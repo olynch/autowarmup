@@ -101,4 +101,9 @@ module FleschSection =
 
 let uniformChoice xs = List.nth xs (Random.int (List.length xs))
 
+let biasedChoice (xs : ('a * float) list) : 'a =
+  let rec helper ((x,p) :: xs) s t = if t <= p then x else helper xs (s -. p) (t -. p) in
+  let t = Random.float 1. in
+  helper xs (List.fold_left (+.) 0. (List.map snd xs)) t
+
 let randomSection () = uniformChoice FleschSection.all

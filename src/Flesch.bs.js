@@ -3,6 +3,7 @@
 var List = require("bs-platform/lib/js/list.js");
 var Block = require("bs-platform/lib/js/block.js");
 var Random = require("bs-platform/lib/js/random.js");
+var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
 
 var all = /* :: */[
   /* Major */0,
@@ -238,6 +239,39 @@ function uniformChoice(xs) {
   return List.nth(xs, Random.$$int(List.length(xs)));
 }
 
+function biasedChoice(xs) {
+  var helper = function (param) {
+    if (param) {
+      var xs = param[1];
+      var match = param[0];
+      var p = match[1];
+      var x = match[0];
+      return (function (s, t) {
+          if (t <= p) {
+            return x;
+          } else {
+            return helper(xs)(s - p, t - p);
+          }
+        });
+    } else {
+      throw [
+            Caml_builtin_exceptions.match_failure,
+            /* tuple */[
+              "Flesch.ml",
+              105,
+              17
+            ]
+          ];
+    }
+  };
+  var t = Random.$$float(1);
+  return helper(xs)(List.fold_left((function (prim, prim$1) {
+                    return prim + prim$1;
+                  }), 0, List.map((function (prim) {
+                        return prim[1];
+                      }), xs)), t);
+}
+
 function randomSection(param) {
   return uniformChoice(all$6);
 }
@@ -251,5 +285,6 @@ exports.ViolinString = ViolinString;
 exports.cross = cross;
 exports.FleschSection = FleschSection;
 exports.uniformChoice = uniformChoice;
+exports.biasedChoice = biasedChoice;
 exports.randomSection = randomSection;
 /* all Not a pure module */
