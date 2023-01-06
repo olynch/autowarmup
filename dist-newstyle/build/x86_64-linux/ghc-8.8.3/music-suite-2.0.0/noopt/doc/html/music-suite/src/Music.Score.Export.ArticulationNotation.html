@@ -1,0 +1,774 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_1zIeZgE3Xc1CH9Vr3K9MsF"><span id="%24con2tag_9UErTezzL5XKoXybUUbj4Z"></span></span><span class="hs-pragma">{-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DefaultSignatures #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE DeriveFoldable #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE DeriveFunctor #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE DeriveTraversable #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE FunctionalDependencies #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-11"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-12"></span><span class="hs-pragma">{-# LANGUAGE RankNTypes #-}</span><span>
+</span><span id="line-13"></span><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving #-}</span><span>
+</span><span id="line-14"></span><span class="hs-pragma">{-# LANGUAGE TupleSections #-}</span><span>
+</span><span id="line-15"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-16"></span><span class="hs-pragma">{-# LANGUAGE ViewPatterns #-}</span><span>
+</span><span id="line-17"></span><span class="hs-pragma">{-# LANGUAGE NoMonomorphismRestriction #-}</span><span>
+</span><span id="line-18"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012-2014</span><span>
+</span><span id="line-33"></span><span class="hs-comment">--</span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-35"></span><span class="hs-comment">--</span><span>
+</span><span id="line-36"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- Portability : non-portable (TF,GNTD)</span><span>
+</span><span id="line-39"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Export.ArticulationNotation</span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Slur"><span class="hs-identifier">Slur</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier">Mark</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier">ArticulationNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#slurs"><span class="hs-identifier">slurs</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#marks"><span class="hs-identifier">marks</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#notateArticulation"><span class="hs-identifier">notateArticulation</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-comment">-- ()</span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Context.html"><span class="hs-identifier">Data.Functor.Context</span></a></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Music.Articulation.html"><span class="hs-identifier">Music.Articulation</span></a></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html"><span class="hs-identifier">Music.Score.Articulation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#Accentuation"><span class="hs-identifier">Accentuation</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#Articulated"><span class="hs-identifier">Articulated</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#Articulation"><span class="hs-identifier">Articulation</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#Separation"><span class="hs-identifier">Separation</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html"><span class="hs-identifier">Music.Score.Articulation</span></a></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Ties.html"><span class="hs-identifier">Music.Score.Ties</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- TODO need NoSlur etc?</span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="hs-keyword">data</span><span> </span><span id="Slur"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Slur"><span class="hs-identifier hs-var">Slur</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="NoSlur"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#NoSlur"><span class="hs-identifier hs-var">NoSlur</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="BeginSlur"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#BeginSlur"><span class="hs-identifier hs-var">BeginSlur</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="EndSlur"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#EndSlur"><span class="hs-identifier hs-var">EndSlur</span></a></span></span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680601746"><span id="local-6989586621680601748"><span class="annot"><span class="annottext">Slur -&gt; Slur -&gt; Bool
+(Slur -&gt; Slur -&gt; Bool) -&gt; (Slur -&gt; Slur -&gt; Bool) -&gt; Eq Slur
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Slur -&gt; Slur -&gt; Bool
+$c/= :: Slur -&gt; Slur -&gt; Bool
+== :: Slur -&gt; Slur -&gt; Bool
+$c== :: Slur -&gt; Slur -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601730"><span id="local-6989586621680601732"><span id="local-6989586621680601734"><span id="local-6989586621680601736"><span id="local-6989586621680601738"><span id="local-6989586621680601740"><span id="local-6989586621680601742"><span class="annot"><span class="annottext">Eq Slur
+Eq Slur =&gt;
+(Slur -&gt; Slur -&gt; Ordering)
+-&gt; (Slur -&gt; Slur -&gt; Bool)
+-&gt; (Slur -&gt; Slur -&gt; Bool)
+-&gt; (Slur -&gt; Slur -&gt; Bool)
+-&gt; (Slur -&gt; Slur -&gt; Bool)
+-&gt; (Slur -&gt; Slur -&gt; Slur)
+-&gt; (Slur -&gt; Slur -&gt; Slur)
+-&gt; Ord Slur
+Slur -&gt; Slur -&gt; Bool
+Slur -&gt; Slur -&gt; Ordering
+Slur -&gt; Slur -&gt; Slur
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Slur -&gt; Slur -&gt; Slur
+$cmin :: Slur -&gt; Slur -&gt; Slur
+max :: Slur -&gt; Slur -&gt; Slur
+$cmax :: Slur -&gt; Slur -&gt; Slur
+&gt;= :: Slur -&gt; Slur -&gt; Bool
+$c&gt;= :: Slur -&gt; Slur -&gt; Bool
+&gt; :: Slur -&gt; Slur -&gt; Bool
+$c&gt; :: Slur -&gt; Slur -&gt; Bool
+&lt;= :: Slur -&gt; Slur -&gt; Bool
+$c&lt;= :: Slur -&gt; Slur -&gt; Bool
+&lt; :: Slur -&gt; Slur -&gt; Bool
+$c&lt; :: Slur -&gt; Slur -&gt; Bool
+compare :: Slur -&gt; Slur -&gt; Ordering
+$ccompare :: Slur -&gt; Slur -&gt; Ordering
+$cp1Ord :: Eq Slur
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601723"><span id="local-6989586621680601725"><span id="local-6989586621680601727"><span class="annot"><span class="annottext">Int -&gt; Slur -&gt; ShowS
+[Slur] -&gt; ShowS
+Slur -&gt; String
+(Int -&gt; Slur -&gt; ShowS)
+-&gt; (Slur -&gt; String) -&gt; ([Slur] -&gt; ShowS) -&gt; Show Slur
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Slur] -&gt; ShowS
+$cshowList :: [Slur] -&gt; ShowS
+show :: Slur -&gt; String
+$cshow :: Slur -&gt; String
+showsPrec :: Int -&gt; Slur -&gt; ShowS
+$cshowsPrec :: Int -&gt; Slur -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-comment">{-
+TODO
+  dashed slur
+  trill
+  8va and variants
+-}</span><span>
+</span><span id="line-69"></span><span class="hs-keyword">data</span><span> </span><span id="Mark"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier hs-var">Mark</span></a></span></span><span>
+</span><span id="line-70"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="NoMark"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#NoMark"><span class="hs-identifier hs-var">NoMark</span></a></span></span><span>
+</span><span id="line-71"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Staccato"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Staccato"><span class="hs-identifier hs-var">Staccato</span></a></span></span><span>
+</span><span id="line-72"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="MoltoStaccato"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#MoltoStaccato"><span class="hs-identifier hs-var">MoltoStaccato</span></a></span></span><span>
+</span><span id="line-73"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Marcato"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Marcato"><span class="hs-identifier hs-var">Marcato</span></a></span></span><span>
+</span><span id="line-74"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Accent"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Accent"><span class="hs-identifier hs-var">Accent</span></a></span></span><span>
+</span><span id="line-75"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Tenuto"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Tenuto"><span class="hs-identifier hs-var">Tenuto</span></a></span></span><span>
+</span><span id="line-76"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Trill"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Trill"><span class="hs-identifier hs-var">Trill</span></a></span></span><span> </span><span class="hs-comment">-- just trill, no line</span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Turn"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Turn"><span class="hs-identifier hs-var">Turn</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span> </span><span class="hs-comment">-- inverted?</span><span>
+</span><span id="line-78"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Mordent"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mordent"><span class="hs-identifier hs-var">Mordent</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span> </span><span class="hs-comment">-- inverted?</span><span>
+</span><span id="line-79"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="UpBow"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#UpBow"><span class="hs-identifier hs-var">UpBow</span></a></span></span><span>
+</span><span id="line-80"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="DownBow"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#DownBow"><span class="hs-identifier hs-var">DownBow</span></a></span></span><span>
+</span><span id="line-81"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Circle"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Circle"><span class="hs-identifier hs-var">Circle</span></a></span></span><span>
+</span><span id="line-82"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680601706"><span id="local-6989586621680601708"><span class="annot"><span class="annottext">Mark -&gt; Mark -&gt; Bool
+(Mark -&gt; Mark -&gt; Bool) -&gt; (Mark -&gt; Mark -&gt; Bool) -&gt; Eq Mark
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Mark -&gt; Mark -&gt; Bool
+$c/= :: Mark -&gt; Mark -&gt; Bool
+== :: Mark -&gt; Mark -&gt; Bool
+$c== :: Mark -&gt; Mark -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601691"><span id="local-6989586621680601693"><span id="local-6989586621680601695"><span id="local-6989586621680601697"><span id="local-6989586621680601699"><span id="local-6989586621680601701"><span id="local-6989586621680601703"><span class="annot"><span class="annottext">Eq Mark
+Eq Mark =&gt;
+(Mark -&gt; Mark -&gt; Ordering)
+-&gt; (Mark -&gt; Mark -&gt; Bool)
+-&gt; (Mark -&gt; Mark -&gt; Bool)
+-&gt; (Mark -&gt; Mark -&gt; Bool)
+-&gt; (Mark -&gt; Mark -&gt; Bool)
+-&gt; (Mark -&gt; Mark -&gt; Mark)
+-&gt; (Mark -&gt; Mark -&gt; Mark)
+-&gt; Ord Mark
+Mark -&gt; Mark -&gt; Bool
+Mark -&gt; Mark -&gt; Ordering
+Mark -&gt; Mark -&gt; Mark
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Mark -&gt; Mark -&gt; Mark
+$cmin :: Mark -&gt; Mark -&gt; Mark
+max :: Mark -&gt; Mark -&gt; Mark
+$cmax :: Mark -&gt; Mark -&gt; Mark
+&gt;= :: Mark -&gt; Mark -&gt; Bool
+$c&gt;= :: Mark -&gt; Mark -&gt; Bool
+&gt; :: Mark -&gt; Mark -&gt; Bool
+$c&gt; :: Mark -&gt; Mark -&gt; Bool
+&lt;= :: Mark -&gt; Mark -&gt; Bool
+$c&lt;= :: Mark -&gt; Mark -&gt; Bool
+&lt; :: Mark -&gt; Mark -&gt; Bool
+$c&lt; :: Mark -&gt; Mark -&gt; Bool
+compare :: Mark -&gt; Mark -&gt; Ordering
+$ccompare :: Mark -&gt; Mark -&gt; Ordering
+$cp1Ord :: Eq Mark
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601685"><span id="local-6989586621680601687"><span id="local-6989586621680601689"><span class="annot"><span class="annottext">Int -&gt; Mark -&gt; ShowS
+[Mark] -&gt; ShowS
+Mark -&gt; String
+(Int -&gt; Mark -&gt; ShowS)
+-&gt; (Mark -&gt; String) -&gt; ([Mark] -&gt; ShowS) -&gt; Show Mark
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Mark] -&gt; ShowS
+$cshowList :: [Mark] -&gt; ShowS
+show :: Mark -&gt; String
+$cshow :: Mark -&gt; String
+showsPrec :: Int -&gt; Mark -&gt; ShowS
+$cshowsPrec :: Int -&gt; Mark -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680601680"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Slur"><span class="hs-identifier hs-type">Slur</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span>  </span><span id="local-6989586621680601678"><span class="annot"><span class="annottext">mempty :: Slur
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Slur
+</span><a href="Music.Score.Export.ArticulationNotation.html#NoSlur"><span class="hs-identifier hs-var">NoSlur</span></a></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span>  </span><span id="local-6989586621680601677"><span class="annot"><span class="annottext">mappend :: Slur -&gt; Slur -&gt; Slur
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mappend</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Slur -&gt; Slur -&gt; Slur
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(&lt;&gt;)</span></a></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680601672"><span id="local-6989586621680601674"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Slur"><span class="hs-identifier hs-type">Slur</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-91"></span><span>  </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#NoSlur"><span class="hs-identifier hs-type">NoSlur</span></a></span><span> </span><span id="local-6989586621680601670"><span class="annot"><span class="annottext">&lt;&gt; :: Slur -&gt; Slur -&gt; Slur
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span id="local-6989586621680601669"><span class="annot"><span class="annottext">a :: Slur
+</span><a href="#local-6989586621680601669"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Slur
+</span><a href="#local-6989586621680601669"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-92"></span><span>  </span><span id="local-6989586621680601668"><span class="annot"><span class="annottext">a :: Slur
+</span><a href="#local-6989586621680601668"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Slur
+</span><a href="#local-6989586621680601668"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680601663"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span>  </span><span id="local-6989586621680601662"><span class="annot"><span class="annottext">mempty :: Mark
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#NoMark"><span class="hs-identifier hs-var">NoMark</span></a></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span>  </span><span id="local-6989586621680601661"><span class="annot"><span class="annottext">mappend :: Mark -&gt; Mark -&gt; Mark
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mappend</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mark -&gt; Mark -&gt; Mark
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(&lt;&gt;)</span></a></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680601656"><span id="local-6989586621680601658"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-101"></span><span>  </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#NoMark"><span class="hs-identifier hs-type">NoMark</span></a></span><span> </span><span id="local-6989586621680601655"><span class="annot"><span class="annottext">&lt;&gt; :: Mark -&gt; Mark -&gt; Mark
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span id="local-6989586621680601654"><span class="annot"><span class="annottext">a :: Mark
+</span><a href="#local-6989586621680601654"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mark
+</span><a href="#local-6989586621680601654"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-102"></span><span>  </span><span id="local-6989586621680601653"><span class="annot"><span class="annottext">a :: Mark
+</span><a href="#local-6989586621680601653"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Mark
+</span><a href="#local-6989586621680601653"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span class="hs-keyword">newtype</span><span> </span><span id="ArticulationNotation"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-var">ArticulationNotation</span></a></span></span><span>
+</span><span id="line-105"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ArticulationNotation"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-var">ArticulationNotation</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getArticulationNotation"><span class="annot"><span class="annottext">ArticulationNotation -&gt; ([Slur], [Mark])
+</span><a href="Music.Score.Export.ArticulationNotation.html#getArticulationNotation"><span class="hs-identifier hs-var hs-var">getArticulationNotation</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Slur"><span class="hs-identifier hs-type">Slur</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">}</span><span>
+</span><span id="line-106"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680601647"><span id="local-6989586621680601649"><span class="annot"><span class="annottext">ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+(ArticulationNotation -&gt; ArticulationNotation -&gt; Bool)
+-&gt; (ArticulationNotation -&gt; ArticulationNotation -&gt; Bool)
+-&gt; Eq ArticulationNotation
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+$c/= :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+== :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+$c== :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601632"><span id="local-6989586621680601634"><span id="local-6989586621680601636"><span id="local-6989586621680601638"><span id="local-6989586621680601640"><span id="local-6989586621680601642"><span id="local-6989586621680601644"><span class="annot"><span class="annottext">Eq ArticulationNotation
+Eq ArticulationNotation =&gt;
+(ArticulationNotation -&gt; ArticulationNotation -&gt; Ordering)
+-&gt; (ArticulationNotation -&gt; ArticulationNotation -&gt; Bool)
+-&gt; (ArticulationNotation -&gt; ArticulationNotation -&gt; Bool)
+-&gt; (ArticulationNotation -&gt; ArticulationNotation -&gt; Bool)
+-&gt; (ArticulationNotation -&gt; ArticulationNotation -&gt; Bool)
+-&gt; (ArticulationNotation
+    -&gt; ArticulationNotation -&gt; ArticulationNotation)
+-&gt; (ArticulationNotation
+    -&gt; ArticulationNotation -&gt; ArticulationNotation)
+-&gt; Ord ArticulationNotation
+ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+ArticulationNotation -&gt; ArticulationNotation -&gt; Ordering
+ArticulationNotation
+-&gt; ArticulationNotation -&gt; ArticulationNotation
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: ArticulationNotation
+-&gt; ArticulationNotation -&gt; ArticulationNotation
+$cmin :: ArticulationNotation
+-&gt; ArticulationNotation -&gt; ArticulationNotation
+max :: ArticulationNotation
+-&gt; ArticulationNotation -&gt; ArticulationNotation
+$cmax :: ArticulationNotation
+-&gt; ArticulationNotation -&gt; ArticulationNotation
+&gt;= :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+$c&gt;= :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+&gt; :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+$c&gt; :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+&lt;= :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+$c&lt;= :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+&lt; :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+$c&lt; :: ArticulationNotation -&gt; ArticulationNotation -&gt; Bool
+compare :: ArticulationNotation -&gt; ArticulationNotation -&gt; Ordering
+$ccompare :: ArticulationNotation -&gt; ArticulationNotation -&gt; Ordering
+$cp1Ord :: Eq ArticulationNotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601626"><span id="local-6989586621680601628"><span id="local-6989586621680601630"><span class="annot"><span class="annottext">Int -&gt; ArticulationNotation -&gt; ShowS
+[ArticulationNotation] -&gt; ShowS
+ArticulationNotation -&gt; String
+(Int -&gt; ArticulationNotation -&gt; ShowS)
+-&gt; (ArticulationNotation -&gt; String)
+-&gt; ([ArticulationNotation] -&gt; ShowS)
+-&gt; Show ArticulationNotation
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ArticulationNotation] -&gt; ShowS
+$cshowList :: [ArticulationNotation] -&gt; ShowS
+show :: ArticulationNotation -&gt; String
+$cshow :: ArticulationNotation -&gt; String
+showsPrec :: Int -&gt; ArticulationNotation -&gt; ShowS
+$cshowsPrec :: Int -&gt; ArticulationNotation -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Slur"><span class="hs-identifier hs-type">Slur</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span>  </span><span id="local-6989586621680601623"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped ArticulationNotation)
+  (f (Unwrapped ArticulationNotation))
+-&gt; p ArticulationNotation (f ArticulationNotation)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ArticulationNotation -&gt; ([Slur], [Mark]))
+-&gt; (([Slur], [Mark]) -&gt; ArticulationNotation)
+-&gt; Iso
+     ArticulationNotation
+     ArticulationNotation
+     ([Slur], [Mark])
+     ([Slur], [Mark])
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">ArticulationNotation -&gt; ([Slur], [Mark])
+</span><a href="Music.Score.Export.ArticulationNotation.html#getArticulationNotation"><span class="hs-identifier hs-var hs-var">getArticulationNotation</span></a></span><span> </span><span class="annot"><span class="annottext">([Slur], [Mark]) -&gt; ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-var">ArticulationNotation</span></a></span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Articulation"><span class="annot"><a href="Music.Score.Articulation.html#Articulation"><span class="hs-identifier hs-var">Articulation</span></a></span></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-119"></span><span>  </span><span id="local-6989586621680601616"><span class="annot"><span class="annottext">transform :: Span -&gt; ArticulationNotation -&gt; ArticulationNotation
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ArticulationNotation -&gt; ArticulationNotation
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680601610"><span id="local-6989586621680601612"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-122"></span><span>  </span><span id="local-6989586621680601607"><span class="annot"><span class="annottext">toTied :: ArticulationNotation
+-&gt; (ArticulationNotation, ArticulationNotation)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680601605"><span class="annot"><span class="annottext">slur :: [Slur]
+</span><a href="#local-6989586621680601605"><span class="hs-identifier hs-var">slur</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601604"><span class="annot"><span class="annottext">marks :: [Mark]
+</span><a href="#local-6989586621680601604"><span class="hs-identifier hs-var">marks</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-123"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">([Slur], [Mark]) -&gt; ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-var">ArticulationNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Slur]
+</span><a href="#local-6989586621680601603"><span class="hs-identifier hs-var">slur1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Mark]
+</span><a href="#local-6989586621680601602"><span class="hs-identifier hs-var">marks1</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-124"></span><span>      </span><span class="annot"><span class="annottext">([Slur], [Mark]) -&gt; ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-var">ArticulationNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Slur]
+</span><a href="#local-6989586621680601601"><span class="hs-identifier hs-var">slur2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Mark]
+</span><a href="#local-6989586621680601600"><span class="hs-identifier hs-var">marks2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-125"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-126"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-127"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621680601602"><span class="annot"><span class="annottext">marks1 :: [Mark]
+</span><a href="#local-6989586621680601602"><span class="hs-identifier hs-var">marks1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601600"><span class="annot"><span class="annottext">marks2 :: [Mark]
+</span><a href="#local-6989586621680601600"><span class="hs-identifier hs-var">marks2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Mark] -&gt; ([Mark], [Mark])
+forall (f :: * -&gt; *) b.
+(Functor f, Monoid b) =&gt;
+f Mark -&gt; (f Mark, f b)
+</span><a href="#local-6989586621680601599"><span class="hs-identifier hs-var">splitMarks</span></a></span><span> </span><span class="annot"><span class="annottext">[Mark]
+</span><a href="#local-6989586621680601604"><span class="hs-identifier hs-var">marks</span></a></span><span>
+</span><span id="line-128"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621680601603"><span class="annot"><span class="annottext">slur1 :: [Slur]
+</span><a href="#local-6989586621680601603"><span class="hs-identifier hs-var">slur1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601601"><span class="annot"><span class="annottext">slur2 :: [Slur]
+</span><a href="#local-6989586621680601601"><span class="hs-identifier hs-var">slur2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Slur] -&gt; ([Slur], [Slur])
+forall (f :: * -&gt; *). Functor f =&gt; f Slur -&gt; (f Slur, f Slur)
+</span><a href="#local-6989586621680601598"><span class="hs-identifier hs-var">splitSlurs</span></a></span><span> </span><span class="annot"><span class="annottext">[Slur]
+</span><a href="#local-6989586621680601605"><span class="hs-identifier hs-var">slur</span></a></span><span>
+</span><span id="line-129"></span><span>      </span><span id="local-6989586621680601598"><span class="annot"><span class="annottext">splitSlurs :: f Slur -&gt; (f Slur, f Slur)
+</span><a href="#local-6989586621680601598"><span class="hs-identifier hs-var hs-var">splitSlurs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">f (Slur, Slur) -&gt; (f Slur, f Slur)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Export.ArticulationNotation.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(f (Slur, Slur) -&gt; (f Slur, f Slur))
+-&gt; (f Slur -&gt; f (Slur, Slur)) -&gt; f Slur -&gt; (f Slur, f Slur)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Slur -&gt; (Slur, Slur)) -&gt; f Slur -&gt; f (Slur, Slur)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Slur -&gt; (Slur, Slur)
+</span><a href="#local-6989586621680601595"><span class="hs-identifier hs-var">splitSlur</span></a></span><span>
+</span><span id="line-130"></span><span>      </span><span id="local-6989586621680601599"><span class="annot"><span class="annottext">splitMarks :: f Mark -&gt; (f Mark, f b)
+</span><a href="#local-6989586621680601599"><span class="hs-identifier hs-var hs-var">splitMarks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">f (Mark, b) -&gt; (f Mark, f b)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Export.ArticulationNotation.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(f (Mark, b) -&gt; (f Mark, f b))
+-&gt; (f Mark -&gt; f (Mark, b)) -&gt; f Mark -&gt; (f Mark, f b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Mark -&gt; (Mark, b)) -&gt; f Mark -&gt; f (Mark, b)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Mark -&gt; (Mark, b)
+forall b. Monoid b =&gt; Mark -&gt; (Mark, b)
+</span><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span>
+</span><span id="line-131"></span><span>      </span><span id="local-6989586621680601595"><span class="annot"><span class="annottext">splitSlur :: Slur -&gt; (Slur, Slur)
+</span><a href="#local-6989586621680601595"><span class="hs-identifier hs-var hs-var">splitSlur</span></a></span></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#NoSlur"><span class="hs-identifier hs-type">NoSlur</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Slur
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Slur
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-132"></span><span>      </span><span class="annot"><a href="#local-6989586621680601595"><span class="hs-identifier hs-var">splitSlur</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#BeginSlur"><span class="hs-identifier hs-type">BeginSlur</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Slur
+</span><a href="Music.Score.Export.ArticulationNotation.html#BeginSlur"><span class="hs-identifier hs-var">BeginSlur</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Slur
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-133"></span><span>      </span><span class="annot"><a href="#local-6989586621680601595"><span class="hs-identifier hs-var">splitSlur</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#EndSlur"><span class="hs-identifier hs-type">EndSlur</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Slur
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Slur
+</span><a href="Music.Score.Export.ArticulationNotation.html#EndSlur"><span class="hs-identifier hs-var">EndSlur</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-134"></span><span>      </span><span id="local-6989586621680601594"><span class="annot"><span class="annottext">splitMark :: Mark -&gt; (Mark, b)
+</span><a href="#local-6989586621680601594"><span class="hs-identifier hs-var hs-var">splitMark</span></a></span></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#NoMark"><span class="hs-identifier hs-type">NoMark</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#NoMark"><span class="hs-identifier hs-var">NoMark</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-135"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Staccato"><span class="hs-identifier hs-type">Staccato</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Staccato"><span class="hs-identifier hs-var">Staccato</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-136"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#MoltoStaccato"><span class="hs-identifier hs-type">MoltoStaccato</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#MoltoStaccato"><span class="hs-identifier hs-var">MoltoStaccato</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-137"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Marcato"><span class="hs-identifier hs-type">Marcato</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Marcato"><span class="hs-identifier hs-var">Marcato</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-138"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Accent"><span class="hs-identifier hs-type">Accent</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Accent"><span class="hs-identifier hs-var">Accent</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Tenuto"><span class="hs-identifier hs-type">Tenuto</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Tenuto"><span class="hs-identifier hs-var">Tenuto</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-140"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Trill"><span class="hs-identifier hs-type">Trill</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Trill"><span class="hs-identifier hs-var">Trill</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-141"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Turn"><span class="hs-identifier hs-type">Turn</span></a></span><span> </span><span id="local-6989586621680601593"><span class="annot"><span class="annottext">x :: Bool
+</span><a href="#local-6989586621680601593"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Turn"><span class="hs-identifier hs-var">Turn</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680601593"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-142"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mordent"><span class="hs-identifier hs-type">Mordent</span></a></span><span> </span><span id="local-6989586621680601592"><span class="annot"><span class="annottext">x :: Bool
+</span><a href="#local-6989586621680601592"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Mordent"><span class="hs-identifier hs-var">Mordent</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680601592"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-143"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#UpBow"><span class="hs-identifier hs-type">UpBow</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#UpBow"><span class="hs-identifier hs-var">UpBow</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-144"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#DownBow"><span class="hs-identifier hs-type">DownBow</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#DownBow"><span class="hs-identifier hs-var">DownBow</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-145"></span><span>      </span><span class="annot"><a href="#local-6989586621680601594"><span class="hs-identifier hs-var">splitMark</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Circle"><span class="hs-identifier hs-type">Circle</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Circle"><span class="hs-identifier hs-var">Circle</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-146"></span><span>
+</span><span id="line-147"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680601587"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-148"></span><span>
+</span><span id="line-149"></span><span>  </span><span id="local-6989586621680601586"><span class="annot"><span class="annottext">mempty :: ArticulationNotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Slur], [Mark]) -&gt; ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-var">ArticulationNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span>  </span><span id="local-6989586621680601585"><span class="annot"><span class="annottext">mappend :: ArticulationNotation
+-&gt; ArticulationNotation -&gt; ArticulationNotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mappend</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ArticulationNotation
+-&gt; ArticulationNotation -&gt; ArticulationNotation
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(&lt;&gt;)</span></a></span><span>
+</span><span id="line-152"></span><span>
+</span><span id="line-153"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680601580"><span id="local-6989586621680601582"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-154"></span><span>  </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span id="local-6989586621680601579"><span class="annot"><span class="annottext">&lt;&gt; :: ArticulationNotation
+-&gt; ArticulationNotation -&gt; ArticulationNotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span id="local-6989586621680601578"><span class="annot"><span class="annottext">y :: ArticulationNotation
+</span><a href="#local-6989586621680601578"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ArticulationNotation
+</span><a href="#local-6989586621680601578"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-155"></span><span>  </span><span id="local-6989586621680601577"><span class="annot"><span class="annottext">x :: ArticulationNotation
+</span><a href="#local-6989586621680601577"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ArticulationNotation
+</span><a href="#local-6989586621680601577"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-156"></span><span>
+</span><span id="line-157"></span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#slurs"><span class="hs-identifier hs-type">slurs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Slur"><span class="hs-identifier hs-type">Slur</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-158"></span><span id="slurs"><span class="annot"><span class="annottext">slurs :: ([Slur] -&gt; f [Slur])
+-&gt; ArticulationNotation -&gt; f ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#slurs"><span class="hs-identifier hs-var hs-var">slurs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(([Slur], [Mark]) -&gt; f ([Slur], [Mark]))
+-&gt; ArticulationNotation -&gt; f ArticulationNotation
+forall s. Wrapped s =&gt; Iso' s (Unwrapped s)
+</span><span class="hs-identifier hs-var">_Wrapped'</span></span><span> </span><span class="annot"><span class="annottext">((([Slur], [Mark]) -&gt; f ([Slur], [Mark]))
+ -&gt; ArticulationNotation -&gt; f ArticulationNotation)
+-&gt; (([Slur] -&gt; f [Slur]) -&gt; ([Slur], [Mark]) -&gt; f ([Slur], [Mark]))
+-&gt; ([Slur] -&gt; f [Slur])
+-&gt; ArticulationNotation
+-&gt; f ArticulationNotation
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">([Slur] -&gt; f [Slur]) -&gt; ([Slur], [Mark]) -&gt; f ([Slur], [Mark])
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span>
+</span><span id="line-159"></span><span>
+</span><span id="line-160"></span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#marks"><span class="hs-identifier hs-type">marks</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-161"></span><span id="marks"><span class="annot"><span class="annottext">marks :: ([Mark] -&gt; f [Mark])
+-&gt; ArticulationNotation -&gt; f ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#marks"><span class="hs-identifier hs-var hs-var">marks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(([Slur], [Mark]) -&gt; f ([Slur], [Mark]))
+-&gt; ArticulationNotation -&gt; f ArticulationNotation
+forall s. Wrapped s =&gt; Iso' s (Unwrapped s)
+</span><span class="hs-identifier hs-var">_Wrapped'</span></span><span> </span><span class="annot"><span class="annottext">((([Slur], [Mark]) -&gt; f ([Slur], [Mark]))
+ -&gt; ArticulationNotation -&gt; f ArticulationNotation)
+-&gt; (([Mark] -&gt; f [Mark]) -&gt; ([Slur], [Mark]) -&gt; f ([Slur], [Mark]))
+-&gt; ([Mark] -&gt; f [Mark])
+-&gt; ArticulationNotation
+-&gt; f ArticulationNotation
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">([Mark] -&gt; f [Mark]) -&gt; ([Slur], [Mark]) -&gt; f ([Slur], [Mark])
+forall s t a b. Field2 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_2</span></span><span>
+</span><span id="line-162"></span><span>
+</span><span id="line-163"></span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#getSeparationMarks"><span class="hs-identifier hs-type">getSeparationMarks</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-164"></span><span id="getSeparationMarks"><span class="annot"><span class="annottext">getSeparationMarks :: Double -&gt; [Mark]
+</span><a href="Music.Score.Export.ArticulationNotation.html#getSeparationMarks"><span class="hs-identifier hs-var hs-var">getSeparationMarks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Mark], Bool) -&gt; [Mark]
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span> </span><span class="annot"><span class="annottext">(([Mark], Bool) -&gt; [Mark])
+-&gt; (Double -&gt; ([Mark], Bool)) -&gt; Double -&gt; [Mark]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; ([Mark], Bool)
+</span><a href="Music.Score.Export.ArticulationNotation.html#getSeparationMarks%27"><span class="hs-identifier hs-var">getSeparationMarks'</span></a></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#hasSlur%27"><span class="hs-identifier hs-type">hasSlur'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-167"></span><span id="hasSlur%27"><span class="annot"><span class="annottext">hasSlur' :: Double -&gt; Bool
+</span><a href="Music.Score.Export.ArticulationNotation.html#hasSlur%27"><span class="hs-identifier hs-var hs-var">hasSlur'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Mark], Bool) -&gt; Bool
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span> </span><span class="annot"><span class="annottext">(([Mark], Bool) -&gt; Bool)
+-&gt; (Double -&gt; ([Mark], Bool)) -&gt; Double -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; ([Mark], Bool)
+</span><a href="Music.Score.Export.ArticulationNotation.html#getSeparationMarks%27"><span class="hs-identifier hs-var">getSeparationMarks'</span></a></span><span>
+</span><span id="line-168"></span><span>
+</span><span id="line-169"></span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#getSeparationMarks%27"><span class="hs-identifier hs-type">getSeparationMarks'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-170"></span><span id="getSeparationMarks%27"><span class="annot"><span class="annottext">getSeparationMarks' :: Double -&gt; ([Mark], Bool)
+</span><a href="Music.Score.Export.ArticulationNotation.html#getSeparationMarks%27"><span class="hs-identifier hs-var hs-var">getSeparationMarks'</span></a></span></span><span> </span><span id="local-6989586621680601571"><span class="annot"><span class="annottext">x :: Double
+</span><a href="#local-6989586621680601571"><span class="hs-identifier hs-var">x</span></a></span></span><span>
+</span><span id="line-171"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601571"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-172"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601571"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601571"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-173"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601571"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601571"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Staccato"><span class="hs-identifier hs-var">Staccato</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-174"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601571"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#MoltoStaccato"><span class="hs-identifier hs-var">MoltoStaccato</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-175"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">otherwise</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ([Mark], Bool)
+forall a. HasCallStack =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Impossible&quot;</span></span><span>
+</span><span id="line-176"></span><span>
+</span><span id="line-177"></span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#getAccentMarks"><span class="hs-identifier hs-type">getAccentMarks</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-178"></span><span id="getAccentMarks"><span class="annot"><span class="annottext">getAccentMarks :: Double -&gt; [Mark]
+</span><a href="Music.Score.Export.ArticulationNotation.html#getAccentMarks"><span class="hs-identifier hs-var hs-var">getAccentMarks</span></a></span></span><span> </span><span id="local-6989586621680601565"><span class="annot"><span class="annottext">x :: Double
+</span><a href="#local-6989586621680601565"><span class="hs-identifier hs-var">x</span></a></span></span><span>
+</span><span id="line-179"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601565"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-180"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601565"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601565"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-181"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601565"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601565"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Accent"><span class="hs-identifier hs-var">Accent</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-182"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621680601565"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Mark
+</span><a href="Music.Score.Export.ArticulationNotation.html#Marcato"><span class="hs-identifier hs-var">Marcato</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-183"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">otherwise</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-184"></span><span>
+</span><span id="line-185"></span><span id="local-6989586621680601765"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#hasSlur"><span class="hs-identifier hs-type">hasSlur</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#Separation"><span class="hs-identifier hs-type">Separation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601765"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#Articulated"><span class="hs-identifier hs-type">Articulated</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601765"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680601765"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span></span><span>
+</span><span id="line-186"></span><span id="hasSlur"><span class="annot"><span class="annottext">hasSlur :: t -&gt; Bool
+</span><a href="Music.Score.Export.ArticulationNotation.html#hasSlur"><span class="hs-identifier hs-var hs-var">hasSlur</span></a></span></span><span> </span><span id="local-6989586621680601563"><span class="annot"><span class="annottext">y :: t
+</span><a href="#local-6989586621680601563"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Bool
+</span><a href="Music.Score.Export.ArticulationNotation.html#hasSlur%27"><span class="hs-identifier hs-var">hasSlur'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Separation t -&gt; Double
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span> </span><span class="annot"><span class="annottext">(Separation t -&gt; Double) -&gt; Separation t -&gt; Double
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Getting (Separation t) t (Separation t) -&gt; t -&gt; Separation t
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting (Separation t) t (Separation t)
+forall a. Articulated a =&gt; Lens' a (Separation a)
+</span><a href="Music.Score.Articulation.html#separation"><span class="hs-identifier hs-var">separation</span></a></span><span> </span><span class="annot"><span class="annottext">(t -&gt; Separation t) -&gt; t -&gt; Separation t
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601563"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-187"></span><span>
+</span><span id="line-188"></span><span id="local-6989586621680601766"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#allMarks"><span class="hs-identifier hs-type">allMarks</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#Separation"><span class="hs-identifier hs-type">Separation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601766"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#Accentuation"><span class="hs-identifier hs-type">Accentuation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601766"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#Articulated"><span class="hs-identifier hs-type">Articulated</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601766"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680601766"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#Mark"><span class="hs-identifier hs-type">Mark</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-189"></span><span id="allMarks"><span class="annot"><span class="annottext">allMarks :: t -&gt; [Mark]
+</span><a href="Music.Score.Export.ArticulationNotation.html#allMarks"><span class="hs-identifier hs-var hs-var">allMarks</span></a></span></span><span> </span><span id="local-6989586621680601559"><span class="annot"><span class="annottext">y :: t
+</span><a href="#local-6989586621680601559"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-190"></span><span>  </span><span class="annot"><span class="annottext">[Mark]
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span>
+</span><span id="line-191"></span><span>    </span><span class="annot"><span class="annottext">[Mark] -&gt; [Mark] -&gt; [Mark]
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; [Mark]
+</span><a href="Music.Score.Export.ArticulationNotation.html#getSeparationMarks"><span class="hs-identifier hs-var">getSeparationMarks</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Separation t -&gt; Double
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span> </span><span class="annot"><span class="annottext">(Separation t -&gt; Double) -&gt; Separation t -&gt; Double
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601559"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">t -&gt; Getting (Separation t) t (Separation t) -&gt; Separation t
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Separation t) t (Separation t)
+forall a. Articulated a =&gt; Lens' a (Separation a)
+</span><a href="Music.Score.Articulation.html#separation"><span class="hs-identifier hs-var">separation</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-192"></span><span>    </span><span class="annot"><span class="annottext">[Mark] -&gt; [Mark] -&gt; [Mark]
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; [Mark]
+</span><a href="Music.Score.Export.ArticulationNotation.html#getAccentMarks"><span class="hs-identifier hs-var">getAccentMarks</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Accentuation t -&gt; Double
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span> </span><span class="annot"><span class="annottext">(Accentuation t -&gt; Double) -&gt; Accentuation t -&gt; Double
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601559"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">t -&gt; Getting (Accentuation t) t (Accentuation t) -&gt; Accentuation t
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Accentuation t) t (Accentuation t)
+forall a. Articulated a =&gt; Lens' a (Accentuation a)
+</span><a href="Music.Score.Articulation.html#accentuation"><span class="hs-identifier hs-var">accentuation</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-193"></span><span>
+</span><span id="line-194"></span><span id="local-6989586621680601556"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#notateArticulation"><span class="hs-identifier hs-type">notateArticulation</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601556"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#Articulated"><span class="hs-identifier hs-type">Articulated</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601556"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#Separation"><span class="hs-identifier hs-type">Separation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601556"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#Accentuation"><span class="hs-identifier hs-type">Accentuation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601556"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Functor.Context.html#Ctxt"><span class="hs-identifier hs-type">Ctxt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601556"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-type">ArticulationNotation</span></a></span></span><span>
+</span><span id="line-195"></span><span id="notateArticulation"><span class="annot"><span class="annottext">notateArticulation :: Ctxt a -&gt; ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#notateArticulation"><span class="hs-identifier hs-var hs-var">notateArticulation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Ctxt a -&gt; (Maybe a, a, Maybe a)
+forall a. Ctxt a -&gt; (Maybe a, a, Maybe a)
+</span><a href="Data.Functor.Context.html#getCtxt"><span class="hs-identifier hs-var hs-var">getCtxt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621680601554"><span class="annot"><span class="annottext">(Maybe a, a, Maybe a)
+</span><a href="#local-6989586621680601554"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Maybe a, a, Maybe a) -&gt; ArticulationNotation
+forall t t t.
+(Real (Separation t), Real (Accentuation t), Real (Separation t),
+ Real (Separation t), Articulated t, Articulated t,
+ Articulated t) =&gt;
+(Maybe t, t, Maybe t) -&gt; ArticulationNotation
+</span><a href="#local-6989586621680601553"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe a, a, Maybe a)
+</span><a href="#local-6989586621680601554"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-196"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-197"></span><span>    </span><span id="local-6989586621680601553"><span class="annot"><span class="annottext">go :: (Maybe t, t, Maybe t) -&gt; ArticulationNotation
+</span><a href="#local-6989586621680601553"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601552"><span class="annot"><span class="annottext">y :: t
+</span><a href="#local-6989586621680601552"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Slur], [Mark]) -&gt; ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-var">ArticulationNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">t -&gt; [Mark]
+forall t.
+(Real (Separation t), Real (Accentuation t), Articulated t) =&gt;
+t -&gt; [Mark]
+</span><a href="Music.Score.Export.ArticulationNotation.html#allMarks"><span class="hs-identifier hs-var">allMarks</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601552"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-198"></span><span>    </span><span class="annot"><a href="#local-6989586621680601553"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680601551"><span class="annot"><span class="annottext">x :: t
+</span><a href="#local-6989586621680601551"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601550"><span class="annot"><span class="annottext">y :: t
+</span><a href="#local-6989586621680601550"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Slur], [Mark]) -&gt; ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-var">ArticulationNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">t -&gt; Bool
+forall t. (Real (Separation t), Articulated t) =&gt; t -&gt; Bool
+</span><a href="Music.Score.Export.ArticulationNotation.html#hasSlur"><span class="hs-identifier hs-var">hasSlur</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601551"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">t -&gt; Bool
+forall t. (Real (Separation t), Articulated t) =&gt; t -&gt; Bool
+</span><a href="Music.Score.Export.ArticulationNotation.html#hasSlur"><span class="hs-identifier hs-var">hasSlur</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601550"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Slur
+</span><a href="Music.Score.Export.ArticulationNotation.html#EndSlur"><span class="hs-identifier hs-var">EndSlur</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-keyword">else</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">t -&gt; [Mark]
+forall t.
+(Real (Separation t), Real (Accentuation t), Articulated t) =&gt;
+t -&gt; [Mark]
+</span><a href="Music.Score.Export.ArticulationNotation.html#allMarks"><span class="hs-identifier hs-var">allMarks</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601550"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-199"></span><span>    </span><span class="annot"><a href="#local-6989586621680601553"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601549"><span class="annot"><span class="annottext">y :: t
+</span><a href="#local-6989586621680601549"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680601548"><span class="annot"><span class="annottext">z :: t
+</span><a href="#local-6989586621680601548"><span class="hs-identifier hs-var">z</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Slur], [Mark]) -&gt; ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-var">ArticulationNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">t -&gt; Bool
+forall t. (Real (Separation t), Articulated t) =&gt; t -&gt; Bool
+</span><a href="Music.Score.Export.ArticulationNotation.html#hasSlur"><span class="hs-identifier hs-var">hasSlur</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601549"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">t -&gt; Bool
+forall t. (Real (Separation t), Articulated t) =&gt; t -&gt; Bool
+</span><a href="Music.Score.Export.ArticulationNotation.html#hasSlur"><span class="hs-identifier hs-var">hasSlur</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601548"><span class="hs-identifier hs-var">z</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Slur
+</span><a href="Music.Score.Export.ArticulationNotation.html#BeginSlur"><span class="hs-identifier hs-var">BeginSlur</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-keyword">else</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">t -&gt; [Mark]
+forall t.
+(Real (Separation t), Real (Accentuation t), Articulated t) =&gt;
+t -&gt; [Mark]
+</span><a href="Music.Score.Export.ArticulationNotation.html#allMarks"><span class="hs-identifier hs-var">allMarks</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601549"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-200"></span><span>    </span><span class="annot"><a href="#local-6989586621680601553"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680601547"><span class="annot"><span class="annottext">x :: t
+</span><a href="#local-6989586621680601547"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601546"><span class="annot"><span class="annottext">y :: t
+</span><a href="#local-6989586621680601546"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680601545"><span class="annot"><span class="annottext">z :: t
+</span><a href="#local-6989586621680601545"><span class="hs-identifier hs-var">z</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Slur], [Mark]) -&gt; ArticulationNotation
+</span><a href="Music.Score.Export.ArticulationNotation.html#ArticulationNotation"><span class="hs-identifier hs-var">ArticulationNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">t -&gt; t -&gt; t -&gt; [Slur]
+forall t t t.
+(Real (Separation t), Real (Separation t), Real (Separation t),
+ Articulated t, Articulated t, Articulated t) =&gt;
+t -&gt; t -&gt; t -&gt; [Slur]
+</span><a href="#local-6989586621680601544"><span class="hs-identifier hs-var">slur3</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601547"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601546"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601545"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">t -&gt; [Mark]
+forall t.
+(Real (Separation t), Real (Accentuation t), Articulated t) =&gt;
+t -&gt; [Mark]
+</span><a href="Music.Score.Export.ArticulationNotation.html#allMarks"><span class="hs-identifier hs-var">allMarks</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601546"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-201"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-202"></span><span>        </span><span id="local-6989586621680601544"><span class="annot"><span class="annottext">slur3 :: t -&gt; t -&gt; t -&gt; [Slur]
+</span><a href="#local-6989586621680601544"><span class="hs-identifier hs-var hs-var">slur3</span></a></span></span><span> </span><span id="local-6989586621680601543"><span class="annot"><span class="annottext">x :: t
+</span><a href="#local-6989586621680601543"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680601542"><span class="annot"><span class="annottext">y :: t
+</span><a href="#local-6989586621680601542"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span id="local-6989586621680601541"><span class="annot"><span class="annottext">z :: t
+</span><a href="#local-6989586621680601541"><span class="hs-identifier hs-var">z</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">t -&gt; Bool
+forall t. (Real (Separation t), Articulated t) =&gt; t -&gt; Bool
+</span><a href="Music.Score.Export.ArticulationNotation.html#hasSlur"><span class="hs-identifier hs-var">hasSlur</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601543"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">t -&gt; Bool
+forall t. (Real (Separation t), Articulated t) =&gt; t -&gt; Bool
+</span><a href="Music.Score.Export.ArticulationNotation.html#hasSlur"><span class="hs-identifier hs-var">hasSlur</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601542"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">t -&gt; Bool
+forall t. (Real (Separation t), Articulated t) =&gt; t -&gt; Bool
+</span><a href="Music.Score.Export.ArticulationNotation.html#hasSlur"><span class="hs-identifier hs-var">hasSlur</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621680601541"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-203"></span><span>          </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">True</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">True</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">True</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-204"></span><span>          </span><span class="hs-comment">{-ContSlur-}</span><span>
+</span><span id="line-205"></span><span>          </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">False</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">True</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">True</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Slur
+</span><a href="Music.Score.Export.ArticulationNotation.html#BeginSlur"><span class="hs-identifier hs-var">BeginSlur</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-206"></span><span>          </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">True</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">True</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">False</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Slur
+</span><a href="Music.Score.Export.ArticulationNotation.html#EndSlur"><span class="hs-identifier hs-var">EndSlur</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-207"></span><span>          </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-208"></span><span>
+</span><span id="line-209"></span><span id="local-6989586621680601820"><span id="local-6989586621680601821"><span id="local-6989586621680601822"><span class="annot"><a href="Music.Score.Export.ArticulationNotation.html#unzipR"><span class="hs-identifier hs-type">unzipR</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601822"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680601822"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680601821"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680601820"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680601822"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601821"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680601822"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601820"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-210"></span><span id="unzipR"><span class="annot"><span class="annottext">unzipR :: f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Export.ArticulationNotation.html#unzipR"><span class="hs-identifier hs-var hs-var">unzipR</span></a></span></span><span> </span><span id="local-6989586621680601540"><span class="annot"><span class="annottext">x :: f (a, b)
+</span><a href="#local-6989586621680601540"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((a, b) -&gt; a) -&gt; f (a, b) -&gt; f a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; a
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span> </span><span class="annot"><span class="annottext">f (a, b)
+</span><a href="#local-6989586621680601540"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">((a, b) -&gt; b) -&gt; f (a, b) -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; b
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span> </span><span class="annot"><span class="annottext">f (a, b)
+</span><a href="#local-6989586621680601540"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-211"></span></pre></body></html>

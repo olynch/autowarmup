@@ -1,0 +1,1231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-matches
+  -fno-warn-unused-imports #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Provides a representation for tied notes, and a class to split a single note</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- into a pair of tied notes.</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Ties</span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Tiable class</span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Splitting tied notes in scores</span></span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Music.Score.Ties.html#splitTiesAt"><span class="hs-identifier">splitTiesAt</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Music.Score.Ties.html#splitDurThen"><span class="hs-identifier">splitDurThen</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- * TieT note transformer</span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier">TieT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Music.Score.Ties.html#isTieEndBeginning"><span class="hs-identifier">isTieEndBeginning</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">BasePrelude</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator">(&lt;&gt;)</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Dynamic</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">first</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">second</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Comonad</span></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator">(&amp;)</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Bifunctor</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html"><span class="hs-identifier">Data.Functor.Couple</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">List</span></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Monoid.Average</span></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.VectorSpace</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Sum</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">getSum</span></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html"><span class="hs-identifier">Music.Time.Behavior</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Note.html"><span class="hs-identifier">Music.Time.Note</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#note"><span class="hs-identifier">note</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Transform.html"><span class="hs-identifier">Music.Time.Transform</span></a></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Voice.html"><span class="hs-identifier">Music.Time.Voice</span></a></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- Class of types that can be tied. Ties are added to a score by splitting a single note</span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- into two and annotating them with a /begin tie/ and /end tie/ mark respectively.</span><span>
+</span><span id="line-48"></span><span class="hs-comment">--</span><span>
+</span><span id="line-49"></span><span class="hs-comment">--</span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- Minimal definition: 'toTied', or both 'beginTie' and 'endTie'.</span><span>
+</span><span id="line-51"></span><span class="hs-keyword">class</span><span> </span><span id="Tiable"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-var">Tiable</span></a></span></span><span> </span><span id="local-6989586621680579867"><span class="annot"><a href="#local-6989586621680579867"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-comment">-- |</span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-comment">-- Modify a note to be the first note in a tied note pair.</span><span>
+</span><span id="line-55"></span><span>  </span><span id="beginTie"><span class="annot"><a href="Music.Score.Ties.html#beginTie"><span class="hs-identifier hs-type">beginTie</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680579867"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680579867"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-56"></span><span>  </span><span id="local-6989586621680579600"><span class="annot"><a href="Music.Score.Ties.html#beginTie"><span class="hs-identifier hs-var hs-var">beginTie</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a, a) -&gt; a
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span> </span><span class="annot"><span class="annottext">((a, a) -&gt; a) -&gt; (a -&gt; (a, a)) -&gt; a -&gt; a
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span></span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-comment">-- |</span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-comment">-- Modify a note to be the second note in a tied note pair.</span><span>
+</span><span id="line-60"></span><span>  </span><span id="endTie"><span class="annot"><a href="Music.Score.Ties.html#endTie"><span class="hs-identifier hs-type">endTie</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680579867"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680579867"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-61"></span><span>  </span><span id="local-6989586621680579596"><span class="annot"><a href="Music.Score.Ties.html#endTie"><span class="hs-identifier hs-var hs-var">endTie</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a, a) -&gt; a
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span> </span><span class="annot"><span class="annottext">((a, a) -&gt; a) -&gt; (a -&gt; (a, a)) -&gt; a -&gt; a
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span></span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span>  </span><span class="hs-comment">-- |</span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-comment">-- Split a single note into a pair of tied notes.</span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-comment">--</span><span>
+</span><span id="line-66"></span><span>  </span><span class="hs-comment">-- The first returned element should have the original 'onset' and the second</span><span>
+</span><span id="line-67"></span><span>  </span><span class="hs-comment">-- element should have the original 'offset'. Formally</span><span>
+</span><span id="line-68"></span><span>  </span><span class="hs-comment">--</span><span>
+</span><span id="line-69"></span><span>  </span><span class="hs-comment">-- &gt; (onset . fst . toTied) a = onset a</span><span>
+</span><span id="line-70"></span><span>  </span><span class="hs-comment">-- &gt; (offset . snd . toTied) a = offset a</span><span>
+</span><span id="line-71"></span><span>  </span><span id="toTied"><span class="annot"><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-type">toTied</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680579867"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680579867"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579867"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>  </span><span id="local-6989586621680579595"><span class="annot"><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var hs-var">toTied</span></a></span><span> </span><span id="local-6989586621680579594"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680579594"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Tiable a =&gt; a -&gt; a
+</span><a href="Music.Score.Ties.html#beginTie"><span class="hs-identifier hs-var">beginTie</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680579594"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Tiable a =&gt; a -&gt; a
+</span><a href="Music.Score.Ties.html#endTie"><span class="hs-identifier hs-var">endTie</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680579594"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579590"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680579588"><span class="annot"><span class="annottext">beginTie :: Double -&gt; Double
+</span><a href="#local-6989586621680579588"><span class="hs-identifier hs-var hs-var hs-var hs-var">beginTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span class="hs-special">;</span><span> </span><span id="local-6989586621680579586"><span class="annot"><span class="annottext">endTie :: Double -&gt; Double
+</span><a href="#local-6989586621680579586"><span class="hs-identifier hs-var hs-var hs-var hs-var">endTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579582"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Float</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680579581"><span class="annot"><span class="annottext">beginTie :: Float -&gt; Float
+</span><a href="#local-6989586621680579581"><span class="hs-identifier hs-var hs-var hs-var hs-var">beginTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Float -&gt; Float
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span class="hs-special">;</span><span> </span><span id="local-6989586621680579580"><span class="annot"><span class="annottext">endTie :: Float -&gt; Float
+</span><a href="#local-6989586621680579580"><span class="hs-identifier hs-var hs-var hs-var hs-var">endTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Float -&gt; Float
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579576"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Char</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680579575"><span class="annot"><span class="annottext">beginTie :: Char -&gt; Char
+</span><a href="#local-6989586621680579575"><span class="hs-identifier hs-var hs-var hs-var hs-var">beginTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span class="hs-special">;</span><span> </span><span id="local-6989586621680579574"><span class="annot"><span class="annottext">endTie :: Char -&gt; Char
+</span><a href="#local-6989586621680579574"><span class="hs-identifier hs-var hs-var hs-var hs-var">endTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579570"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680579569"><span class="annot"><span class="annottext">beginTie :: Int -&gt; Int
+</span><a href="#local-6989586621680579569"><span class="hs-identifier hs-var hs-var hs-var hs-var">beginTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span class="hs-special">;</span><span> </span><span id="local-6989586621680579568"><span class="annot"><span class="annottext">endTie :: Int -&gt; Int
+</span><a href="#local-6989586621680579568"><span class="hs-identifier hs-var hs-var hs-var hs-var">endTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579564"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.2.0/src"><span class="hs-identifier hs-type">Integer</span></a></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680579563"><span class="annot"><span class="annottext">beginTie :: Integer -&gt; Integer
+</span><a href="#local-6989586621680579563"><span class="hs-identifier hs-var hs-var hs-var hs-var">beginTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span class="hs-special">;</span><span> </span><span id="local-6989586621680579562"><span class="annot"><span class="annottext">endTie :: Integer -&gt; Integer
+</span><a href="#local-6989586621680579562"><span class="hs-identifier hs-var hs-var hs-var hs-var">endTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579558"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680579557"><span class="annot"><span class="annottext">beginTie :: () -&gt; ()
+</span><a href="#local-6989586621680579557"><span class="hs-identifier hs-var hs-var hs-var hs-var">beginTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; ()
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span class="hs-special">;</span><span> </span><span id="local-6989586621680579556"><span class="annot"><span class="annottext">endTie :: () -&gt; ()
+</span><a href="#local-6989586621680579556"><span class="hs-identifier hs-var hs-var hs-var hs-var">endTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; ()
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span id="local-6989586621680579555"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579551"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Ratio</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579555"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680579550"><span class="annot"><span class="annottext">beginTie :: Ratio a -&gt; Ratio a
+</span><a href="#local-6989586621680579550"><span class="hs-identifier hs-var hs-var hs-var hs-var">beginTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Ratio a -&gt; Ratio a
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span class="hs-special">;</span><span> </span><span id="local-6989586621680579549"><span class="annot"><span class="annottext">endTie :: Ratio a -&gt; Ratio a
+</span><a href="#local-6989586621680579549"><span class="hs-identifier hs-var hs-var hs-var hs-var">endTie</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Ratio a -&gt; Ratio a
+forall k (cat :: k -&gt; k -&gt; *) (a :: k). Category cat =&gt; cat a a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span id="local-6989586621680579548"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579544"><span id="local-6989586621680579546"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579548"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579548"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621680579542"><span class="annot"><span class="annottext">toTied :: TieT a -&gt; (TieT a, TieT a)
+</span><a href="#local-6989586621680579542"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680579540"><span class="annot"><span class="annottext">prevTie :: Any
+</span><a href="#local-6989586621680579540"><span class="hs-identifier hs-var">prevTie</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579539"><span class="annot"><span class="annottext">nextTie :: Any
+</span><a href="#local-6989586621680579539"><span class="hs-identifier hs-var">nextTie</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579538"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680579538"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Any, Any), a) -&gt; TieT a
+forall a. ((Any, Any), a) -&gt; TieT a
+</span><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-var">TieT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Any
+</span><a href="#local-6989586621680579540"><span class="hs-identifier hs-var">prevTie</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Any
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Any</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680579536"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">((Any, Any), a) -&gt; TieT a
+forall a. ((Any, Any), a) -&gt; TieT a
+</span><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-var">TieT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; Any
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Any</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Any
+</span><a href="#local-6989586621680579539"><span class="hs-identifier hs-var">nextTie</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680579535"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-90"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-91"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621680579536"><span class="annot"><span class="annottext">b :: a
+</span><a href="#local-6989586621680579536"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579535"><span class="annot"><span class="annottext">c :: a
+</span><a href="#local-6989586621680579535"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680579538"><span class="hs-identifier hs-var">a</span></a></span></span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span id="local-6989586621680579534"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579530"><span id="local-6989586621680579532"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579534"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680579534"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-94"></span><span>  </span><span id="local-6989586621680579528"><span class="annot"><span class="annottext">toTied :: [a] -&gt; ([a], [a])
+</span><a href="#local-6989586621680579528"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(a, a)] -&gt; ([a], [a])
+forall a b. [(a, b)] -&gt; ([a], [b])
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">unzip</span></a></span><span> </span><span class="annot"><span class="annottext">([(a, a)] -&gt; ([a], [a])) -&gt; ([a] -&gt; [(a, a)]) -&gt; [a] -&gt; ([a], [a])
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, a)) -&gt; [a] -&gt; [(a, a)]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span></span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span id="local-6989586621680579526"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579522"><span id="local-6989586621680579524"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579526"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579526"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-97"></span><span>  </span><span id="local-6989586621680579520"><span class="annot"><span class="annottext">toTied :: Behavior a -&gt; (Behavior a, Behavior a)
+</span><a href="#local-6989586621680579520"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Behavior (a, a) -&gt; (Behavior a, Behavior a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Ties.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(Behavior (a, a) -&gt; (Behavior a, Behavior a))
+-&gt; (Behavior a -&gt; Behavior (a, a))
+-&gt; Behavior a
+-&gt; (Behavior a, Behavior a)
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, a)) -&gt; Behavior a -&gt; Behavior (a, a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span></span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span class="hs-comment">--</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- There is no (HasPart ChordT) instance, so PartT must be outside ChordT in the stack</span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- This restriction assures all chord notes are in the same part</span><span>
+</span><span id="line-102"></span><span class="hs-comment">--</span><span>
+</span><span id="line-103"></span><span id="local-6989586621680579517"><span id="local-6989586621680579518"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579513"><span id="local-6989586621680579515"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579518"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680579517"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579518"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621680579511"><span class="annot"><span class="annottext">toTied :: (c, a) -&gt; ((c, a), (c, a))
+</span><a href="#local-6989586621680579511"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(c, (a, a)) -&gt; ((c, a), (c, a))
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Ties.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">((c, (a, a)) -&gt; ((c, a), (c, a)))
+-&gt; ((c, a) -&gt; (c, (a, a))) -&gt; (c, a) -&gt; ((c, a), (c, a))
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, a)) -&gt; (c, a) -&gt; (c, (a, a))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span></span></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span id="local-6989586621680579509"><span id="local-6989586621680579510"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579505"><span id="local-6989586621680579507"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579510"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579509"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579510"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-107"></span><span>  </span><span id="local-6989586621680579503"><span class="annot"><span class="annottext">toTied :: Couple b a -&gt; (Couple b a, Couple b a)
+</span><a href="#local-6989586621680579503"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Couple b (a, a) -&gt; (Couple b a, Couple b a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Ties.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(Couple b (a, a) -&gt; (Couple b a, Couple b a))
+-&gt; (Couple b a -&gt; Couple b (a, a))
+-&gt; Couple b a
+-&gt; (Couple b a, Couple b a)
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, a)) -&gt; Couple b a -&gt; Couple b (a, a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span></span></span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span id="local-6989586621680579502"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579498"><span id="local-6989586621680579500"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579502"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579502"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-110"></span><span>  </span><span id="local-6989586621680579496"><span class="annot"><span class="annottext">toTied :: Maybe a -&gt; (Maybe a, Maybe a)
+</span><a href="#local-6989586621680579496"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (a, a) -&gt; (Maybe a, Maybe a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Ties.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (a, a) -&gt; (Maybe a, Maybe a))
+-&gt; (Maybe a -&gt; Maybe (a, a)) -&gt; Maybe a -&gt; (Maybe a, Maybe a)
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, a)) -&gt; Maybe a -&gt; Maybe (a, a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span></span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span id="local-6989586621680579495"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579491"><span id="local-6989586621680579493"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579495"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Average</span></span><span> </span><span class="annot"><a href="#local-6989586621680579495"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-113"></span><span>  </span><span id="local-6989586621680579489"><span class="annot"><span class="annottext">toTied :: Average a -&gt; (Average a, Average a)
+</span><a href="#local-6989586621680579489"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Average (a, a) -&gt; (Average a, Average a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Ties.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(Average (a, a) -&gt; (Average a, Average a))
+-&gt; (Average a -&gt; Average (a, a))
+-&gt; Average a
+-&gt; (Average a, Average a)
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, a)) -&gt; Average a -&gt; Average (a, a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span id="local-6989586621680579488"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579484"><span id="local-6989586621680579486"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579488"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Sum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579488"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-116"></span><span>  </span><span id="local-6989586621680579482"><span class="annot"><span class="annottext">toTied :: Sum a -&gt; (Sum a, Sum a)
+</span><a href="#local-6989586621680579482"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Sum (a, a) -&gt; (Sum a, Sum a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Ties.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(Sum (a, a) -&gt; (Sum a, Sum a))
+-&gt; (Sum a -&gt; Sum (a, a)) -&gt; Sum a -&gt; (Sum a, Sum a)
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, a)) -&gt; Sum a -&gt; Sum (a, a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span id="local-6989586621680579481"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579477"><span id="local-6989586621680579479"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579481"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Product</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579481"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-119"></span><span>  </span><span id="local-6989586621680579475"><span class="annot"><span class="annottext">toTied :: Product a -&gt; (Product a, Product a)
+</span><a href="#local-6989586621680579475"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Product (a, a) -&gt; (Product a, Product a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Ties.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(Product (a, a) -&gt; (Product a, Product a))
+-&gt; (Product a -&gt; Product (a, a))
+-&gt; Product a
+-&gt; (Product a, Product a)
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, a)) -&gt; Product a -&gt; Product (a, a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span></span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span class="hs-comment">-- Lifted instances</span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span id="local-6989586621680579474"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579474"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579474"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-124"></span><span>  </span><span id="local-6989586621680579471"><span class="annot"><span class="annottext">fromPitch :: Pitch -&gt; TieT a
+</span><a href="Music.Pitch.Common.Internal.html#fromPitch"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromPitch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; TieT a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; TieT a) -&gt; (Pitch -&gt; a) -&gt; Pitch -&gt; TieT a
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; a
+forall a. IsPitch a =&gt; Pitch -&gt; a
+</span><a href="Music.Pitch.Common.Internal.html#fromPitch"><span class="hs-identifier hs-var">fromPitch</span></a></span></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span id="local-6989586621680579469"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579469"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579469"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-127"></span><span>  </span><span id="local-6989586621680579466"><span class="annot"><span class="annottext">fromDynamics :: DynamicsL -&gt; TieT a
+</span><a href="Music.Dynamics.Literal.html#fromDynamics"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromDynamics</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; TieT a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; TieT a) -&gt; (DynamicsL -&gt; a) -&gt; DynamicsL -&gt; TieT a
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">DynamicsL -&gt; a
+forall a. IsDynamics a =&gt; DynamicsL -&gt; a
+</span><a href="Music.Dynamics.Literal.html#fromDynamics"><span class="hs-identifier hs-var">fromDynamics</span></a></span></span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span id="local-6989586621680579464"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579464"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579464"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-130"></span><span>  </span><span id="local-6989586621680579461"><span class="annot"><span class="annottext">transform :: Span -&gt; TieT a -&gt; TieT a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span id="local-6989586621680579459"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680579459"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; a -&gt; a
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680579459"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-131"></span><span>
+</span><span id="line-132"></span><span id="local-6989586621680579458"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579453"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579458"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579458"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span>  </span><span id="local-6989586621680579448"><span class="annot"><span class="annottext">+ :: TieT a -&gt; TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(+)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; TieT a -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(+)</span></a></span><span>
+</span><span id="line-135"></span><span>
+</span><span id="line-136"></span><span>  </span><span id="local-6989586621680579445"><span class="annot"><span class="annottext">* :: TieT a -&gt; TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(*)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; TieT a -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(*)</span></a></span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span>  </span><span id="local-6989586621680579443"><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="hs-special">)</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; TieT a -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span>  </span><span id="local-6989586621680579442"><span class="annot"><span class="annottext">abs :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">abs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">abs</span></a></span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span>  </span><span id="local-6989586621680579440"><span class="annot"><span class="annottext">signum :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">signum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">signum</span></a></span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span>  </span><span id="local-6989586621680579438"><span class="annot"><span class="annottext">fromInteger :: Integer -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromInteger</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; TieT a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; TieT a) -&gt; (Integer -&gt; a) -&gt; Integer -&gt; TieT a
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; a
+forall a. Num a =&gt; Integer -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromInteger</span></a></span></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span id="local-6989586621680579437"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579434"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579437"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579437"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span>  </span><span id="local-6989586621680579430"><span class="annot"><span class="annottext">recip :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">recip</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Fractional a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">recip</span></a></span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span>  </span><span id="local-6989586621680579428"><span class="annot"><span class="annottext">fromRational :: Rational -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromRational</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; TieT a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; TieT a) -&gt; (Rational -&gt; a) -&gt; Rational -&gt; TieT a
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Rational -&gt; a
+forall a. Fractional a =&gt; Rational -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromRational</span></a></span></span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span id="local-6989586621680579427"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579396"><span id="local-6989586621680579398"><span id="local-6989586621680579400"><span id="local-6989586621680579402"><span id="local-6989586621680579407"><span id="local-6989586621680579414"><span id="local-6989586621680579418"><span id="local-6989586621680579420"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579427"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579427"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span>  </span><span id="local-6989586621680579394"><span class="annot"><span class="annottext">pi :: TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">pi</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; TieT a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Floating a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pi</span></a></span><span>
+</span><span id="line-155"></span><span>
+</span><span id="line-156"></span><span>  </span><span id="local-6989586621680579392"><span class="annot"><span class="annottext">sqrt :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">sqrt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">sqrt</span></a></span><span>
+</span><span id="line-157"></span><span>
+</span><span id="line-158"></span><span>  </span><span id="local-6989586621680579390"><span class="annot"><span class="annottext">exp :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">exp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">exp</span></a></span><span>
+</span><span id="line-159"></span><span>
+</span><span id="line-160"></span><span>  </span><span id="local-6989586621680579388"><span class="annot"><span class="annottext">log :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">log</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">log</span></a></span><span>
+</span><span id="line-161"></span><span>
+</span><span id="line-162"></span><span>  </span><span id="local-6989586621680579386"><span class="annot"><span class="annottext">sin :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">sin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">sin</span></a></span><span>
+</span><span id="line-163"></span><span>
+</span><span id="line-164"></span><span>  </span><span id="local-6989586621680579384"><span class="annot"><span class="annottext">cos :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">cos</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">cos</span></a></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span>  </span><span id="local-6989586621680579382"><span class="annot"><span class="annottext">asin :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">asin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">asin</span></a></span><span>
+</span><span id="line-167"></span><span>
+</span><span id="line-168"></span><span>  </span><span id="local-6989586621680579380"><span class="annot"><span class="annottext">atan :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">atan</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">atan</span></a></span><span>
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span>  </span><span id="local-6989586621680579378"><span class="annot"><span class="annottext">acos :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">acos</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">acos</span></a></span><span>
+</span><span id="line-171"></span><span>
+</span><span id="line-172"></span><span>  </span><span id="local-6989586621680579376"><span class="annot"><span class="annottext">sinh :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">sinh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">sinh</span></a></span><span>
+</span><span id="line-173"></span><span>
+</span><span id="line-174"></span><span>  </span><span id="local-6989586621680579374"><span class="annot"><span class="annottext">cosh :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">cosh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">cosh</span></a></span><span>
+</span><span id="line-175"></span><span>
+</span><span id="line-176"></span><span>  </span><span id="local-6989586621680579372"><span class="annot"><span class="annottext">asinh :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">asinh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">asinh</span></a></span><span>
+</span><span id="line-177"></span><span>
+</span><span id="line-178"></span><span>  </span><span id="local-6989586621680579370"><span class="annot"><span class="annottext">atanh :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">atanh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">atanh</span></a></span><span>
+</span><span id="line-179"></span><span>
+</span><span id="line-180"></span><span>  </span><span id="local-6989586621680579368"><span class="annot"><span class="annottext">acosh :: TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">acosh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">acos</span></a></span></span><span>
+</span><span id="line-181"></span><span>
+</span><span id="line-182"></span><span id="local-6989586621680579366"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579352"><span id="local-6989586621680579354"><span id="local-6989586621680579356"><span id="local-6989586621680579358"><span id="local-6989586621680579362"><span id="local-6989586621680579364"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579366"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579366"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-183"></span><span>
+</span><span id="line-184"></span><span>  </span><span id="local-6989586621680579350"><span class="annot"><span class="annottext">toEnum :: Int -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toEnum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; TieT a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; TieT a) -&gt; (Int -&gt; a) -&gt; Int -&gt; TieT a
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a
+forall a. Enum a =&gt; Int -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toEnum</span></a></span><span>
+</span><span id="line-185"></span><span>
+</span><span id="line-186"></span><span>  </span><span id="local-6989586621680579348"><span class="annot"><span class="annottext">fromEnum :: TieT a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromEnum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromEnum</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Int) -&gt; (TieT a -&gt; a) -&gt; TieT a -&gt; Int
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">TieT a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span><span>
+</span><span id="line-187"></span><span>
+</span><span id="line-188"></span><span id="local-6989586621680579345"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579345"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579345"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-189"></span><span>
+</span><span id="line-190"></span><span>  </span><span id="local-6989586621680579341"><span class="annot"><span class="annottext">minBound :: TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">minBound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; TieT a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">minBound</span></a></span><span>
+</span><span id="line-191"></span><span>
+</span><span id="line-192"></span><span>  </span><span id="local-6989586621680579339"><span class="annot"><span class="annottext">maxBound :: TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">maxBound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; TieT a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">maxBound</span></a></span></span><span>
+</span><span id="line-193"></span><span>
+</span><span id="line-194"></span><span id="local-6989586621680579337"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579337"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579337"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579337"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579337"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-195"></span><span>  </span><span id="local-6989586621680579332"><span class="annot"><span class="annottext">toRational :: TieT a -&gt; Rational
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toRational</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Rational
+forall a. Real a =&gt; a -&gt; Rational
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toRational</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Rational) -&gt; (TieT a -&gt; a) -&gt; TieT a -&gt; Rational
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">TieT a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span><span>
+</span><span id="line-196"></span><span>
+</span><span id="line-197"></span><span id="local-6989586621680579331"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680579320"><span id="local-6989586621680579323"><span id="local-6989586621680579325"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579331"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579331"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579331"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579331"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-198"></span><span>
+</span><span id="line-199"></span><span>  </span><span id="local-6989586621680579317"><span class="annot"><span class="annottext">quot :: TieT a -&gt; TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">quot</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; TieT a -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">quot</span></a></span><span>
+</span><span id="line-200"></span><span>
+</span><span id="line-201"></span><span>  </span><span id="local-6989586621680579315"><span class="annot"><span class="annottext">quotRem :: TieT a -&gt; TieT a -&gt; (TieT a, TieT a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">quotRem</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((TieT a -&gt; TieT (a, a)) -&gt; TieT a -&gt; (TieT a, TieT a))
+-&gt; (TieT a -&gt; TieT a -&gt; TieT (a, a))
+-&gt; TieT a
+-&gt; TieT a
+-&gt; (TieT a, TieT a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(TieT (a, a) -&gt; (TieT a, TieT a))
+-&gt; (TieT a -&gt; TieT (a, a)) -&gt; TieT a -&gt; (TieT a, TieT a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">TieT (a, a) -&gt; (TieT a, TieT a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Ties.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a -&gt; a -&gt; (a, a)) -&gt; TieT a -&gt; TieT a -&gt; TieT (a, a)
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; (a, a)
+forall a. Integral a =&gt; a -&gt; a -&gt; (a, a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">quotRem</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-202"></span><span>
+</span><span id="line-203"></span><span>  </span><span id="local-6989586621680579313"><span class="annot"><span class="annottext">rem :: TieT a -&gt; TieT a -&gt; TieT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">rem</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; TieT a -&gt; TieT a -&gt; TieT a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">rem</span></a></span><span>
+</span><span id="line-204"></span><span>
+</span><span id="line-205"></span><span>  </span><span id="local-6989586621680579311"><span class="annot"><span class="annottext">toInteger :: TieT a -&gt; Integer
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toInteger</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Integer
+forall a. Integral a =&gt; a -&gt; Integer
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toInteger</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Integer) -&gt; (TieT a -&gt; a) -&gt; TieT a -&gt; Integer
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">TieT a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span><span>
+</span><span id="line-206"></span><span>
+</span><span id="line-207"></span><span class="hs-keyword">newtype</span><span> </span><span id="TieT"><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-var">TieT</span></a></span></span><span> </span><span id="local-6989586621680579850"><span class="annot"><a href="#local-6989586621680579850"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TieT"><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-var">TieT</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getTieT"><span class="annot"><span class="annottext">TieT a -&gt; ((Any, Any), a)
+</span><a href="Music.Score.Ties.html#getTieT"><span class="hs-identifier hs-var hs-var">getTieT</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Any</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Any</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579850"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">}</span><span>
+</span><span id="line-208"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680579306"><span id="local-6989586621680579308"><span class="annot"><span class="annottext">TieT a -&gt; TieT a -&gt; Bool
+(TieT a -&gt; TieT a -&gt; Bool)
+-&gt; (TieT a -&gt; TieT a -&gt; Bool) -&gt; Eq (TieT a)
+forall a. Eq a =&gt; TieT a -&gt; TieT a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: TieT a -&gt; TieT a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; TieT a -&gt; TieT a -&gt; Bool
+== :: TieT a -&gt; TieT a -&gt; Bool
+$c== :: forall a. Eq a =&gt; TieT a -&gt; TieT a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579290"><span id="local-6989586621680579292"><span id="local-6989586621680579294"><span id="local-6989586621680579296"><span id="local-6989586621680579298"><span id="local-6989586621680579300"><span id="local-6989586621680579302"><span class="annot"><span class="annottext">Eq (TieT a)
+Eq (TieT a) =&gt;
+(TieT a -&gt; TieT a -&gt; Ordering)
+-&gt; (TieT a -&gt; TieT a -&gt; Bool)
+-&gt; (TieT a -&gt; TieT a -&gt; Bool)
+-&gt; (TieT a -&gt; TieT a -&gt; Bool)
+-&gt; (TieT a -&gt; TieT a -&gt; Bool)
+-&gt; (TieT a -&gt; TieT a -&gt; TieT a)
+-&gt; (TieT a -&gt; TieT a -&gt; TieT a)
+-&gt; Ord (TieT a)
+TieT a -&gt; TieT a -&gt; Bool
+TieT a -&gt; TieT a -&gt; Ordering
+TieT a -&gt; TieT a -&gt; TieT a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (TieT a)
+forall a. Ord a =&gt; TieT a -&gt; TieT a -&gt; Bool
+forall a. Ord a =&gt; TieT a -&gt; TieT a -&gt; Ordering
+forall a. Ord a =&gt; TieT a -&gt; TieT a -&gt; TieT a
+min :: TieT a -&gt; TieT a -&gt; TieT a
+$cmin :: forall a. Ord a =&gt; TieT a -&gt; TieT a -&gt; TieT a
+max :: TieT a -&gt; TieT a -&gt; TieT a
+$cmax :: forall a. Ord a =&gt; TieT a -&gt; TieT a -&gt; TieT a
+&gt;= :: TieT a -&gt; TieT a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; TieT a -&gt; TieT a -&gt; Bool
+&gt; :: TieT a -&gt; TieT a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; TieT a -&gt; TieT a -&gt; Bool
+&lt;= :: TieT a -&gt; TieT a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; TieT a -&gt; TieT a -&gt; Bool
+&lt; :: TieT a -&gt; TieT a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; TieT a -&gt; TieT a -&gt; Bool
+compare :: TieT a -&gt; TieT a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; TieT a -&gt; TieT a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (TieT a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579283"><span id="local-6989586621680579285"><span id="local-6989586621680579287"><span class="annot"><span class="annottext">Int -&gt; TieT a -&gt; ShowS
+[TieT a] -&gt; ShowS
+TieT a -&gt; String
+(Int -&gt; TieT a -&gt; ShowS)
+-&gt; (TieT a -&gt; String) -&gt; ([TieT a] -&gt; ShowS) -&gt; Show (TieT a)
+forall a. Show a =&gt; Int -&gt; TieT a -&gt; ShowS
+forall a. Show a =&gt; [TieT a] -&gt; ShowS
+forall a. Show a =&gt; TieT a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [TieT a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [TieT a] -&gt; ShowS
+show :: TieT a -&gt; String
+$cshow :: forall a. Show a =&gt; TieT a -&gt; String
+showsPrec :: Int -&gt; TieT a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; TieT a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579278"><span id="local-6989586621680579280"><span class="annot"><span class="annottext">a -&gt; TieT b -&gt; TieT a
+(a -&gt; b) -&gt; TieT a -&gt; TieT b
+(forall a b. (a -&gt; b) -&gt; TieT a -&gt; TieT b)
+-&gt; (forall a b. a -&gt; TieT b -&gt; TieT a) -&gt; Functor TieT
+forall a b. a -&gt; TieT b -&gt; TieT a
+forall a b. (a -&gt; b) -&gt; TieT a -&gt; TieT b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; TieT b -&gt; TieT a
+$c&lt;$ :: forall a b. a -&gt; TieT b -&gt; TieT a
+fmap :: (a -&gt; b) -&gt; TieT a -&gt; TieT b
+$cfmap :: forall a b. (a -&gt; b) -&gt; TieT a -&gt; TieT b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579243"><span id="local-6989586621680579245"><span id="local-6989586621680579247"><span id="local-6989586621680579249"><span id="local-6989586621680579251"><span id="local-6989586621680579253"><span id="local-6989586621680579255"><span id="local-6989586621680579257"><span id="local-6989586621680579259"><span id="local-6989586621680579261"><span id="local-6989586621680579263"><span id="local-6989586621680579265"><span id="local-6989586621680579267"><span id="local-6989586621680579269"><span id="local-6989586621680579271"><span id="local-6989586621680579273"><span id="local-6989586621680579275"><span class="annot"><span class="annottext">a -&gt; TieT a -&gt; Bool
+TieT m -&gt; m
+TieT a -&gt; [a]
+TieT a -&gt; Bool
+TieT a -&gt; Int
+TieT a -&gt; a
+TieT a -&gt; a
+TieT a -&gt; a
+TieT a -&gt; a
+(a -&gt; m) -&gt; TieT a -&gt; m
+(a -&gt; m) -&gt; TieT a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+(a -&gt; a -&gt; a) -&gt; TieT a -&gt; a
+(a -&gt; a -&gt; a) -&gt; TieT a -&gt; a
+(forall m. Monoid m =&gt; TieT m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TieT a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TieT a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TieT a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TieT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TieT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TieT a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; TieT a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; TieT a -&gt; a)
+-&gt; (forall a. TieT a -&gt; [a])
+-&gt; (forall a. TieT a -&gt; Bool)
+-&gt; (forall a. TieT a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; TieT a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; TieT a -&gt; a)
+-&gt; (forall a. Ord a =&gt; TieT a -&gt; a)
+-&gt; (forall a. Num a =&gt; TieT a -&gt; a)
+-&gt; (forall a. Num a =&gt; TieT a -&gt; a)
+-&gt; Foldable TieT
+forall a. Eq a =&gt; a -&gt; TieT a -&gt; Bool
+forall a. Num a =&gt; TieT a -&gt; a
+forall a. Ord a =&gt; TieT a -&gt; a
+forall m. Monoid m =&gt; TieT m -&gt; m
+forall a. TieT a -&gt; Bool
+forall a. TieT a -&gt; Int
+forall a. TieT a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; TieT a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TieT a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: TieT a -&gt; a
+$cproduct :: forall a. Num a =&gt; TieT a -&gt; a
+sum :: TieT a -&gt; a
+$csum :: forall a. Num a =&gt; TieT a -&gt; a
+minimum :: TieT a -&gt; a
+$cminimum :: forall a. Ord a =&gt; TieT a -&gt; a
+maximum :: TieT a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; TieT a -&gt; a
+elem :: a -&gt; TieT a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; TieT a -&gt; Bool
+length :: TieT a -&gt; Int
+$clength :: forall a. TieT a -&gt; Int
+null :: TieT a -&gt; Bool
+$cnull :: forall a. TieT a -&gt; Bool
+toList :: TieT a -&gt; [a]
+$ctoList :: forall a. TieT a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; TieT a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; TieT a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; TieT a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; TieT a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TieT a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; TieT a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TieT a -&gt; m
+foldMap :: (a -&gt; m) -&gt; TieT a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TieT a -&gt; m
+fold :: TieT m -&gt; m
+$cfold :: forall m. Monoid m =&gt; TieT m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579232"><span id="local-6989586621680579234"><span id="local-6989586621680579236"><span id="local-6989586621680579238"><span class="annot"><span class="annottext">Functor TieT
+Foldable TieT
+(Functor TieT, Foldable TieT) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; TieT a -&gt; f (TieT b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    TieT (f a) -&gt; f (TieT a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; TieT a -&gt; m (TieT b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; TieT (m a) -&gt; m (TieT a))
+-&gt; Traversable TieT
+(a -&gt; f b) -&gt; TieT a -&gt; f (TieT b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; TieT (m a) -&gt; m (TieT a)
+forall (f :: * -&gt; *) a. Applicative f =&gt; TieT (f a) -&gt; f (TieT a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; TieT a -&gt; m (TieT b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TieT a -&gt; f (TieT b)
+sequence :: TieT (m a) -&gt; m (TieT a)
+$csequence :: forall (m :: * -&gt; *) a. Monad m =&gt; TieT (m a) -&gt; m (TieT a)
+mapM :: (a -&gt; m b) -&gt; TieT a -&gt; m (TieT b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; TieT a -&gt; m (TieT b)
+sequenceA :: TieT (f a) -&gt; f (TieT a)
+$csequenceA :: forall (f :: * -&gt; *) a. Applicative f =&gt; TieT (f a) -&gt; f (TieT a)
+traverse :: (a -&gt; f b) -&gt; TieT a -&gt; f (TieT b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TieT a -&gt; f (TieT b)
+$cp2Traversable :: Foldable TieT
+$cp1Traversable :: Functor TieT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579220"><span id="local-6989586621680579222"><span id="local-6989586621680579224"><span id="local-6989586621680579226"><span id="local-6989586621680579228"><span class="annot"><span class="annottext">Functor TieT
+a -&gt; TieT a
+Functor TieT =&gt;
+(forall a. a -&gt; TieT a)
+-&gt; (forall a b. TieT (a -&gt; b) -&gt; TieT a -&gt; TieT b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; TieT a -&gt; TieT b -&gt; TieT c)
+-&gt; (forall a b. TieT a -&gt; TieT b -&gt; TieT b)
+-&gt; (forall a b. TieT a -&gt; TieT b -&gt; TieT a)
+-&gt; Applicative TieT
+TieT a -&gt; TieT b -&gt; TieT b
+TieT a -&gt; TieT b -&gt; TieT a
+TieT (a -&gt; b) -&gt; TieT a -&gt; TieT b
+(a -&gt; b -&gt; c) -&gt; TieT a -&gt; TieT b -&gt; TieT c
+forall a. a -&gt; TieT a
+forall a b. TieT a -&gt; TieT b -&gt; TieT a
+forall a b. TieT a -&gt; TieT b -&gt; TieT b
+forall a b. TieT (a -&gt; b) -&gt; TieT a -&gt; TieT b
+forall a b c. (a -&gt; b -&gt; c) -&gt; TieT a -&gt; TieT b -&gt; TieT c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: TieT a -&gt; TieT b -&gt; TieT a
+$c&lt;* :: forall a b. TieT a -&gt; TieT b -&gt; TieT a
+*&gt; :: TieT a -&gt; TieT b -&gt; TieT b
+$c*&gt; :: forall a b. TieT a -&gt; TieT b -&gt; TieT b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; TieT a -&gt; TieT b -&gt; TieT c
+$cliftA2 :: forall a b c. (a -&gt; b -&gt; c) -&gt; TieT a -&gt; TieT b -&gt; TieT c
+&lt;*&gt; :: TieT (a -&gt; b) -&gt; TieT a -&gt; TieT b
+$c&lt;*&gt; :: forall a b. TieT (a -&gt; b) -&gt; TieT a -&gt; TieT b
+pure :: a -&gt; TieT a
+$cpure :: forall a. a -&gt; TieT a
+$cp1Applicative :: Functor TieT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579212"><span id="local-6989586621680579214"><span id="local-6989586621680579216"><span class="annot"><span class="annottext">Applicative TieT
+a -&gt; TieT a
+Applicative TieT =&gt;
+(forall a b. TieT a -&gt; (a -&gt; TieT b) -&gt; TieT b)
+-&gt; (forall a b. TieT a -&gt; TieT b -&gt; TieT b)
+-&gt; (forall a. a -&gt; TieT a)
+-&gt; Monad TieT
+TieT a -&gt; (a -&gt; TieT b) -&gt; TieT b
+TieT a -&gt; TieT b -&gt; TieT b
+forall a. a -&gt; TieT a
+forall a b. TieT a -&gt; TieT b -&gt; TieT b
+forall a b. TieT a -&gt; (a -&gt; TieT b) -&gt; TieT b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; TieT a
+$creturn :: forall a. a -&gt; TieT a
+&gt;&gt; :: TieT a -&gt; TieT b -&gt; TieT b
+$c&gt;&gt; :: forall a b. TieT a -&gt; TieT b -&gt; TieT b
+&gt;&gt;= :: TieT a -&gt; (a -&gt; TieT b) -&gt; TieT b
+$c&gt;&gt;= :: forall a b. TieT a -&gt; (a -&gt; TieT b) -&gt; TieT b
+$cp1Monad :: Applicative TieT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579204"><span id="local-6989586621680579206"><span id="local-6989586621680579208"><span class="annot"><span class="annottext">Functor TieT
+Functor TieT =&gt;
+(forall a. TieT a -&gt; a)
+-&gt; (forall a. TieT a -&gt; TieT (TieT a))
+-&gt; (forall a b. (TieT a -&gt; b) -&gt; TieT a -&gt; TieT b)
+-&gt; Comonad TieT
+TieT a -&gt; a
+TieT a -&gt; TieT (TieT a)
+(TieT a -&gt; b) -&gt; TieT a -&gt; TieT b
+forall a. TieT a -&gt; a
+forall a. TieT a -&gt; TieT (TieT a)
+forall a b. (TieT a -&gt; b) -&gt; TieT a -&gt; TieT b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (TieT a -&gt; b) -&gt; TieT a -&gt; TieT b
+$cextend :: forall a b. (TieT a -&gt; b) -&gt; TieT a -&gt; TieT b
+duplicate :: TieT a -&gt; TieT (TieT a)
+$cduplicate :: forall a. TieT a -&gt; TieT (TieT a)
+extract :: TieT a -&gt; a
+$cextract :: forall a. TieT a -&gt; a
+$cp1Comonad :: Functor TieT
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-209"></span><span>
+</span><span id="line-210"></span><span id="local-6989586621680579202"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579202"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-211"></span><span>
+</span><span id="line-212"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579202"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Any</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Any</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579202"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-213"></span><span>
+</span><span id="line-214"></span><span>  </span><span id="local-6989586621680579199"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (TieT a)) (f (Unwrapped (TieT a)))
+-&gt; p (TieT a) (f (TieT a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TieT a -&gt; ((Any, Any), a))
+-&gt; (((Any, Any), a) -&gt; TieT a)
+-&gt; Iso (TieT a) (TieT a) ((Any, Any), a) ((Any, Any), a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">TieT a -&gt; ((Any, Any), a)
+forall a. TieT a -&gt; ((Any, Any), a)
+</span><a href="Music.Score.Ties.html#getTieT"><span class="hs-identifier hs-var hs-var">getTieT</span></a></span><span> </span><span class="annot"><span class="annottext">((Any, Any), a) -&gt; TieT a
+forall a. ((Any, Any), a) -&gt; TieT a
+</span><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-var">TieT</span></a></span></span><span>
+</span><span id="line-215"></span><span>
+</span><span id="line-216"></span><span id="local-6989586621680579195"><span id="local-6989586621680579196"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579196"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579195"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-217"></span><span>
+</span><span id="line-218"></span><span id="local-6989586621680579192"><span class="annot"><a href="Music.Score.Ties.html#isTieEndBeginning"><span class="hs-identifier hs-type">isTieEndBeginning</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579192"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-219"></span><span id="isTieEndBeginning"><span class="annot"><span class="annottext">isTieEndBeginning :: TieT a -&gt; (Bool, Bool)
+</span><a href="Music.Score.Ties.html#isTieEndBeginning"><span class="hs-identifier hs-var hs-var">isTieEndBeginning</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680579191"><span class="annot"><span class="annottext">ties :: (Any, Any)
+</span><a href="#local-6989586621680579191"><span class="hs-identifier hs-var">ties</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter (Any, Any) (Bool, Bool) Any Bool
+-&gt; (Any -&gt; Bool) -&gt; (Any, Any) -&gt; (Bool, Bool)
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="annot"><span class="annottext">ASetter (Any, Any) (Bool, Bool) Any Bool
+forall (r :: * -&gt; * -&gt; *) a b.
+Bitraversable r =&gt;
+Traversal (r a a) (r b b) a b
+</span><span class="hs-identifier hs-var">both</span></span><span> </span><span class="annot"><span class="annottext">Any -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var">getAny</span></a></span><span> </span><span class="annot"><span class="annottext">((Any, Any) -&gt; (Bool, Bool)) -&gt; (Any, Any) -&gt; (Bool, Bool)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Any, Any)
+</span><a href="#local-6989586621680579191"><span class="hs-identifier hs-var">ties</span></a></span><span>
+</span><span id="line-220"></span><span>
+</span><span id="line-221"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-222"></span><span class="hs-comment">-- Split all voice into bars, using the given bar durations. Music that does not</span><span>
+</span><span id="line-223"></span><span class="hs-comment">-- fit into the given durations is discarded.</span><span>
+</span><span id="line-224"></span><span class="hs-comment">--</span><span>
+</span><span id="line-225"></span><span class="hs-comment">-- Events that cross a barlines are split into tied notes.</span><span>
+</span><span id="line-226"></span><span id="local-6989586621680579187"><span class="annot"><a href="Music.Score.Ties.html#splitTiesAt"><span class="hs-identifier hs-type">splitTiesAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579187"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Voice.html#Voice"><span class="hs-identifier hs-type">Voice</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579187"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Time.Voice.html#Voice"><span class="hs-identifier hs-type">Voice</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579187"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-227"></span><span id="splitTiesAt"><span class="annot"><span class="annottext">splitTiesAt :: [Duration] -&gt; Voice a -&gt; [Voice a]
+</span><a href="Music.Score.Ties.html#splitTiesAt"><span class="hs-identifier hs-var hs-var">splitTiesAt</span></a></span></span><span> </span><span id="local-6989586621680579186"><span class="annot"><span class="annottext">barDurs :: [Duration]
+</span><a href="#local-6989586621680579186"><span class="hs-identifier hs-var">barDurs</span></a></span></span><span> </span><span id="local-6989586621680579185"><span class="annot"><span class="annottext">x :: Voice a
+</span><a href="#local-6989586621680579185"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([(Duration, a)] -&gt; Voice a) -&gt; [[(Duration, a)]] -&gt; [Voice a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Note a] -&gt; Getting (Voice a) [Note a] (Voice a) -&gt; Voice a
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Voice a) [Note a] (Voice a)
+forall a. Iso' [Note a] (Voice a)
+</span><a href="Music.Time.Voice.html#voice"><span class="hs-identifier hs-var">voice</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Note a] -&gt; Voice a)
+-&gt; ([(Duration, a)] -&gt; [Note a]) -&gt; [(Duration, a)] -&gt; Voice a
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">((Duration, a) -&gt; Note a) -&gt; [(Duration, a)] -&gt; [Note a]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Duration, a) -&gt; Getting (Note a) (Duration, a) (Note a) -&gt; Note a
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Note a) (Duration, a) (Note a)
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([[(Duration, a)]] -&gt; [Voice a]) -&gt; [[(Duration, a)]] -&gt; [Voice a]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[Duration] -&gt; [(Duration, a)] -&gt; [[(Duration, a)]]
+forall a.
+Tiable a =&gt;
+[Duration] -&gt; [(Duration, a)] -&gt; [[(Duration, a)]]
+</span><a href="Music.Score.Ties.html#splitTiesAt%27"><span class="hs-identifier hs-var">splitTiesAt'</span></a></span><span> </span><span class="annot"><span class="annottext">[Duration]
+</span><a href="#local-6989586621680579186"><span class="hs-identifier hs-var">barDurs</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Note a -&gt; (Duration, a)) -&gt; [Note a] -&gt; [(Duration, a)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Note a
+-&gt; Getting (Duration, a) (Note a) (Duration, a) -&gt; (Duration, a)
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+-&gt; Iso (Note a) (Note a) (Duration, a) (Duration, a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Note a] -&gt; [(Duration, a)])
+-&gt; (Voice a -&gt; [Note a]) -&gt; Voice a -&gt; [(Duration, a)]
+forall k (cat :: k -&gt; k -&gt; *) (b :: k) (c :: k) (a :: k).
+Category cat =&gt;
+cat b c -&gt; cat a b -&gt; cat a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Voice a -&gt; Getting [Note a] (Voice a) [Note a] -&gt; [Note a]
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting [Note a] (Voice a) [Note a]
+forall a b. Iso (Voice a) (Voice b) [Note a] [Note b]
+</span><a href="Music.Time.Voice.html#notes"><span class="hs-identifier hs-var">notes</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Voice a
+</span><a href="#local-6989586621680579185"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-228"></span><span>
+</span><span id="line-229"></span><span id="local-6989586621680579641"><span class="annot"><a href="Music.Score.Ties.html#splitTiesAt%27"><span class="hs-identifier hs-type">splitTiesAt'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579641"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579641"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579641"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">]</span></span><span>
+</span><span id="line-230"></span><span id="splitTiesAt%27"><span class="annot"><span class="annottext">splitTiesAt' :: [Duration] -&gt; [(Duration, a)] -&gt; [[(Duration, a)]]
+</span><a href="Music.Score.Ties.html#splitTiesAt%27"><span class="hs-identifier hs-var hs-var">splitTiesAt'</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-231"></span><span class="annot"><a href="Music.Score.Ties.html#splitTiesAt%27"><span class="hs-identifier hs-var">splitTiesAt'</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-232"></span><span class="annot"><a href="Music.Score.Ties.html#splitTiesAt%27"><span class="hs-identifier hs-var">splitTiesAt'</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680579179"><span class="annot"><span class="annottext">barDur :: Duration
+</span><a href="#local-6989586621680579179"><span class="hs-identifier hs-var">barDur</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">:</span></a></span><span> </span><span id="local-6989586621680579178"><span class="annot"><span class="annottext">rbarDur :: [Duration]
+</span><a href="#local-6989586621680579178"><span class="hs-identifier hs-var">rbarDur</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680579177"><span class="annot"><span class="annottext">occs :: [(Duration, a)]
+</span><a href="#local-6989586621680579177"><span class="hs-identifier hs-var">occs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; [(Duration, a)] -&gt; ([(Duration, a)], [(Duration, a)])
+forall a.
+Tiable a =&gt;
+Duration -&gt; [(Duration, a)] -&gt; ([(Duration, a)], [(Duration, a)])
+</span><a href="Music.Score.Ties.html#splitDurFor"><span class="hs-identifier hs-var">splitDurFor</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579179"><span class="hs-identifier hs-var">barDur</span></a></span><span> </span><span class="annot"><span class="annottext">[(Duration, a)]
+</span><a href="#local-6989586621680579177"><span class="hs-identifier hs-var">occs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-233"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621680579175"><span class="annot"><span class="annottext">barOccs :: [(Duration, a)]
+</span><a href="#local-6989586621680579175"><span class="hs-identifier hs-var">barOccs</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(Duration, a)]
+</span><a href="#local-6989586621680579175"><span class="hs-identifier hs-var">barOccs</span></a></span><span> </span><span class="annot"><span class="annottext">[(Duration, a)] -&gt; [[(Duration, a)]] -&gt; [[(Duration, a)]]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-234"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621680579174"><span class="annot"><span class="annottext">barOccs :: [(Duration, a)]
+</span><a href="#local-6989586621680579174"><span class="hs-identifier hs-var">barOccs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579173"><span class="annot"><span class="annottext">restOccs :: [(Duration, a)]
+</span><a href="#local-6989586621680579173"><span class="hs-identifier hs-var">restOccs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(Duration, a)]
+</span><a href="#local-6989586621680579174"><span class="hs-identifier hs-var">barOccs</span></a></span><span> </span><span class="annot"><span class="annottext">[(Duration, a)] -&gt; [[(Duration, a)]] -&gt; [[(Duration, a)]]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">[Duration] -&gt; [(Duration, a)] -&gt; [[(Duration, a)]]
+forall a.
+Tiable a =&gt;
+[Duration] -&gt; [(Duration, a)] -&gt; [[(Duration, a)]]
+</span><a href="Music.Score.Ties.html#splitTiesAt%27"><span class="hs-identifier hs-var">splitTiesAt'</span></a></span><span> </span><span class="annot"><span class="annottext">[Duration]
+</span><a href="#local-6989586621680579178"><span class="hs-identifier hs-var">rbarDur</span></a></span><span> </span><span class="annot"><span class="annottext">[(Duration, a)]
+</span><a href="#local-6989586621680579173"><span class="hs-identifier hs-var">restOccs</span></a></span><span>
+</span><span id="line-235"></span><span>
+</span><span id="line-236"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-237"></span><span class="hs-comment">-- Split an event into one chunk of the duration @s@, followed parts shorter than duration @t@.</span><span>
+</span><span id="line-238"></span><span class="hs-comment">--</span><span>
+</span><span id="line-239"></span><span class="hs-comment">-- The returned list is always non-empty. All elements but the first and the last must have duration @t@.</span><span>
+</span><span id="line-240"></span><span class="hs-comment">--</span><span>
+</span><span id="line-241"></span><span class="hs-comment">-- &gt; sum $ fmap fst $ splitDur s (x,a) = x</span><span>
+</span><span id="line-242"></span><span id="local-6989586621680579628"><span class="annot"><a href="Music.Score.Ties.html#splitDurThen"><span class="hs-identifier hs-type">splitDurThen</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579628"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579628"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579628"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span><span>
+</span><span id="line-243"></span><span id="splitDurThen"><span class="annot"><span class="annottext">splitDurThen :: Duration -&gt; Duration -&gt; (Duration, a) -&gt; [(Duration, a)]
+</span><a href="Music.Score.Ties.html#splitDurThen"><span class="hs-identifier hs-var hs-var">splitDurThen</span></a></span></span><span> </span><span id="local-6989586621680579172"><span class="annot"><span class="annottext">s :: Duration
+</span><a href="#local-6989586621680579172"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680579171"><span class="annot"><span class="annottext">t :: Duration
+</span><a href="#local-6989586621680579171"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680579170"><span class="annot"><span class="annottext">x :: (Duration, a)
+</span><a href="#local-6989586621680579170"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; (Duration, a) -&gt; ((Duration, a), Maybe (Duration, a))
+forall a.
+Tiable a =&gt;
+Duration -&gt; (Duration, a) -&gt; ((Duration, a), Maybe (Duration, a))
+</span><a href="Music.Score.Ties.html#splitDur"><span class="hs-identifier hs-var">splitDur</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579172"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration, a)
+</span><a href="#local-6989586621680579170"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-244"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621680579168"><span class="annot"><span class="annottext">a :: (Duration, a)
+</span><a href="#local-6989586621680579168"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">(Duration, a)
+</span><a href="#local-6989586621680579168"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-245"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621680579167"><span class="annot"><span class="annottext">a :: (Duration, a)
+</span><a href="#local-6989586621680579167"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680579166"><span class="annot"><span class="annottext">b :: (Duration, a)
+</span><a href="#local-6989586621680579166"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Duration, a)
+</span><a href="#local-6989586621680579167"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration, a) -&gt; [(Duration, a)] -&gt; [(Duration, a)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; (Duration, a) -&gt; [(Duration, a)]
+forall a.
+Tiable a =&gt;
+Duration -&gt; Duration -&gt; (Duration, a) -&gt; [(Duration, a)]
+</span><a href="Music.Score.Ties.html#splitDurThen"><span class="hs-identifier hs-var">splitDurThen</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579171"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579171"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration, a)
+</span><a href="#local-6989586621680579166"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-246"></span><span>
+</span><span id="line-247"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-248"></span><span class="hs-comment">-- Extract as many events or parts of events as possible in the given positive duration, and</span><span>
+</span><span id="line-249"></span><span class="hs-comment">-- return it with remaining events.</span><span>
+</span><span id="line-250"></span><span class="hs-comment">--</span><span>
+</span><span id="line-251"></span><span class="hs-comment">-- The extracted events always fit into the given duration, i.e.</span><span>
+</span><span id="line-252"></span><span class="hs-comment">--</span><span>
+</span><span id="line-253"></span><span class="hs-comment">-- &gt; sum $ fmap duration $ fst $ splitDurFor maxDur xs &lt;= maxDur</span><span>
+</span><span id="line-254"></span><span class="hs-comment">--</span><span>
+</span><span id="line-255"></span><span class="hs-comment">-- If there are remaining events, they always fit exactly, i.e.</span><span>
+</span><span id="line-256"></span><span class="hs-comment">--</span><span>
+</span><span id="line-257"></span><span class="hs-comment">-- &gt; sum $ fmap duration $ fst $ splitDurFor maxDur xs == maxDur  iff  (not $ null $ snd $ splitDurFor maxDur xs)</span><span>
+</span><span id="line-258"></span><span id="local-6989586621680579632"><span class="annot"><a href="Music.Score.Ties.html#splitDurFor"><span class="hs-identifier hs-type">splitDurFor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579632"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579632"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579632"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579632"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span></span><span>
+</span><span id="line-259"></span><span id="splitDurFor"><span class="annot"><span class="annottext">splitDurFor :: Duration -&gt; [(Duration, a)] -&gt; ([(Duration, a)], [(Duration, a)])
+</span><a href="Music.Score.Ties.html#splitDurFor"><span class="hs-identifier hs-var hs-var">splitDurFor</span></a></span></span><span> </span><span id="local-6989586621680579165"><span class="annot"><span class="annottext">remDur :: Duration
+</span><a href="#local-6989586621680579165"><span class="hs-identifier hs-var">remDur</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-260"></span><span class="annot"><a href="Music.Score.Ties.html#splitDurFor"><span class="hs-identifier hs-var">splitDurFor</span></a></span><span> </span><span id="local-6989586621680579164"><span class="annot"><span class="annottext">remDur :: Duration
+</span><a href="#local-6989586621680579164"><span class="hs-identifier hs-var">remDur</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680579163"><span class="annot"><span class="annottext">x :: (Duration, a)
+</span><a href="#local-6989586621680579163"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">:</span></a></span><span> </span><span id="local-6989586621680579162"><span class="annot"><span class="annottext">xs :: [(Duration, a)]
+</span><a href="#local-6989586621680579162"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; (Duration, a) -&gt; ((Duration, a), Maybe (Duration, a))
+forall a.
+Tiable a =&gt;
+Duration -&gt; (Duration, a) -&gt; ((Duration, a), Maybe (Duration, a))
+</span><a href="Music.Score.Ties.html#splitDur"><span class="hs-identifier hs-var">splitDur</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579164"><span class="hs-identifier hs-var">remDur</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration, a)
+</span><a href="#local-6989586621680579163"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-261"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621680579161"><span class="annot"><span class="annottext">x :: (Duration, a)
+</span><a href="#local-6989586621680579161"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621680579160"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680579160"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-262"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579160"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579164"><span class="hs-identifier hs-var">remDur</span></a></span><span>
+</span><span id="line-263"></span><span>      </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">([(Duration, a)] -&gt; [(Duration, a)])
+-&gt; ([(Duration, a)], [(Duration, a)])
+-&gt; ([(Duration, a)], [(Duration, a)])
+forall (p :: * -&gt; * -&gt; *) a b c.
+Bifunctor p =&gt;
+(a -&gt; b) -&gt; p a c -&gt; p b c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Duration, a)
+</span><a href="#local-6989586621680579161"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration, a) -&gt; [(Duration, a)] -&gt; [(Duration, a)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(([(Duration, a)], [(Duration, a)])
+ -&gt; ([(Duration, a)], [(Duration, a)]))
+-&gt; ([(Duration, a)], [(Duration, a)])
+-&gt; ([(Duration, a)], [(Duration, a)])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; [(Duration, a)] -&gt; ([(Duration, a)], [(Duration, a)])
+forall a.
+Tiable a =&gt;
+Duration -&gt; [(Duration, a)] -&gt; ([(Duration, a)], [(Duration, a)])
+</span><a href="Music.Score.Ties.html#splitDurFor"><span class="hs-identifier hs-var">splitDurFor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579164"><span class="hs-identifier hs-var">remDur</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579160"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Duration, a)]
+</span><a href="#local-6989586621680579162"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-264"></span><span>      </span><span class="hs-keyword">else</span><span class="hs-comment">-- d == remDur</span><span>
+</span><span id="line-265"></span><span>        </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">(Duration, a)
+</span><a href="#local-6989586621680579161"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[(Duration, a)]
+</span><a href="#local-6989586621680579162"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-266"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621680579158"><span class="annot"><span class="annottext">x :: (Duration, a)
+</span><a href="#local-6989586621680579158"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621680579157"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680579157"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680579156"><span class="annot"><span class="annottext">rest :: (Duration, a)
+</span><a href="#local-6989586621680579156"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">(Duration, a)
+</span><a href="#local-6989586621680579158"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Duration, a)
+</span><a href="#local-6989586621680579156"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration, a) -&gt; [(Duration, a)] -&gt; [(Duration, a)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">[(Duration, a)]
+</span><a href="#local-6989586621680579162"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-267"></span><span>
+</span><span id="line-268"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-269"></span><span class="hs-comment">-- Split a event if it is longer than the given duration. Returns the first part of the</span><span>
+</span><span id="line-270"></span><span class="hs-comment">-- event (which always &lt;= s) and the rest.</span><span>
+</span><span id="line-271"></span><span class="hs-comment">--</span><span>
+</span><span id="line-272"></span><span class="hs-comment">-- &gt; splitDur maxDur (d,a)</span><span>
+</span><span id="line-273"></span><span id="local-6989586621680579629"><span class="annot"><a href="Music.Score.Ties.html#splitDur"><span class="hs-identifier hs-type">splitDur</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579629"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579629"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579629"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579629"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-274"></span><span id="splitDur"><span class="annot"><span class="annottext">splitDur :: Duration -&gt; (Duration, a) -&gt; ((Duration, a), Maybe (Duration, a))
+</span><a href="Music.Score.Ties.html#splitDur"><span class="hs-identifier hs-var hs-var">splitDur</span></a></span></span><span> </span><span id="local-6989586621680579155"><span class="annot"><span class="annottext">maxDur :: Duration
+</span><a href="#local-6989586621680579155"><span class="hs-identifier hs-var">maxDur</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680579154"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680579154"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579153"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680579153"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-275"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579155"><span class="hs-identifier hs-var">maxDur</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ((Duration, a), Maybe (Duration, a))
+forall a. HasCallStack =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;splitDur: maxDur must be &gt; 0&quot;</span></span><span>
+</span><span id="line-276"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579154"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579155"><span class="hs-identifier hs-var">maxDur</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579154"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680579153"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe (Duration, a)
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-277"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579154"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579155"><span class="hs-identifier hs-var">maxDur</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579155"><span class="hs-identifier hs-var">maxDur</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680579149"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Duration, a) -&gt; Maybe (Duration, a)
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579154"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680579155"><span class="hs-identifier hs-var">maxDur</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680579148"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-278"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">otherwise</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ((Duration, a), Maybe (Duration, a))
+forall a. HasCallStack =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Impossible&quot;</span></span><span>
+</span><span id="line-279"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-280"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621680579149"><span class="annot"><span class="annottext">b :: a
+</span><a href="#local-6989586621680579149"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680579148"><span class="annot"><span class="annottext">c :: a
+</span><a href="#local-6989586621680579148"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680579153"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-281"></span><span>
+</span><span id="line-282"></span><span id="local-6989586621680579839"><span id="local-6989586621680579840"><span id="local-6989586621680579841"><span class="annot"><a href="Music.Score.Ties.html#unzipR"><span class="hs-identifier hs-type">unzipR</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579841"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680579841"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680579840"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579839"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680579841"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579840"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579841"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579839"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-283"></span><span id="unzipR"><span class="annot"><span class="annottext">unzipR :: f (a, b) -&gt; (f a, f b)
+</span><a href="Music.Score.Ties.html#unzipR"><span class="hs-identifier hs-var hs-var">unzipR</span></a></span></span><span> </span><span id="local-6989586621680579147"><span class="annot"><span class="annottext">x :: f (a, b)
+</span><a href="#local-6989586621680579147"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((a, b) -&gt; a) -&gt; f (a, b) -&gt; f a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; a
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span> </span><span class="annot"><span class="annottext">f (a, b)
+</span><a href="#local-6989586621680579147"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">((a, b) -&gt; b) -&gt; f (a, b) -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; b
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span> </span><span class="annot"><span class="annottext">f (a, b)
+</span><a href="#local-6989586621680579147"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-284"></span></pre></body></html>

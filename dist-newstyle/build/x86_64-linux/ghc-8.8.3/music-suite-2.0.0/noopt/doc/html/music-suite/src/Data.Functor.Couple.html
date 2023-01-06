@@ -1,0 +1,1516 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveFoldable #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE DeriveFunctor #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE DeriveTraversable #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Defines two variants of @(,)@ with lifted instances for the standard type</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- classes.</span><span>
+</span><span id="line-12"></span><span class="hs-comment">--</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- The 'Functor', 'Applicative' and 'Comonad' instances are the standard</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- instances.  'Applicative' is used to lift 'Monoid' and the standard numeric</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- classes.</span><span>
+</span><span id="line-16"></span><span class="hs-comment">--</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- The only difference between 'Twain' and 'Couple' is the handling of 'Eq' and</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- 'Ord': 'Twain' compares only the second value, while 'Couple' compares both.</span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- Thus 'Couple' needs an extra @Ord b@ constraint for all sub-classes of</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- 'Ord'.</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Functor.Couple</span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier">Twain</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Comonad</span></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">iso</span></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Bifunctor</span></a></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Functor.Identity</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Functor.Product</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- A variant of pair/writer with lifted instances for the numeric classes, using 'Applicative'.</span><span>
+</span><span id="line-40"></span><span class="hs-keyword">newtype</span><span> </span><span id="Twain"><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-var">Twain</span></a></span></span><span> </span><span id="local-6989586621680561727"><span class="annot"><a href="#local-6989586621680561727"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span id="local-6989586621680561726"><span class="annot"><a href="#local-6989586621680561726"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Twain"><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-var">Twain</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getTwain"><span class="annot"><span class="annottext">Twain b a -&gt; (b, a)
+</span><a href="Data.Functor.Couple.html#getTwain"><span class="hs-identifier hs-var hs-var">getTwain</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680561727"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680561726"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">}</span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680561550"><span id="local-6989586621680561552"><span id="local-6989586621680561554"><span class="annot"><span class="annottext">Int -&gt; Twain b a -&gt; ShowS
+[Twain b a] -&gt; ShowS
+Twain b a -&gt; String
+(Int -&gt; Twain b a -&gt; ShowS)
+-&gt; (Twain b a -&gt; String)
+-&gt; ([Twain b a] -&gt; ShowS)
+-&gt; Show (Twain b a)
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+forall b a. (Show b, Show a) =&gt; Int -&gt; Twain b a -&gt; ShowS
+forall b a. (Show b, Show a) =&gt; [Twain b a] -&gt; ShowS
+forall b a. (Show b, Show a) =&gt; Twain b a -&gt; String
+showList :: [Twain b a] -&gt; ShowS
+$cshowList :: forall b a. (Show b, Show a) =&gt; [Twain b a] -&gt; ShowS
+show :: Twain b a -&gt; String
+$cshow :: forall b a. (Show b, Show a) =&gt; Twain b a -&gt; String
+showsPrec :: Int -&gt; Twain b a -&gt; ShowS
+$cshowsPrec :: forall b a. (Show b, Show a) =&gt; Int -&gt; Twain b a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561545"><span id="local-6989586621680561547"><span class="annot"><span class="annottext">a -&gt; Twain b b -&gt; Twain b a
+(a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+(forall a b. (a -&gt; b) -&gt; Twain b a -&gt; Twain b b)
+-&gt; (forall a b. a -&gt; Twain b b -&gt; Twain b a) -&gt; Functor (Twain b)
+forall a b. a -&gt; Twain b b -&gt; Twain b a
+forall a b. (a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+forall b a b. a -&gt; Twain b b -&gt; Twain b a
+forall b a b. (a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; Twain b b -&gt; Twain b a
+$c&lt;$ :: forall b a b. a -&gt; Twain b b -&gt; Twain b a
+fmap :: (a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+$cfmap :: forall b a b. (a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561534"><span id="local-6989586621680561536"><span id="local-6989586621680561538"><span id="local-6989586621680561540"><span class="annot"><span class="annottext">Functor (Twain b)
+Foldable (Twain b)
+(Functor (Twain b), Foldable (Twain b)) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; Twain b a -&gt; f (Twain b b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    Twain b (f a) -&gt; f (Twain b a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; Twain b a -&gt; m (Twain b b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    Twain b (m a) -&gt; m (Twain b a))
+-&gt; Traversable (Twain b)
+(a -&gt; f b) -&gt; Twain b a -&gt; f (Twain b b)
+forall b. Functor (Twain b)
+forall b. Foldable (Twain b)
+forall b (m :: * -&gt; *) a. Monad m =&gt; Twain b (m a) -&gt; m (Twain b a)
+forall b (f :: * -&gt; *) a.
+Applicative f =&gt;
+Twain b (f a) -&gt; f (Twain b a)
+forall b (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Twain b a -&gt; m (Twain b b)
+forall b (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Twain b a -&gt; f (Twain b b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; Twain b (m a) -&gt; m (Twain b a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+Twain b (f a) -&gt; f (Twain b a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Twain b a -&gt; m (Twain b b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Twain b a -&gt; f (Twain b b)
+sequence :: Twain b (m a) -&gt; m (Twain b a)
+$csequence :: forall b (m :: * -&gt; *) a. Monad m =&gt; Twain b (m a) -&gt; m (Twain b a)
+mapM :: (a -&gt; m b) -&gt; Twain b a -&gt; m (Twain b b)
+$cmapM :: forall b (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Twain b a -&gt; m (Twain b b)
+sequenceA :: Twain b (f a) -&gt; f (Twain b a)
+$csequenceA :: forall b (f :: * -&gt; *) a.
+Applicative f =&gt;
+Twain b (f a) -&gt; f (Twain b a)
+traverse :: (a -&gt; f b) -&gt; Twain b a -&gt; f (Twain b b)
+$ctraverse :: forall b (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Twain b a -&gt; f (Twain b b)
+$cp2Traversable :: forall b. Foldable (Twain b)
+$cp1Traversable :: forall b. Functor (Twain b)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561499"><span id="local-6989586621680561501"><span id="local-6989586621680561503"><span id="local-6989586621680561505"><span id="local-6989586621680561507"><span id="local-6989586621680561509"><span id="local-6989586621680561511"><span id="local-6989586621680561513"><span id="local-6989586621680561515"><span id="local-6989586621680561517"><span id="local-6989586621680561519"><span id="local-6989586621680561521"><span id="local-6989586621680561523"><span id="local-6989586621680561525"><span id="local-6989586621680561527"><span id="local-6989586621680561529"><span id="local-6989586621680561531"><span class="annot"><span class="annottext">a -&gt; Twain b a -&gt; Bool
+Twain b m -&gt; m
+Twain b a -&gt; [a]
+Twain b a -&gt; Bool
+Twain b a -&gt; Int
+Twain b a -&gt; a
+Twain b a -&gt; a
+Twain b a -&gt; a
+Twain b a -&gt; a
+(a -&gt; m) -&gt; Twain b a -&gt; m
+(a -&gt; m) -&gt; Twain b a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+(a -&gt; a -&gt; a) -&gt; Twain b a -&gt; a
+(a -&gt; a -&gt; a) -&gt; Twain b a -&gt; a
+(forall m. Monoid m =&gt; Twain b m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Twain b a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Twain b a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Twain b a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Twain b a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Twain b a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Twain b a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Twain b a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Twain b a -&gt; a)
+-&gt; (forall a. Twain b a -&gt; [a])
+-&gt; (forall a. Twain b a -&gt; Bool)
+-&gt; (forall a. Twain b a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; Twain b a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; Twain b a -&gt; a)
+-&gt; (forall a. Ord a =&gt; Twain b a -&gt; a)
+-&gt; (forall a. Num a =&gt; Twain b a -&gt; a)
+-&gt; (forall a. Num a =&gt; Twain b a -&gt; a)
+-&gt; Foldable (Twain b)
+forall a. Eq a =&gt; a -&gt; Twain b a -&gt; Bool
+forall a. Num a =&gt; Twain b a -&gt; a
+forall a. Ord a =&gt; Twain b a -&gt; a
+forall m. Monoid m =&gt; Twain b m -&gt; m
+forall a. Twain b a -&gt; Bool
+forall a. Twain b a -&gt; Int
+forall a. Twain b a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; Twain b a -&gt; a
+forall b a. Eq a =&gt; a -&gt; Twain b a -&gt; Bool
+forall b a. Num a =&gt; Twain b a -&gt; a
+forall b a. Ord a =&gt; Twain b a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Twain b a -&gt; m
+forall b m. Monoid m =&gt; Twain b m -&gt; m
+forall b a. Twain b a -&gt; Bool
+forall b a. Twain b a -&gt; Int
+forall b a. Twain b a -&gt; [a]
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+forall b a. (a -&gt; a -&gt; a) -&gt; Twain b a -&gt; a
+forall b m a. Monoid m =&gt; (a -&gt; m) -&gt; Twain b a -&gt; m
+forall b b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+forall b a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: Twain b a -&gt; a
+$cproduct :: forall b a. Num a =&gt; Twain b a -&gt; a
+sum :: Twain b a -&gt; a
+$csum :: forall b a. Num a =&gt; Twain b a -&gt; a
+minimum :: Twain b a -&gt; a
+$cminimum :: forall b a. Ord a =&gt; Twain b a -&gt; a
+maximum :: Twain b a -&gt; a
+$cmaximum :: forall b a. Ord a =&gt; Twain b a -&gt; a
+elem :: a -&gt; Twain b a -&gt; Bool
+$celem :: forall b a. Eq a =&gt; a -&gt; Twain b a -&gt; Bool
+length :: Twain b a -&gt; Int
+$clength :: forall b a. Twain b a -&gt; Int
+null :: Twain b a -&gt; Bool
+$cnull :: forall b a. Twain b a -&gt; Bool
+toList :: Twain b a -&gt; [a]
+$ctoList :: forall b a. Twain b a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; Twain b a -&gt; a
+$cfoldl1 :: forall b a. (a -&gt; a -&gt; a) -&gt; Twain b a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; Twain b a -&gt; a
+$cfoldr1 :: forall b a. (a -&gt; a -&gt; a) -&gt; Twain b a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+$cfoldl' :: forall b b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+$cfoldl :: forall b b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+$cfoldr' :: forall b a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+$cfoldr :: forall b a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Twain b a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; Twain b a -&gt; m
+$cfoldMap' :: forall b m a. Monoid m =&gt; (a -&gt; m) -&gt; Twain b a -&gt; m
+foldMap :: (a -&gt; m) -&gt; Twain b a -&gt; m
+$cfoldMap :: forall b m a. Monoid m =&gt; (a -&gt; m) -&gt; Twain b a -&gt; m
+fold :: Twain b m -&gt; m
+$cfold :: forall b m. Monoid m =&gt; Twain b m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561487"><span id="local-6989586621680561489"><span id="local-6989586621680561491"><span id="local-6989586621680561493"><span id="local-6989586621680561495"><span class="annot"><span class="annottext">Functor (Twain b)
+a -&gt; Twain b a
+Functor (Twain b) =&gt;
+(forall a. a -&gt; Twain b a)
+-&gt; (forall a b. Twain b (a -&gt; b) -&gt; Twain b a -&gt; Twain b b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; Twain b a -&gt; Twain b b -&gt; Twain b c)
+-&gt; (forall a b. Twain b a -&gt; Twain b b -&gt; Twain b b)
+-&gt; (forall a b. Twain b a -&gt; Twain b b -&gt; Twain b a)
+-&gt; Applicative (Twain b)
+Twain b a -&gt; Twain b b -&gt; Twain b b
+Twain b a -&gt; Twain b b -&gt; Twain b a
+Twain b (a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+(a -&gt; b -&gt; c) -&gt; Twain b a -&gt; Twain b b -&gt; Twain b c
+forall a. a -&gt; Twain b a
+forall b. Monoid b =&gt; Functor (Twain b)
+forall b a. Monoid b =&gt; a -&gt; Twain b a
+forall b a b. Monoid b =&gt; Twain b a -&gt; Twain b b -&gt; Twain b a
+forall b a b. Monoid b =&gt; Twain b a -&gt; Twain b b -&gt; Twain b b
+forall b a b.
+Monoid b =&gt;
+Twain b (a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+forall b a b c.
+Monoid b =&gt;
+(a -&gt; b -&gt; c) -&gt; Twain b a -&gt; Twain b b -&gt; Twain b c
+forall a b. Twain b a -&gt; Twain b b -&gt; Twain b a
+forall a b. Twain b a -&gt; Twain b b -&gt; Twain b b
+forall a b. Twain b (a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+forall a b c. (a -&gt; b -&gt; c) -&gt; Twain b a -&gt; Twain b b -&gt; Twain b c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: Twain b a -&gt; Twain b b -&gt; Twain b a
+$c&lt;* :: forall b a b. Monoid b =&gt; Twain b a -&gt; Twain b b -&gt; Twain b a
+*&gt; :: Twain b a -&gt; Twain b b -&gt; Twain b b
+$c*&gt; :: forall b a b. Monoid b =&gt; Twain b a -&gt; Twain b b -&gt; Twain b b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; Twain b a -&gt; Twain b b -&gt; Twain b c
+$cliftA2 :: forall b a b c.
+Monoid b =&gt;
+(a -&gt; b -&gt; c) -&gt; Twain b a -&gt; Twain b b -&gt; Twain b c
+&lt;*&gt; :: Twain b (a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+$c&lt;*&gt; :: forall b a b.
+Monoid b =&gt;
+Twain b (a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+pure :: a -&gt; Twain b a
+$cpure :: forall b a. Monoid b =&gt; a -&gt; Twain b a
+$cp1Applicative :: forall b. Monoid b =&gt; Functor (Twain b)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561479"><span id="local-6989586621680561481"><span id="local-6989586621680561483"><span class="annot"><span class="annottext">Applicative (Twain b)
+a -&gt; Twain b a
+Applicative (Twain b) =&gt;
+(forall a b. Twain b a -&gt; (a -&gt; Twain b b) -&gt; Twain b b)
+-&gt; (forall a b. Twain b a -&gt; Twain b b -&gt; Twain b b)
+-&gt; (forall a. a -&gt; Twain b a)
+-&gt; Monad (Twain b)
+Twain b a -&gt; (a -&gt; Twain b b) -&gt; Twain b b
+Twain b a -&gt; Twain b b -&gt; Twain b b
+forall a. a -&gt; Twain b a
+forall b. Monoid b =&gt; Applicative (Twain b)
+forall b a. Monoid b =&gt; a -&gt; Twain b a
+forall b a b. Monoid b =&gt; Twain b a -&gt; Twain b b -&gt; Twain b b
+forall b a b.
+Monoid b =&gt;
+Twain b a -&gt; (a -&gt; Twain b b) -&gt; Twain b b
+forall a b. Twain b a -&gt; Twain b b -&gt; Twain b b
+forall a b. Twain b a -&gt; (a -&gt; Twain b b) -&gt; Twain b b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; Twain b a
+$creturn :: forall b a. Monoid b =&gt; a -&gt; Twain b a
+&gt;&gt; :: Twain b a -&gt; Twain b b -&gt; Twain b b
+$c&gt;&gt; :: forall b a b. Monoid b =&gt; Twain b a -&gt; Twain b b -&gt; Twain b b
+&gt;&gt;= :: Twain b a -&gt; (a -&gt; Twain b b) -&gt; Twain b b
+$c&gt;&gt;= :: forall b a b.
+Monoid b =&gt;
+Twain b a -&gt; (a -&gt; Twain b b) -&gt; Twain b b
+$cp1Monad :: forall b. Monoid b =&gt; Applicative (Twain b)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561471"><span id="local-6989586621680561473"><span id="local-6989586621680561475"><span class="annot"><span class="annottext">Functor (Twain b)
+Functor (Twain b) =&gt;
+(forall a. Twain b a -&gt; a)
+-&gt; (forall a. Twain b a -&gt; Twain b (Twain b a))
+-&gt; (forall a b. (Twain b a -&gt; b) -&gt; Twain b a -&gt; Twain b b)
+-&gt; Comonad (Twain b)
+Twain b a -&gt; a
+Twain b a -&gt; Twain b (Twain b a)
+(Twain b a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+forall b. Functor (Twain b)
+forall a. Twain b a -&gt; a
+forall a. Twain b a -&gt; Twain b (Twain b a)
+forall b a. Twain b a -&gt; a
+forall b a. Twain b a -&gt; Twain b (Twain b a)
+forall a b. (Twain b a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+forall b a b. (Twain b a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (Twain b a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+$cextend :: forall b a b. (Twain b a -&gt; b) -&gt; Twain b a -&gt; Twain b b
+duplicate :: Twain b a -&gt; Twain b (Twain b a)
+$cduplicate :: forall b a. Twain b a -&gt; Twain b (Twain b a)
+extract :: Twain b a -&gt; a
+$cextract :: forall b a. Twain b a -&gt; a
+$cp1Comonad :: forall b. Functor (Twain b)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561464"><span id="local-6989586621680561466"><span id="local-6989586621680561468"><span class="annot"><span class="annottext">b -&gt; Twain b a -&gt; Twain b a
+NonEmpty (Twain b a) -&gt; Twain b a
+Twain b a -&gt; Twain b a -&gt; Twain b a
+(Twain b a -&gt; Twain b a -&gt; Twain b a)
+-&gt; (NonEmpty (Twain b a) -&gt; Twain b a)
+-&gt; (forall b. Integral b =&gt; b -&gt; Twain b a -&gt; Twain b a)
+-&gt; Semigroup (Twain b a)
+forall b. Integral b =&gt; b -&gt; Twain b a -&gt; Twain b a
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+forall b a.
+(Semigroup b, Semigroup a) =&gt;
+NonEmpty (Twain b a) -&gt; Twain b a
+forall b a.
+(Semigroup b, Semigroup a) =&gt;
+Twain b a -&gt; Twain b a -&gt; Twain b a
+forall b a b.
+(Semigroup b, Semigroup a, Integral b) =&gt;
+b -&gt; Twain b a -&gt; Twain b a
+stimes :: b -&gt; Twain b a -&gt; Twain b a
+$cstimes :: forall b a b.
+(Semigroup b, Semigroup a, Integral b) =&gt;
+b -&gt; Twain b a -&gt; Twain b a
+sconcat :: NonEmpty (Twain b a) -&gt; Twain b a
+$csconcat :: forall b a.
+(Semigroup b, Semigroup a) =&gt;
+NonEmpty (Twain b a) -&gt; Twain b a
+&lt;&gt; :: Twain b a -&gt; Twain b a -&gt; Twain b a
+$c&lt;&gt; :: forall b a.
+(Semigroup b, Semigroup a) =&gt;
+Twain b a -&gt; Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561456"><span id="local-6989586621680561458"><span id="local-6989586621680561460"><span class="annot"><span class="annottext">Semigroup (Twain b a)
+Twain b a
+Semigroup (Twain b a) =&gt;
+Twain b a
+-&gt; (Twain b a -&gt; Twain b a -&gt; Twain b a)
+-&gt; ([Twain b a] -&gt; Twain b a)
+-&gt; Monoid (Twain b a)
+[Twain b a] -&gt; Twain b a
+Twain b a -&gt; Twain b a -&gt; Twain b a
+forall a.
+Semigroup a =&gt;
+a -&gt; (a -&gt; a -&gt; a) -&gt; ([a] -&gt; a) -&gt; Monoid a
+forall b a. (Monoid b, Monoid a) =&gt; Semigroup (Twain b a)
+forall b a. (Monoid b, Monoid a) =&gt; Twain b a
+forall b a. (Monoid b, Monoid a) =&gt; [Twain b a] -&gt; Twain b a
+forall b a.
+(Monoid b, Monoid a) =&gt;
+Twain b a -&gt; Twain b a -&gt; Twain b a
+mconcat :: [Twain b a] -&gt; Twain b a
+$cmconcat :: forall b a. (Monoid b, Monoid a) =&gt; [Twain b a] -&gt; Twain b a
+mappend :: Twain b a -&gt; Twain b a -&gt; Twain b a
+$cmappend :: forall b a.
+(Monoid b, Monoid a) =&gt;
+Twain b a -&gt; Twain b a -&gt; Twain b a
+mempty :: Twain b a
+$cmempty :: forall b a. (Monoid b, Monoid a) =&gt; Twain b a
+$cp1Monoid :: forall b a. (Monoid b, Monoid a) =&gt; Semigroup (Twain b a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span id="local-6989586621680561453"><span id="local-6989586621680561454"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561454"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561453"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561454"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561453"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680561454"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680561453"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span>  </span><span id="local-6989586621680561450"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (Twain b a)) (f (Unwrapped (Twain b a)))
+-&gt; p (Twain b a) (f (Twain b a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Twain b a -&gt; (b, a))
+-&gt; ((b, a) -&gt; Twain b a)
+-&gt; Iso (Twain b a) (Twain b a) (b, a) (b, a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">Twain b a -&gt; (b, a)
+forall b a. Twain b a -&gt; (b, a)
+</span><a href="Data.Functor.Couple.html#getTwain"><span class="hs-identifier hs-var hs-var">getTwain</span></a></span><span> </span><span class="annot"><span class="annottext">(b, a) -&gt; Twain b a
+forall b a. (b, a) -&gt; Twain b a
+</span><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-var">Twain</span></a></span></span></span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span id="local-6989586621680561446"><span id="local-6989586621680561447"><span id="local-6989586621680561448"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561448"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561447"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561448"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561446"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span id="local-6989586621680561442"><span id="local-6989586621680561443"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561437"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561443"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561442"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561443"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561442"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span>  </span><span id="local-6989586621680561432"><span class="annot"><span class="annottext">+ :: Twain b a -&gt; Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(+)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Twain b a -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(+)</span></a></span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span>  </span><span id="local-6989586621680561429"><span class="annot"><span class="annottext">* :: Twain b a -&gt; Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(*)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Twain b a -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(*)</span></a></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span>  </span><span id="local-6989586621680561427"><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="hs-special">)</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Twain b a -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span>  </span><span id="local-6989586621680561426"><span class="annot"><span class="annottext">abs :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">abs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">abs</span></a></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span>  </span><span id="local-6989586621680561424"><span class="annot"><span class="annottext">signum :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">signum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">signum</span></a></span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span>  </span><span id="local-6989586621680561422"><span class="annot"><span class="annottext">fromInteger :: Integer -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromInteger</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Twain b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Twain b a) -&gt; (Integer -&gt; a) -&gt; Integer -&gt; Twain b a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; a
+forall a. Num a =&gt; Integer -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromInteger</span></a></span></span></span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span id="local-6989586621680561419"><span id="local-6989586621680561420"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561416"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561420"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561419"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561420"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561419"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-66"></span><span>
+</span><span id="line-67"></span><span>  </span><span id="local-6989586621680561412"><span class="annot"><span class="annottext">recip :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">recip</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Fractional a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">recip</span></a></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span>  </span><span id="local-6989586621680561410"><span class="annot"><span class="annottext">fromRational :: Rational -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromRational</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Twain b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Twain b a) -&gt; (Rational -&gt; a) -&gt; Rational -&gt; Twain b a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Rational -&gt; a
+forall a. Fractional a =&gt; Rational -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromRational</span></a></span></span></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span id="local-6989586621680561408"><span id="local-6989586621680561409"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561377"><span id="local-6989586621680561379"><span id="local-6989586621680561381"><span id="local-6989586621680561383"><span id="local-6989586621680561388"><span id="local-6989586621680561395"><span id="local-6989586621680561399"><span id="local-6989586621680561401"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561409"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561408"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561409"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561408"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span>  </span><span id="local-6989586621680561375"><span class="annot"><span class="annottext">pi :: Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">pi</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Twain b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Floating a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pi</span></a></span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span>  </span><span id="local-6989586621680561373"><span class="annot"><span class="annottext">sqrt :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">sqrt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">sqrt</span></a></span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span>  </span><span id="local-6989586621680561371"><span class="annot"><span class="annottext">exp :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">exp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">exp</span></a></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span>  </span><span id="local-6989586621680561369"><span class="annot"><span class="annottext">log :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">log</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">log</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span>  </span><span id="local-6989586621680561367"><span class="annot"><span class="annottext">sin :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">sin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">sin</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span>  </span><span id="local-6989586621680561365"><span class="annot"><span class="annottext">cos :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">cos</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">cos</span></a></span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span>  </span><span id="local-6989586621680561363"><span class="annot"><span class="annottext">asin :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">asin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">asin</span></a></span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span>  </span><span id="local-6989586621680561361"><span class="annot"><span class="annottext">atan :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">atan</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">atan</span></a></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621680561359"><span class="annot"><span class="annottext">acos :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">acos</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">acos</span></a></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span>  </span><span id="local-6989586621680561357"><span class="annot"><span class="annottext">sinh :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">sinh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">sinh</span></a></span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span>  </span><span id="local-6989586621680561355"><span class="annot"><span class="annottext">cosh :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">cosh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">cosh</span></a></span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span>  </span><span id="local-6989586621680561353"><span class="annot"><span class="annottext">asinh :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">asinh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">asinh</span></a></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span>  </span><span id="local-6989586621680561351"><span class="annot"><span class="annottext">atanh :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">atanh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">atanh</span></a></span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span>  </span><span id="local-6989586621680561349"><span class="annot"><span class="annottext">acosh :: Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">acosh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">acos</span></a></span></span></span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span id="local-6989586621680561346"><span id="local-6989586621680561347"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561332"><span id="local-6989586621680561334"><span id="local-6989586621680561336"><span id="local-6989586621680561338"><span id="local-6989586621680561342"><span id="local-6989586621680561344"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561347"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561346"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561347"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561346"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span>  </span><span id="local-6989586621680561330"><span class="annot"><span class="annottext">toEnum :: Int -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toEnum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Twain b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Twain b a) -&gt; (Int -&gt; a) -&gt; Int -&gt; Twain b a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a
+forall a. Enum a =&gt; Int -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toEnum</span></a></span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span>  </span><span id="local-6989586621680561328"><span class="annot"><span class="annottext">fromEnum :: Twain b a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromEnum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromEnum</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Int) -&gt; (Twain b a -&gt; a) -&gt; Twain b a -&gt; Int
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Twain b a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span></span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span id="local-6989586621680561324"><span id="local-6989586621680561325"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561325"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561324"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561325"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561324"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span>  </span><span id="local-6989586621680561320"><span class="annot"><span class="annottext">minBound :: Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">minBound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Twain b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">minBound</span></a></span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span>  </span><span id="local-6989586621680561318"><span class="annot"><span class="annottext">maxBound :: Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">maxBound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Twain b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">maxBound</span></a></span></span></span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span class="hs-comment">--</span><span>
+</span><span id="line-114"></span><span class="hs-comment">-- Eq, Ord and their subclasses</span><span>
+</span><span id="line-115"></span><span class="hs-comment">--</span><span>
+</span><span id="line-116"></span><span class="hs-comment">-- If comparison takes both values into account, we must add and (Ord b)</span><span>
+</span><span id="line-117"></span><span class="hs-comment">-- constraint to all of the following instances. Instead, follow the</span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- spirit of the Num et al instances to compare just the second argument.</span><span>
+</span><span id="line-119"></span><span class="hs-comment">--</span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span id="local-6989586621680561315"><span id="local-6989586621680561316"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561312"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561316"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561315"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561316"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-122"></span><span>  </span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680561310"><span class="annot"><span class="annottext">b :: b
+</span><a href="#local-6989586621680561310"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561309"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680561309"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680561308"><span class="annot"><span class="annottext">== :: Twain b a -&gt; Twain b a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var hs-var hs-var hs-var">==</span></a></span></span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680561307"><span class="annot"><span class="annottext">b' :: b
+</span><a href="#local-6989586621680561307"><span class="hs-identifier hs-var">b'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561306"><span class="annot"><span class="annottext">a' :: a
+</span><a href="#local-6989586621680561306"><span class="hs-identifier hs-var">a'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680561309"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680561306"><span class="hs-identifier hs-var">a'</span></a></span></span></span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span id="local-6989586621680561304"><span id="local-6989586621680561305"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561290"><span id="local-6989586621680561292"><span id="local-6989586621680561294"><span id="local-6989586621680561296"><span id="local-6989586621680561299"><span id="local-6989586621680561301"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561305"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561304"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561305"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-125"></span><span>  </span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680561288"><span class="annot"><span class="annottext">b :: b
+</span><a href="#local-6989586621680561288"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561287"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680561287"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680561286"><span class="annot"><span class="annottext">&lt;= :: Twain b a -&gt; Twain b a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;=</span></a></span></span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680561284"><span class="annot"><span class="annottext">b' :: b
+</span><a href="#local-6989586621680561284"><span class="hs-identifier hs-var">b'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561283"><span class="annot"><span class="annottext">a' :: a
+</span><a href="#local-6989586621680561283"><span class="hs-identifier hs-var">a'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680561287"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680561283"><span class="hs-identifier hs-var">a'</span></a></span></span></span><span>
+</span><span id="line-126"></span><span>
+</span><span id="line-127"></span><span id="local-6989586621680561280"><span id="local-6989586621680561281"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561269"><span id="local-6989586621680561272"><span id="local-6989586621680561274"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561281"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561280"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561280"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561280"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561281"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561280"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span>  </span><span id="local-6989586621680561266"><span class="annot"><span class="annottext">quot :: Twain b a -&gt; Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">quot</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Twain b a -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">quot</span></a></span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span>  </span><span id="local-6989586621680561264"><span class="annot"><span class="annottext">rem :: Twain b a -&gt; Twain b a -&gt; Twain b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">rem</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Twain b a -&gt; Twain b a -&gt; Twain b a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">rem</span></a></span><span>
+</span><span id="line-132"></span><span>
+</span><span id="line-133"></span><span>  </span><span id="local-6989586621680561262"><span class="annot"><span class="annottext">quotRem :: Twain b a -&gt; Twain b a -&gt; (Twain b a, Twain b a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">quotRem</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Twain b a -&gt; Twain b (a, a))
+ -&gt; Twain b a -&gt; (Twain b a, Twain b a))
+-&gt; (Twain b a -&gt; Twain b a -&gt; Twain b (a, a))
+-&gt; Twain b a
+-&gt; Twain b a
+-&gt; (Twain b a, Twain b a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Twain b (a, a) -&gt; (Twain b a, Twain b a))
+-&gt; (Twain b a -&gt; Twain b (a, a))
+-&gt; Twain b a
+-&gt; (Twain b a, Twain b a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Twain b (a, a) -&gt; (Twain b a, Twain b a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Data.Functor.Couple.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a -&gt; a -&gt; (a, a)) -&gt; Twain b a -&gt; Twain b a -&gt; Twain b (a, a)
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; (a, a)
+forall a. Integral a =&gt; a -&gt; a -&gt; (a, a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">quotRem</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-134"></span><span>
+</span><span id="line-135"></span><span>  </span><span id="local-6989586621680561259"><span class="annot"><span class="annottext">toInteger :: Twain b a -&gt; Integer
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toInteger</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Integer
+forall a. Integral a =&gt; a -&gt; Integer
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toInteger</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Integer) -&gt; (Twain b a -&gt; a) -&gt; Twain b a -&gt; Integer
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Twain b a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span></span><span>
+</span><span id="line-136"></span><span>
+</span><span id="line-137"></span><span id="local-6989586621680561257"><span id="local-6989586621680561258"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561258"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561257"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561258"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561257"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-138"></span><span>  </span><span id="local-6989586621680561252"><span class="annot"><span class="annottext">toRational :: Twain b a -&gt; Rational
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toRational</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Rational
+forall a. Real a =&gt; a -&gt; Rational
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toRational</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Rational) -&gt; (Twain b a -&gt; a) -&gt; Twain b a -&gt; Rational
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Twain b a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span></span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span id="local-6989586621680561250"><span id="local-6989586621680561251"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561239"><span id="local-6989586621680561241"><span id="local-6989586621680561243"><span id="local-6989586621680561245"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561251"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">RealFrac</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561250"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">RealFrac</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561251"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561250"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-141"></span><span>  </span><span id="local-6989586621680561237"><span class="annot"><span class="annottext">properFraction :: Twain b a -&gt; (b, Twain b a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">properFraction</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Twain b b -&gt; b) -&gt; (Twain b b, Twain b a) -&gt; (b, Twain b a)
+forall (p :: * -&gt; * -&gt; *) a b c.
+Bifunctor p =&gt;
+(a -&gt; b) -&gt; p a c -&gt; p b c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="annot"><span class="annottext">Twain b b -&gt; b
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span><span> </span><span class="annot"><span class="annottext">((Twain b b, Twain b a) -&gt; (b, Twain b a))
+-&gt; (Twain b a -&gt; (Twain b b, Twain b a))
+-&gt; Twain b a
+-&gt; (b, Twain b a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Twain b (b, a) -&gt; (Twain b b, Twain b a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Data.Functor.Couple.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(Twain b (b, a) -&gt; (Twain b b, Twain b a))
+-&gt; (Twain b a -&gt; Twain b (b, a))
+-&gt; Twain b a
+-&gt; (Twain b b, Twain b a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (b, a)) -&gt; Twain b a -&gt; Twain b (b, a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (b, a)
+forall a b. (RealFrac a, Integral b) =&gt; a -&gt; (b, a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">properFraction</span></a></span></span></span><span>
+</span><span id="line-142"></span><span>
+</span><span id="line-143"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-144"></span><span class="hs-comment">-- A variant of pair/writer with lifted instances for the numeric classes, using 'Applicative'.</span><span>
+</span><span id="line-145"></span><span class="hs-keyword">newtype</span><span> </span><span id="Couple"><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-var">Couple</span></a></span></span><span> </span><span id="local-6989586621680561595"><span class="annot"><a href="#local-6989586621680561595"><span class="hs-identifier hs-type">b</span></a></span></span><span> </span><span id="local-6989586621680561594"><span class="annot"><a href="#local-6989586621680561594"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Couple"><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-var">Couple</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getCouple"><span class="annot"><span class="annottext">Couple b a -&gt; (b, a)
+</span><a href="Data.Functor.Couple.html#getCouple"><span class="hs-identifier hs-var hs-var">getCouple</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680561595"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680561594"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">}</span><span>
+</span><span id="line-146"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680561227"><span id="local-6989586621680561229"><span id="local-6989586621680561231"><span class="annot"><span class="annottext">Int -&gt; Couple b a -&gt; ShowS
+[Couple b a] -&gt; ShowS
+Couple b a -&gt; String
+(Int -&gt; Couple b a -&gt; ShowS)
+-&gt; (Couple b a -&gt; String)
+-&gt; ([Couple b a] -&gt; ShowS)
+-&gt; Show (Couple b a)
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+forall b a. (Show b, Show a) =&gt; Int -&gt; Couple b a -&gt; ShowS
+forall b a. (Show b, Show a) =&gt; [Couple b a] -&gt; ShowS
+forall b a. (Show b, Show a) =&gt; Couple b a -&gt; String
+showList :: [Couple b a] -&gt; ShowS
+$cshowList :: forall b a. (Show b, Show a) =&gt; [Couple b a] -&gt; ShowS
+show :: Couple b a -&gt; String
+$cshow :: forall b a. (Show b, Show a) =&gt; Couple b a -&gt; String
+showsPrec :: Int -&gt; Couple b a -&gt; ShowS
+$cshowsPrec :: forall b a. (Show b, Show a) =&gt; Int -&gt; Couple b a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561223"><span id="local-6989586621680561225"><span class="annot"><span class="annottext">a -&gt; Couple b b -&gt; Couple b a
+(a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+(forall a b. (a -&gt; b) -&gt; Couple b a -&gt; Couple b b)
+-&gt; (forall a b. a -&gt; Couple b b -&gt; Couple b a)
+-&gt; Functor (Couple b)
+forall a b. a -&gt; Couple b b -&gt; Couple b a
+forall a b. (a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+forall b a b. a -&gt; Couple b b -&gt; Couple b a
+forall b a b. (a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; Couple b b -&gt; Couple b a
+$c&lt;$ :: forall b a b. a -&gt; Couple b b -&gt; Couple b a
+fmap :: (a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+$cfmap :: forall b a b. (a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561189"><span id="local-6989586621680561191"><span id="local-6989586621680561193"><span id="local-6989586621680561195"><span id="local-6989586621680561197"><span id="local-6989586621680561199"><span id="local-6989586621680561201"><span id="local-6989586621680561203"><span id="local-6989586621680561205"><span id="local-6989586621680561207"><span id="local-6989586621680561209"><span id="local-6989586621680561211"><span id="local-6989586621680561213"><span id="local-6989586621680561215"><span id="local-6989586621680561217"><span id="local-6989586621680561219"><span id="local-6989586621680561221"><span class="annot"><span class="annottext">a -&gt; Couple b a -&gt; Bool
+Couple b m -&gt; m
+Couple b a -&gt; [a]
+Couple b a -&gt; Bool
+Couple b a -&gt; Int
+Couple b a -&gt; a
+Couple b a -&gt; a
+Couple b a -&gt; a
+Couple b a -&gt; a
+(a -&gt; m) -&gt; Couple b a -&gt; m
+(a -&gt; m) -&gt; Couple b a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+(a -&gt; a -&gt; a) -&gt; Couple b a -&gt; a
+(a -&gt; a -&gt; a) -&gt; Couple b a -&gt; a
+(forall m. Monoid m =&gt; Couple b m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Couple b a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Couple b a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Couple b a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Couple b a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Couple b a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Couple b a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Couple b a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Couple b a -&gt; a)
+-&gt; (forall a. Couple b a -&gt; [a])
+-&gt; (forall a. Couple b a -&gt; Bool)
+-&gt; (forall a. Couple b a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; Couple b a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; Couple b a -&gt; a)
+-&gt; (forall a. Ord a =&gt; Couple b a -&gt; a)
+-&gt; (forall a. Num a =&gt; Couple b a -&gt; a)
+-&gt; (forall a. Num a =&gt; Couple b a -&gt; a)
+-&gt; Foldable (Couple b)
+forall a. Eq a =&gt; a -&gt; Couple b a -&gt; Bool
+forall a. Num a =&gt; Couple b a -&gt; a
+forall a. Ord a =&gt; Couple b a -&gt; a
+forall m. Monoid m =&gt; Couple b m -&gt; m
+forall a. Couple b a -&gt; Bool
+forall a. Couple b a -&gt; Int
+forall a. Couple b a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; Couple b a -&gt; a
+forall b a. Eq a =&gt; a -&gt; Couple b a -&gt; Bool
+forall b a. Num a =&gt; Couple b a -&gt; a
+forall b a. Ord a =&gt; Couple b a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Couple b a -&gt; m
+forall b m. Monoid m =&gt; Couple b m -&gt; m
+forall b a. Couple b a -&gt; Bool
+forall b a. Couple b a -&gt; Int
+forall b a. Couple b a -&gt; [a]
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+forall b a. (a -&gt; a -&gt; a) -&gt; Couple b a -&gt; a
+forall b m a. Monoid m =&gt; (a -&gt; m) -&gt; Couple b a -&gt; m
+forall b b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+forall b a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: Couple b a -&gt; a
+$cproduct :: forall b a. Num a =&gt; Couple b a -&gt; a
+sum :: Couple b a -&gt; a
+$csum :: forall b a. Num a =&gt; Couple b a -&gt; a
+minimum :: Couple b a -&gt; a
+$cminimum :: forall b a. Ord a =&gt; Couple b a -&gt; a
+maximum :: Couple b a -&gt; a
+$cmaximum :: forall b a. Ord a =&gt; Couple b a -&gt; a
+elem :: a -&gt; Couple b a -&gt; Bool
+$celem :: forall b a. Eq a =&gt; a -&gt; Couple b a -&gt; Bool
+length :: Couple b a -&gt; Int
+$clength :: forall b a. Couple b a -&gt; Int
+null :: Couple b a -&gt; Bool
+$cnull :: forall b a. Couple b a -&gt; Bool
+toList :: Couple b a -&gt; [a]
+$ctoList :: forall b a. Couple b a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; Couple b a -&gt; a
+$cfoldl1 :: forall b a. (a -&gt; a -&gt; a) -&gt; Couple b a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; Couple b a -&gt; a
+$cfoldr1 :: forall b a. (a -&gt; a -&gt; a) -&gt; Couple b a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+$cfoldl' :: forall b b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+$cfoldl :: forall b b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+$cfoldr' :: forall b a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+$cfoldr :: forall b a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Couple b a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; Couple b a -&gt; m
+$cfoldMap' :: forall b m a. Monoid m =&gt; (a -&gt; m) -&gt; Couple b a -&gt; m
+foldMap :: (a -&gt; m) -&gt; Couple b a -&gt; m
+$cfoldMap :: forall b m a. Monoid m =&gt; (a -&gt; m) -&gt; Couple b a -&gt; m
+fold :: Couple b m -&gt; m
+$cfold :: forall b m. Monoid m =&gt; Couple b m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561179"><span id="local-6989586621680561181"><span id="local-6989586621680561183"><span id="local-6989586621680561185"><span class="annot"><span class="annottext">Functor (Couple b)
+Foldable (Couple b)
+(Functor (Couple b), Foldable (Couple b)) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; Couple b a -&gt; f (Couple b b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    Couple b (f a) -&gt; f (Couple b a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; Couple b a -&gt; m (Couple b b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    Couple b (m a) -&gt; m (Couple b a))
+-&gt; Traversable (Couple b)
+(a -&gt; f b) -&gt; Couple b a -&gt; f (Couple b b)
+forall b. Functor (Couple b)
+forall b. Foldable (Couple b)
+forall b (m :: * -&gt; *) a.
+Monad m =&gt;
+Couple b (m a) -&gt; m (Couple b a)
+forall b (f :: * -&gt; *) a.
+Applicative f =&gt;
+Couple b (f a) -&gt; f (Couple b a)
+forall b (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Couple b a -&gt; m (Couple b b)
+forall b (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Couple b a -&gt; f (Couple b b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; Couple b (m a) -&gt; m (Couple b a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+Couple b (f a) -&gt; f (Couple b a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Couple b a -&gt; m (Couple b b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Couple b a -&gt; f (Couple b b)
+sequence :: Couple b (m a) -&gt; m (Couple b a)
+$csequence :: forall b (m :: * -&gt; *) a.
+Monad m =&gt;
+Couple b (m a) -&gt; m (Couple b a)
+mapM :: (a -&gt; m b) -&gt; Couple b a -&gt; m (Couple b b)
+$cmapM :: forall b (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Couple b a -&gt; m (Couple b b)
+sequenceA :: Couple b (f a) -&gt; f (Couple b a)
+$csequenceA :: forall b (f :: * -&gt; *) a.
+Applicative f =&gt;
+Couple b (f a) -&gt; f (Couple b a)
+traverse :: (a -&gt; f b) -&gt; Couple b a -&gt; f (Couple b b)
+$ctraverse :: forall b (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Couple b a -&gt; f (Couple b b)
+$cp2Traversable :: forall b. Foldable (Couple b)
+$cp1Traversable :: forall b. Functor (Couple b)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561168"><span id="local-6989586621680561170"><span id="local-6989586621680561172"><span id="local-6989586621680561174"><span id="local-6989586621680561176"><span class="annot"><span class="annottext">Functor (Couple b)
+a -&gt; Couple b a
+Functor (Couple b) =&gt;
+(forall a. a -&gt; Couple b a)
+-&gt; (forall a b. Couple b (a -&gt; b) -&gt; Couple b a -&gt; Couple b b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; Couple b a -&gt; Couple b b -&gt; Couple b c)
+-&gt; (forall a b. Couple b a -&gt; Couple b b -&gt; Couple b b)
+-&gt; (forall a b. Couple b a -&gt; Couple b b -&gt; Couple b a)
+-&gt; Applicative (Couple b)
+Couple b a -&gt; Couple b b -&gt; Couple b b
+Couple b a -&gt; Couple b b -&gt; Couple b a
+Couple b (a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+(a -&gt; b -&gt; c) -&gt; Couple b a -&gt; Couple b b -&gt; Couple b c
+forall a. a -&gt; Couple b a
+forall b. Monoid b =&gt; Functor (Couple b)
+forall b a. Monoid b =&gt; a -&gt; Couple b a
+forall b a b. Monoid b =&gt; Couple b a -&gt; Couple b b -&gt; Couple b a
+forall b a b. Monoid b =&gt; Couple b a -&gt; Couple b b -&gt; Couple b b
+forall b a b.
+Monoid b =&gt;
+Couple b (a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+forall b a b c.
+Monoid b =&gt;
+(a -&gt; b -&gt; c) -&gt; Couple b a -&gt; Couple b b -&gt; Couple b c
+forall a b. Couple b a -&gt; Couple b b -&gt; Couple b a
+forall a b. Couple b a -&gt; Couple b b -&gt; Couple b b
+forall a b. Couple b (a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+forall a b c.
+(a -&gt; b -&gt; c) -&gt; Couple b a -&gt; Couple b b -&gt; Couple b c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: Couple b a -&gt; Couple b b -&gt; Couple b a
+$c&lt;* :: forall b a b. Monoid b =&gt; Couple b a -&gt; Couple b b -&gt; Couple b a
+*&gt; :: Couple b a -&gt; Couple b b -&gt; Couple b b
+$c*&gt; :: forall b a b. Monoid b =&gt; Couple b a -&gt; Couple b b -&gt; Couple b b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; Couple b a -&gt; Couple b b -&gt; Couple b c
+$cliftA2 :: forall b a b c.
+Monoid b =&gt;
+(a -&gt; b -&gt; c) -&gt; Couple b a -&gt; Couple b b -&gt; Couple b c
+&lt;*&gt; :: Couple b (a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+$c&lt;*&gt; :: forall b a b.
+Monoid b =&gt;
+Couple b (a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+pure :: a -&gt; Couple b a
+$cpure :: forall b a. Monoid b =&gt; a -&gt; Couple b a
+$cp1Applicative :: forall b. Monoid b =&gt; Functor (Couple b)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561161"><span id="local-6989586621680561163"><span id="local-6989586621680561165"><span class="annot"><span class="annottext">Applicative (Couple b)
+a -&gt; Couple b a
+Applicative (Couple b) =&gt;
+(forall a b. Couple b a -&gt; (a -&gt; Couple b b) -&gt; Couple b b)
+-&gt; (forall a b. Couple b a -&gt; Couple b b -&gt; Couple b b)
+-&gt; (forall a. a -&gt; Couple b a)
+-&gt; Monad (Couple b)
+Couple b a -&gt; (a -&gt; Couple b b) -&gt; Couple b b
+Couple b a -&gt; Couple b b -&gt; Couple b b
+forall a. a -&gt; Couple b a
+forall b. Monoid b =&gt; Applicative (Couple b)
+forall b a. Monoid b =&gt; a -&gt; Couple b a
+forall b a b. Monoid b =&gt; Couple b a -&gt; Couple b b -&gt; Couple b b
+forall b a b.
+Monoid b =&gt;
+Couple b a -&gt; (a -&gt; Couple b b) -&gt; Couple b b
+forall a b. Couple b a -&gt; Couple b b -&gt; Couple b b
+forall a b. Couple b a -&gt; (a -&gt; Couple b b) -&gt; Couple b b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; Couple b a
+$creturn :: forall b a. Monoid b =&gt; a -&gt; Couple b a
+&gt;&gt; :: Couple b a -&gt; Couple b b -&gt; Couple b b
+$c&gt;&gt; :: forall b a b. Monoid b =&gt; Couple b a -&gt; Couple b b -&gt; Couple b b
+&gt;&gt;= :: Couple b a -&gt; (a -&gt; Couple b b) -&gt; Couple b b
+$c&gt;&gt;= :: forall b a b.
+Monoid b =&gt;
+Couple b a -&gt; (a -&gt; Couple b b) -&gt; Couple b b
+$cp1Monad :: forall b. Monoid b =&gt; Applicative (Couple b)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561154"><span id="local-6989586621680561156"><span id="local-6989586621680561158"><span class="annot"><span class="annottext">Functor (Couple b)
+Functor (Couple b) =&gt;
+(forall a. Couple b a -&gt; a)
+-&gt; (forall a. Couple b a -&gt; Couple b (Couple b a))
+-&gt; (forall a b. (Couple b a -&gt; b) -&gt; Couple b a -&gt; Couple b b)
+-&gt; Comonad (Couple b)
+Couple b a -&gt; a
+Couple b a -&gt; Couple b (Couple b a)
+(Couple b a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+forall b. Functor (Couple b)
+forall a. Couple b a -&gt; a
+forall a. Couple b a -&gt; Couple b (Couple b a)
+forall b a. Couple b a -&gt; a
+forall b a. Couple b a -&gt; Couple b (Couple b a)
+forall a b. (Couple b a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+forall b a b. (Couple b a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (Couple b a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+$cextend :: forall b a b. (Couple b a -&gt; b) -&gt; Couple b a -&gt; Couple b b
+duplicate :: Couple b a -&gt; Couple b (Couple b a)
+$cduplicate :: forall b a. Couple b a -&gt; Couple b (Couple b a)
+extract :: Couple b a -&gt; a
+$cextract :: forall b a. Couple b a -&gt; a
+$cp1Comonad :: forall b. Functor (Couple b)
+</span><a href="#local-6989586621680561154"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561148"><span id="local-6989586621680561150"><span id="local-6989586621680561152"><span class="annot"><span class="annottext">b -&gt; Couple b a -&gt; Couple b a
+NonEmpty (Couple b a) -&gt; Couple b a
+Couple b a -&gt; Couple b a -&gt; Couple b a
+(Couple b a -&gt; Couple b a -&gt; Couple b a)
+-&gt; (NonEmpty (Couple b a) -&gt; Couple b a)
+-&gt; (forall b. Integral b =&gt; b -&gt; Couple b a -&gt; Couple b a)
+-&gt; Semigroup (Couple b a)
+forall b. Integral b =&gt; b -&gt; Couple b a -&gt; Couple b a
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+forall b a.
+(Semigroup b, Semigroup a) =&gt;
+NonEmpty (Couple b a) -&gt; Couple b a
+forall b a.
+(Semigroup b, Semigroup a) =&gt;
+Couple b a -&gt; Couple b a -&gt; Couple b a
+forall b a b.
+(Semigroup b, Semigroup a, Integral b) =&gt;
+b -&gt; Couple b a -&gt; Couple b a
+stimes :: b -&gt; Couple b a -&gt; Couple b a
+$cstimes :: forall b a b.
+(Semigroup b, Semigroup a, Integral b) =&gt;
+b -&gt; Couple b a -&gt; Couple b a
+sconcat :: NonEmpty (Couple b a) -&gt; Couple b a
+$csconcat :: forall b a.
+(Semigroup b, Semigroup a) =&gt;
+NonEmpty (Couple b a) -&gt; Couple b a
+&lt;&gt; :: Couple b a -&gt; Couple b a -&gt; Couple b a
+$c&lt;&gt; :: forall b a.
+(Semigroup b, Semigroup a) =&gt;
+Couple b a -&gt; Couple b a -&gt; Couple b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561141"><span id="local-6989586621680561143"><span id="local-6989586621680561145"><span class="annot"><span class="annottext">Semigroup (Couple b a)
+Couple b a
+Semigroup (Couple b a) =&gt;
+Couple b a
+-&gt; (Couple b a -&gt; Couple b a -&gt; Couple b a)
+-&gt; ([Couple b a] -&gt; Couple b a)
+-&gt; Monoid (Couple b a)
+[Couple b a] -&gt; Couple b a
+Couple b a -&gt; Couple b a -&gt; Couple b a
+forall a.
+Semigroup a =&gt;
+a -&gt; (a -&gt; a -&gt; a) -&gt; ([a] -&gt; a) -&gt; Monoid a
+forall b a. (Monoid b, Monoid a) =&gt; Semigroup (Couple b a)
+forall b a. (Monoid b, Monoid a) =&gt; Couple b a
+forall b a. (Monoid b, Monoid a) =&gt; [Couple b a] -&gt; Couple b a
+forall b a.
+(Monoid b, Monoid a) =&gt;
+Couple b a -&gt; Couple b a -&gt; Couple b a
+mconcat :: [Couple b a] -&gt; Couple b a
+$cmconcat :: forall b a. (Monoid b, Monoid a) =&gt; [Couple b a] -&gt; Couple b a
+mappend :: Couple b a -&gt; Couple b a -&gt; Couple b a
+$cmappend :: forall b a.
+(Monoid b, Monoid a) =&gt;
+Couple b a -&gt; Couple b a -&gt; Couple b a
+mempty :: Couple b a
+$cmempty :: forall b a. (Monoid b, Monoid a) =&gt; Couple b a
+$cp1Monoid :: forall b a. (Monoid b, Monoid a) =&gt; Semigroup (Couple b a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span id="local-6989586621680561139"><span id="local-6989586621680561140"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561140"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561139"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561140"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561139"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680561140"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680561139"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span>  </span><span id="local-6989586621680561137"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (Couple b a)) (f (Unwrapped (Couple b a)))
+-&gt; p (Couple b a) (f (Couple b a))
+</span><a href="#local-6989586621680561137"><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple b a -&gt; (b, a))
+-&gt; ((b, a) -&gt; Couple b a)
+-&gt; Iso (Couple b a) (Couple b a) (b, a) (b, a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">Couple b a -&gt; (b, a)
+forall b a. Couple b a -&gt; (b, a)
+</span><a href="Data.Functor.Couple.html#getCouple"><span class="hs-identifier hs-var hs-var">getCouple</span></a></span><span> </span><span class="annot"><span class="annottext">(b, a) -&gt; Couple b a
+forall b a. (b, a) -&gt; Couple b a
+</span><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-var">Couple</span></a></span></span></span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span id="local-6989586621680561134"><span id="local-6989586621680561135"><span id="local-6989586621680561136"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561136"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561135"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561136"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561134"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-155"></span><span>
+</span><span id="line-156"></span><span id="local-6989586621680561131"><span id="local-6989586621680561132"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561126"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561132"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561131"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561132"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561131"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-157"></span><span>
+</span><span id="line-158"></span><span>  </span><span id="local-6989586621680561122"><span class="annot"><span class="annottext">+ :: Couple b a -&gt; Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561122"><span class="hs-operator hs-var hs-var hs-var hs-var">(+)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Couple b a -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(+)</span></a></span><span>
+</span><span id="line-159"></span><span>
+</span><span id="line-160"></span><span>  </span><span id="local-6989586621680561121"><span class="annot"><span class="annottext">* :: Couple b a -&gt; Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561121"><span class="hs-operator hs-var hs-var hs-var hs-var">(*)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Couple b a -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(*)</span></a></span><span>
+</span><span id="line-161"></span><span>
+</span><span id="line-162"></span><span>  </span><span id="local-6989586621680561120"><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="hs-special">)</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Couple b a -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="hs-special">)</span><span>
+</span><span id="line-163"></span><span>
+</span><span id="line-164"></span><span>  </span><span id="local-6989586621680561119"><span class="annot"><span class="annottext">abs :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561119"><span class="hs-identifier hs-var hs-var hs-var hs-var">abs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">abs</span></a></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span>  </span><span id="local-6989586621680561118"><span class="annot"><span class="annottext">signum :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561118"><span class="hs-identifier hs-var hs-var hs-var hs-var">signum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">signum</span></a></span><span>
+</span><span id="line-167"></span><span>
+</span><span id="line-168"></span><span>  </span><span id="local-6989586621680561117"><span class="annot"><span class="annottext">fromInteger :: Integer -&gt; Couple b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromInteger</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Couple b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Couple b a) -&gt; (Integer -&gt; a) -&gt; Integer -&gt; Couple b a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; a
+forall a. Num a =&gt; Integer -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromInteger</span></a></span></span></span><span>
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span id="local-6989586621680561115"><span id="local-6989586621680561116"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561112"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561116"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561115"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561116"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561115"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-171"></span><span>
+</span><span id="line-172"></span><span>  </span><span id="local-6989586621680561109"><span class="annot"><span class="annottext">recip :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561109"><span class="hs-identifier hs-var hs-var hs-var hs-var">recip</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Fractional a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">recip</span></a></span><span>
+</span><span id="line-173"></span><span>
+</span><span id="line-174"></span><span>  </span><span id="local-6989586621680561108"><span class="annot"><span class="annottext">fromRational :: Rational -&gt; Couple b a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromRational</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Couple b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Couple b a) -&gt; (Rational -&gt; a) -&gt; Rational -&gt; Couple b a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Rational -&gt; a
+forall a. Fractional a =&gt; Rational -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromRational</span></a></span></span></span><span>
+</span><span id="line-175"></span><span>
+</span><span id="line-176"></span><span id="local-6989586621680561106"><span id="local-6989586621680561107"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561075"><span id="local-6989586621680561077"><span id="local-6989586621680561079"><span id="local-6989586621680561081"><span id="local-6989586621680561086"><span id="local-6989586621680561093"><span id="local-6989586621680561097"><span id="local-6989586621680561099"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561107"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561106"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561107"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561106"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-177"></span><span>
+</span><span id="line-178"></span><span>  </span><span id="local-6989586621680561074"><span class="annot"><span class="annottext">pi :: Couple b a
+</span><a href="#local-6989586621680561074"><span class="hs-identifier hs-var hs-var hs-var hs-var">pi</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Couple b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Floating a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pi</span></a></span><span>
+</span><span id="line-179"></span><span>
+</span><span id="line-180"></span><span>  </span><span id="local-6989586621680561073"><span class="annot"><span class="annottext">sqrt :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561073"><span class="hs-identifier hs-var hs-var hs-var hs-var">sqrt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">sqrt</span></a></span><span>
+</span><span id="line-181"></span><span>
+</span><span id="line-182"></span><span>  </span><span id="local-6989586621680561072"><span class="annot"><span class="annottext">exp :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561072"><span class="hs-identifier hs-var hs-var hs-var hs-var">exp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">exp</span></a></span><span>
+</span><span id="line-183"></span><span>
+</span><span id="line-184"></span><span>  </span><span id="local-6989586621680561071"><span class="annot"><span class="annottext">log :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561071"><span class="hs-identifier hs-var hs-var hs-var hs-var">log</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">log</span></a></span><span>
+</span><span id="line-185"></span><span>
+</span><span id="line-186"></span><span>  </span><span id="local-6989586621680561070"><span class="annot"><span class="annottext">sin :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561070"><span class="hs-identifier hs-var hs-var hs-var hs-var">sin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">sin</span></a></span><span>
+</span><span id="line-187"></span><span>
+</span><span id="line-188"></span><span>  </span><span id="local-6989586621680561069"><span class="annot"><span class="annottext">cos :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561069"><span class="hs-identifier hs-var hs-var hs-var hs-var">cos</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">cos</span></a></span><span>
+</span><span id="line-189"></span><span>
+</span><span id="line-190"></span><span>  </span><span id="local-6989586621680561068"><span class="annot"><span class="annottext">asin :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561068"><span class="hs-identifier hs-var hs-var hs-var hs-var">asin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">asin</span></a></span><span>
+</span><span id="line-191"></span><span>
+</span><span id="line-192"></span><span>  </span><span id="local-6989586621680561067"><span class="annot"><span class="annottext">atan :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561067"><span class="hs-identifier hs-var hs-var hs-var hs-var">atan</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">atan</span></a></span><span>
+</span><span id="line-193"></span><span>
+</span><span id="line-194"></span><span>  </span><span id="local-6989586621680561066"><span class="annot"><span class="annottext">acos :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561066"><span class="hs-identifier hs-var hs-var hs-var hs-var">acos</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">acos</span></a></span><span>
+</span><span id="line-195"></span><span>
+</span><span id="line-196"></span><span>  </span><span id="local-6989586621680561065"><span class="annot"><span class="annottext">sinh :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561065"><span class="hs-identifier hs-var hs-var hs-var hs-var">sinh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">sinh</span></a></span><span>
+</span><span id="line-197"></span><span>
+</span><span id="line-198"></span><span>  </span><span id="local-6989586621680561064"><span class="annot"><span class="annottext">cosh :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561064"><span class="hs-identifier hs-var hs-var hs-var hs-var">cosh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">cosh</span></a></span><span>
+</span><span id="line-199"></span><span>
+</span><span id="line-200"></span><span>  </span><span id="local-6989586621680561063"><span class="annot"><span class="annottext">asinh :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561063"><span class="hs-identifier hs-var hs-var hs-var hs-var">asinh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">asinh</span></a></span><span>
+</span><span id="line-201"></span><span>
+</span><span id="line-202"></span><span>  </span><span id="local-6989586621680561062"><span class="annot"><span class="annottext">atanh :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561062"><span class="hs-identifier hs-var hs-var hs-var hs-var">atanh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">atanh</span></a></span><span>
+</span><span id="line-203"></span><span>
+</span><span id="line-204"></span><span>  </span><span id="local-6989586621680561061"><span class="annot"><span class="annottext">acosh :: Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680561061"><span class="hs-identifier hs-var hs-var hs-var hs-var">acosh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">acos</span></a></span></span></span><span>
+</span><span id="line-205"></span><span>
+</span><span id="line-206"></span><span id="local-6989586621680561059"><span id="local-6989586621680561060"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561045"><span id="local-6989586621680561047"><span id="local-6989586621680561049"><span id="local-6989586621680561051"><span id="local-6989586621680561055"><span id="local-6989586621680561057"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561060"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561059"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561060"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561059"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-207"></span><span>
+</span><span id="line-208"></span><span>  </span><span id="local-6989586621680561044"><span class="annot"><span class="annottext">toEnum :: Int -&gt; Couple b a
+</span><a href="#local-6989586621680561044"><span class="hs-identifier hs-var hs-var hs-var hs-var">toEnum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Couple b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Couple b a) -&gt; (Int -&gt; a) -&gt; Int -&gt; Couple b a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a
+forall a. Enum a =&gt; Int -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toEnum</span></a></span><span>
+</span><span id="line-209"></span><span>
+</span><span id="line-210"></span><span>  </span><span id="local-6989586621680561043"><span class="annot"><span class="annottext">fromEnum :: Couple b a -&gt; Int
+</span><a href="#local-6989586621680561043"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromEnum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromEnum</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Int) -&gt; (Couple b a -&gt; a) -&gt; Couple b a -&gt; Int
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Couple b a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span></span><span>
+</span><span id="line-211"></span><span>
+</span><span id="line-212"></span><span id="local-6989586621680561041"><span id="local-6989586621680561042"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561042"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561041"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561042"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561041"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-213"></span><span>
+</span><span id="line-214"></span><span>  </span><span id="local-6989586621680561038"><span class="annot"><span class="annottext">minBound :: Couple b a
+</span><a href="#local-6989586621680561038"><span class="hs-identifier hs-var hs-var hs-var hs-var">minBound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Couple b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">minBound</span></a></span><span>
+</span><span id="line-215"></span><span>
+</span><span id="line-216"></span><span>  </span><span id="local-6989586621680561037"><span class="annot"><span class="annottext">maxBound :: Couple b a
+</span><a href="#local-6989586621680561037"><span class="hs-identifier hs-var hs-var hs-var hs-var">maxBound</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Couple b a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Bounded a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">maxBound</span></a></span></span></span><span>
+</span><span id="line-217"></span><span>
+</span><span id="line-218"></span><span id="local-6989586621680561035"><span id="local-6989586621680561036"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561032"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561036"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561035"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561036"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561035"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-219"></span><span>  </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680561031"><span class="annot"><span class="annottext">b :: b
+</span><a href="#local-6989586621680561031"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561030"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680561030"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621680561029"><span class="annot"><span class="annottext">== :: Couple b a -&gt; Couple b a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var hs-var hs-var hs-var">==</span></a></span></span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680561028"><span class="annot"><span class="annottext">b' :: b
+</span><a href="#local-6989586621680561028"><span class="hs-identifier hs-var">b'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561027"><span class="annot"><span class="annottext">a' :: a
+</span><a href="#local-6989586621680561027"><span class="hs-identifier hs-var">a'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680561031"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680561030"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(b, a) -&gt; (b, a) -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680561028"><span class="hs-identifier hs-var">b'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680561027"><span class="hs-identifier hs-var">a'</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-220"></span><span>
+</span><span id="line-221"></span><span id="local-6989586621680561025"><span id="local-6989586621680561026"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680561011"><span id="local-6989586621680561013"><span id="local-6989586621680561015"><span id="local-6989586621680561017"><span id="local-6989586621680561020"><span id="local-6989586621680561022"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561026"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561025"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561026"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561025"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-222"></span><span>  </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680561010"><span class="annot"><span class="annottext">b :: b
+</span><a href="#local-6989586621680561010"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561009"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680561009"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680561008"><span class="annot"><span class="annottext">&lt;= :: Couple b a -&gt; Couple b a -&gt; Bool
+</span><a href="#local-6989586621680561008"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;=</span></a></span></span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680561007"><span class="annot"><span class="annottext">b' :: b
+</span><a href="#local-6989586621680561007"><span class="hs-identifier hs-var">b'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680561006"><span class="annot"><span class="annottext">a' :: a
+</span><a href="#local-6989586621680561006"><span class="hs-identifier hs-var">a'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680561010"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680561009"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(b, a) -&gt; (b, a) -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680561007"><span class="hs-identifier hs-var">b'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680561006"><span class="hs-identifier hs-var">a'</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-223"></span><span>
+</span><span id="line-224"></span><span id="local-6989586621680561004"><span id="local-6989586621680561005"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680560993"><span id="local-6989586621680560996"><span id="local-6989586621680560998"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561005"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561005"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561004"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561004"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561004"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561005"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561004"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-225"></span><span>
+</span><span id="line-226"></span><span>  </span><span id="local-6989586621680560991"><span class="annot"><span class="annottext">quot :: Couple b a -&gt; Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680560991"><span class="hs-identifier hs-var hs-var hs-var hs-var">quot</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Couple b a -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">quot</span></a></span><span>
+</span><span id="line-227"></span><span>
+</span><span id="line-228"></span><span>  </span><span id="local-6989586621680560990"><span class="annot"><span class="annottext">rem :: Couple b a -&gt; Couple b a -&gt; Couple b a
+</span><a href="#local-6989586621680560990"><span class="hs-identifier hs-var hs-var hs-var hs-var">rem</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Couple b a -&gt; Couple b a -&gt; Couple b a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">rem</span></a></span><span>
+</span><span id="line-229"></span><span>
+</span><span id="line-230"></span><span>  </span><span id="local-6989586621680560989"><span class="annot"><span class="annottext">quotRem :: Couple b a -&gt; Couple b a -&gt; (Couple b a, Couple b a)
+</span><a href="#local-6989586621680560989"><span class="hs-identifier hs-var hs-var hs-var hs-var">quotRem</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Couple b a -&gt; Couple b (a, a))
+ -&gt; Couple b a -&gt; (Couple b a, Couple b a))
+-&gt; (Couple b a -&gt; Couple b a -&gt; Couple b (a, a))
+-&gt; Couple b a
+-&gt; Couple b a
+-&gt; (Couple b a, Couple b a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Couple b (a, a) -&gt; (Couple b a, Couple b a))
+-&gt; (Couple b a -&gt; Couple b (a, a))
+-&gt; Couple b a
+-&gt; (Couple b a, Couple b a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Couple b (a, a) -&gt; (Couple b a, Couple b a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Data.Functor.Couple.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a -&gt; a -&gt; (a, a)) -&gt; Couple b a -&gt; Couple b a -&gt; Couple b (a, a)
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; (a, a)
+forall a. Integral a =&gt; a -&gt; a -&gt; (a, a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">quotRem</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-231"></span><span>
+</span><span id="line-232"></span><span>  </span><span id="local-6989586621680560988"><span class="annot"><span class="annottext">toInteger :: Couple b a -&gt; Integer
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toInteger</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Integer
+forall a. Integral a =&gt; a -&gt; Integer
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toInteger</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Integer) -&gt; (Couple b a -&gt; a) -&gt; Couple b a -&gt; Integer
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Couple b a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span></span><span>
+</span><span id="line-233"></span><span>
+</span><span id="line-234"></span><span id="local-6989586621680560986"><span id="local-6989586621680560987"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560987"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560987"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560986"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560987"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560986"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-235"></span><span>  </span><span id="local-6989586621680560982"><span class="annot"><span class="annottext">toRational :: Couple b a -&gt; Rational
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toRational</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Rational
+forall a. Real a =&gt; a -&gt; Rational
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toRational</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Rational) -&gt; (Couple b a -&gt; a) -&gt; Couple b a -&gt; Rational
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Couple b a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span></span><span>
+</span><span id="line-236"></span><span>
+</span><span id="line-237"></span><span id="local-6989586621680560980"><span id="local-6989586621680560981"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680560969"><span id="local-6989586621680560971"><span id="local-6989586621680560973"><span id="local-6989586621680560975"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560981"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560981"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">RealFrac</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560980"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">RealFrac</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560981"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560980"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-238"></span><span>  </span><span id="local-6989586621680560968"><span class="annot"><span class="annottext">properFraction :: Couple b a -&gt; (b, Couple b a)
+</span><a href="#local-6989586621680560968"><span class="hs-identifier hs-var hs-var hs-var hs-var">properFraction</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple b b -&gt; b) -&gt; (Couple b b, Couple b a) -&gt; (b, Couple b a)
+forall (p :: * -&gt; * -&gt; *) a b c.
+Bifunctor p =&gt;
+(a -&gt; b) -&gt; p a c -&gt; p b c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="annot"><span class="annottext">Couple b b -&gt; b
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span><span> </span><span class="annot"><span class="annottext">((Couple b b, Couple b a) -&gt; (b, Couple b a))
+-&gt; (Couple b a -&gt; (Couple b b, Couple b a))
+-&gt; Couple b a
+-&gt; (b, Couple b a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Couple b (b, a) -&gt; (Couple b b, Couple b a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="Data.Functor.Couple.html#unzipR"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(Couple b (b, a) -&gt; (Couple b b, Couple b a))
+-&gt; (Couple b a -&gt; Couple b (b, a))
+-&gt; Couple b a
+-&gt; (Couple b b, Couple b a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (b, a)) -&gt; Couple b a -&gt; Couple b (b, a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; (b, a)
+forall a b. (RealFrac a, Integral b) =&gt; a -&gt; (b, a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">properFraction</span></a></span></span></span><span>
+</span><span id="line-239"></span><span>
+</span><span id="line-240"></span><span id="local-6989586621680561690"><span id="local-6989586621680561691"><span id="local-6989586621680561692"><span class="annot"><a href="Data.Functor.Couple.html#unzipR"><span class="hs-identifier hs-type">unzipR</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561692"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680561692"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680561691"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680561690"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680561692"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561691"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680561692"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680561690"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-241"></span><span id="unzipR"><span class="annot"><span class="annottext">unzipR :: f (a, b) -&gt; (f a, f b)
+</span><a href="Data.Functor.Couple.html#unzipR"><span class="hs-identifier hs-var hs-var">unzipR</span></a></span></span><span> </span><span id="local-6989586621680560967"><span class="annot"><span class="annottext">x :: f (a, b)
+</span><a href="#local-6989586621680560967"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((a, b) -&gt; a) -&gt; f (a, b) -&gt; f a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; a
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span> </span><span class="annot"><span class="annottext">f (a, b)
+</span><a href="#local-6989586621680560967"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">((a, b) -&gt; b) -&gt; f (a, b) -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; b
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span> </span><span class="annot"><span class="annottext">f (a, b)
+</span><a href="#local-6989586621680560967"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-242"></span></pre></body></html>

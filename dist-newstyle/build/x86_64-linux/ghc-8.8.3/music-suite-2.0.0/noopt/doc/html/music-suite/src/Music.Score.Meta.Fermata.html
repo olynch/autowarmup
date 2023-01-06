@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_Bvefv8V7NUdDYoLybrIuC0"></span><span class="hs-pragma">{-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE DeriveFoldable #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE DeriveFunctor #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE DeriveTraversable #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-11"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-12"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-20"></span><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012-2014</span><span>
+</span><span id="line-28"></span><span class="hs-comment">--</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-30"></span><span class="hs-comment">--</span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- Portability : non-portable (TF,GNTD)</span><span>
+</span><span id="line-34"></span><span class="hs-comment">--</span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- Provides fermatas.</span><span>
+</span><span id="line-36"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Meta.Fermata</span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Fermata type</span></span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Fermata.html#Fermata"><span class="hs-identifier">Fermata</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Adding fermatas to scores</span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Fermata.html#fermata"><span class="hs-identifier">fermata</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Fermata.html#fermataAt"><span class="hs-identifier">fermataAt</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">view</span></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Plus</span></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Foldable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">F</span></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">List</span></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Map</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Set</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.String</span></a></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Traversable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-60"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-61"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Internal.Util.html"><span class="hs-identifier">Music.Score.Internal.Util</span></a></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.html"><span class="hs-identifier">Music.Score.Meta</span></a></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-65"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html"><span class="hs-identifier">Music.Score.Pitch</span></a></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html"><span class="hs-identifier">Music.Time.Reactive</span></a></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- | Represents a fermata.</span><span>
+</span><span id="line-70"></span><span class="hs-keyword">data</span><span> </span><span id="Fermata"><span class="annot"><a href="Music.Score.Meta.Fermata.html#Fermata"><span class="hs-identifier hs-var">Fermata</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="StandardFermata"><span class="annot"><a href="Music.Score.Meta.Fermata.html#StandardFermata"><span class="hs-identifier hs-var">StandardFermata</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="LongFermata"><span class="annot"><a href="Music.Score.Meta.Fermata.html#LongFermata"><span class="hs-identifier hs-var">LongFermata</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="VeryLongFermata"><span class="annot"><a href="Music.Score.Meta.Fermata.html#VeryLongFermata"><span class="hs-identifier hs-var">VeryLongFermata</span></a></span></span><span>
+</span><span id="line-71"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680595192"><span id="local-6989586621680595194"><span class="annot"><span class="annottext">Fermata -&gt; Fermata -&gt; Bool
+(Fermata -&gt; Fermata -&gt; Bool)
+-&gt; (Fermata -&gt; Fermata -&gt; Bool) -&gt; Eq Fermata
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Fermata -&gt; Fermata -&gt; Bool
+$c/= :: Fermata -&gt; Fermata -&gt; Bool
+== :: Fermata -&gt; Fermata -&gt; Bool
+$c== :: Fermata -&gt; Fermata -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680595176"><span id="local-6989586621680595178"><span id="local-6989586621680595180"><span id="local-6989586621680595182"><span id="local-6989586621680595184"><span id="local-6989586621680595186"><span id="local-6989586621680595188"><span class="annot"><span class="annottext">Eq Fermata
+Eq Fermata =&gt;
+(Fermata -&gt; Fermata -&gt; Ordering)
+-&gt; (Fermata -&gt; Fermata -&gt; Bool)
+-&gt; (Fermata -&gt; Fermata -&gt; Bool)
+-&gt; (Fermata -&gt; Fermata -&gt; Bool)
+-&gt; (Fermata -&gt; Fermata -&gt; Bool)
+-&gt; (Fermata -&gt; Fermata -&gt; Fermata)
+-&gt; (Fermata -&gt; Fermata -&gt; Fermata)
+-&gt; Ord Fermata
+Fermata -&gt; Fermata -&gt; Bool
+Fermata -&gt; Fermata -&gt; Ordering
+Fermata -&gt; Fermata -&gt; Fermata
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Fermata -&gt; Fermata -&gt; Fermata
+$cmin :: Fermata -&gt; Fermata -&gt; Fermata
+max :: Fermata -&gt; Fermata -&gt; Fermata
+$cmax :: Fermata -&gt; Fermata -&gt; Fermata
+&gt;= :: Fermata -&gt; Fermata -&gt; Bool
+$c&gt;= :: Fermata -&gt; Fermata -&gt; Bool
+&gt; :: Fermata -&gt; Fermata -&gt; Bool
+$c&gt; :: Fermata -&gt; Fermata -&gt; Bool
+&lt;= :: Fermata -&gt; Fermata -&gt; Bool
+$c&lt;= :: Fermata -&gt; Fermata -&gt; Bool
+&lt; :: Fermata -&gt; Fermata -&gt; Bool
+$c&lt; :: Fermata -&gt; Fermata -&gt; Bool
+compare :: Fermata -&gt; Fermata -&gt; Ordering
+$ccompare :: Fermata -&gt; Fermata -&gt; Ordering
+$cp1Ord :: Eq Fermata
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680595169"><span id="local-6989586621680595171"><span id="local-6989586621680595173"><span class="annot"><span class="annottext">Int -&gt; Fermata -&gt; ShowS
+[Fermata] -&gt; ShowS
+Fermata -&gt; String
+(Int -&gt; Fermata -&gt; ShowS)
+-&gt; (Fermata -&gt; String) -&gt; ([Fermata] -&gt; ShowS) -&gt; Show Fermata
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Fermata] -&gt; ShowS
+$cshowList :: [Fermata] -&gt; ShowS
+show :: Fermata -&gt; String
+$cshow :: Fermata -&gt; String
+showsPrec :: Int -&gt; Fermata -&gt; ShowS
+$cshowsPrec :: Int -&gt; Fermata -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="hs-comment">-- | Add a fermata over the whole score.</span><span>
+</span><span id="line-74"></span><span id="local-6989586621680595167"><span class="annot"><a href="Music.Score.Meta.Fermata.html#fermata"><span class="hs-identifier hs-type">fermata</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595167"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595167"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595167"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Fermata.html#Fermata"><span class="hs-identifier hs-type">Fermata</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680595167"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680595167"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-75"></span><span id="fermata"><span class="annot"><span class="annottext">fermata :: Fermata -&gt; a -&gt; a
+</span><a href="Music.Score.Meta.Fermata.html#fermata"><span class="hs-identifier hs-var hs-var">fermata</span></a></span></span><span> </span><span id="local-6989586621680595166"><span class="annot"><span class="annottext">c :: Fermata
+</span><a href="#local-6989586621680595166"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621680595165"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680595165"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680595165"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-76"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680595165"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680595163"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680595163"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Fermata -&gt; a -&gt; a
+forall a. HasMeta a =&gt; Time -&gt; Fermata -&gt; a -&gt; a
+</span><a href="Music.Score.Meta.Fermata.html#fermataAt"><span class="hs-identifier hs-var">fermataAt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting Time Span Time -&gt; Span -&gt; Time
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting Time Span Time
+forall a. (HasPosition1 a, Transformable a) =&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#onset"><span class="hs-identifier hs-var">onset</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680595163"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Fermata
+</span><a href="#local-6989586621680595166"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680595165"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- | Add a fermata to the given score.</span><span>
+</span><span id="line-80"></span><span id="local-6989586621680595231"><span class="annot"><a href="Music.Score.Meta.Fermata.html#fermataAt"><span class="hs-identifier hs-type">fermataAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595231"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Fermata.html#Fermata"><span class="hs-identifier hs-type">Fermata</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680595231"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680595231"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-81"></span><span id="fermataAt"><span class="annot"><span class="annottext">fermataAt :: Time -&gt; Fermata -&gt; a -&gt; a
+</span><a href="Music.Score.Meta.Fermata.html#fermataAt"><span class="hs-identifier hs-var hs-var">fermataAt</span></a></span></span><span> </span><span id="local-6989586621680595161"><span class="annot"><span class="annottext">s :: Time
+</span><a href="#local-6989586621680595161"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680595160"><span class="annot"><span class="annottext">c :: Fermata
+</span><a href="#local-6989586621680595160"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Event (Option (Last Fermata)) -&gt; a -&gt; a
+forall a b. (AttributeClass a, HasMeta b) =&gt; Event a -&gt; b -&gt; b
+</span><a href="Music.Score.Meta.html#addMetaNote"><span class="hs-identifier hs-var">addMetaNote</span></a></span><span> </span><span class="annot"><span class="annottext">(Event (Option (Last Fermata)) -&gt; a -&gt; a)
+-&gt; Event (Option (Last Fermata)) -&gt; a -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Getting
+  (Event (Option (Last Fermata)))
+  (Span, Option (Last Fermata))
+  (Event (Option (Last Fermata)))
+-&gt; (Span, Option (Last Fermata)) -&gt; Event (Option (Last Fermata))
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting
+  (Event (Option (Last Fermata)))
+  (Span, Option (Last Fermata))
+  (Event (Option (Last Fermata)))
+forall a b. Iso (Span, a) (Span, b) (Event a) (Event b)
+</span><a href="Music.Time.Event.html#event"><span class="hs-identifier hs-var">event</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680595161"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Span
+</span><a href="Music.Time.Types.html#%3C-%3E"><span class="hs-operator hs-var">&lt;-&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680595161"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe (Last Fermata) -&gt; Option (Last Fermata)
+forall a. Maybe a -&gt; Option a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Option</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Last Fermata) -&gt; Option (Last Fermata))
+-&gt; Maybe (Last Fermata) -&gt; Option (Last Fermata)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Last Fermata -&gt; Maybe (Last Fermata)
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">(Last Fermata -&gt; Maybe (Last Fermata))
+-&gt; Last Fermata -&gt; Maybe (Last Fermata)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Fermata -&gt; Last Fermata
+forall a. a -&gt; Last a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Last</span></a></span><span> </span><span class="annot"><span class="annottext">Fermata
+</span><a href="#local-6989586621680595160"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span></pre></body></html>

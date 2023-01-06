@@ -1,0 +1,498 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable    #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveFunctor         #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances     #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies          #-}</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- Module      :  Data.AffineSpace.Point</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Copyright   :  (c) 2011 Brent Yorgey</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- License     :  BSD-style (see LICENSE)</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Maintainer  :  byorgey@cis.upenn.edu</span><span>
+</span><span id="line-12"></span><span class="hs-comment">--</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- A type for /points/ (as distinct from vectors), with an appropriate</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- AffineSpace instance.</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.AffineSpace.Point</span><span>
+</span><span id="line-19"></span><span>       </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Points</span></span><span>
+</span><span id="line-20"></span><span>         </span><span class="annot"><a href="Data.AffineSpace.Point.html#Point"><span class="hs-identifier">Point</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#unPoint"><span class="hs-identifier">unPoint</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#origin"><span class="hs-identifier">origin</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#%2A."><span class="hs-operator">(*.)</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#mirror"><span class="hs-identifier">mirror</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>         </span><span class="annot"><span class="hs-comment">-- * Reflection through a point</span></span><span>
+</span><span id="line-23"></span><span>         </span><span class="annot"><a href="Data.AffineSpace.Point.html#relative"><span class="hs-identifier">relative</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#relative2"><span class="hs-identifier">relative2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#relative3"><span class="hs-identifier">relative3</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>         </span><span class="annot"><a href="Data.AffineSpace.Point.html#reflectThrough"><span class="hs-identifier">reflectThrough</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>       </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><span class="hs-identifier">Data.VectorSpace</span></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Data</span></a></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span>           </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Typeable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-comment">------------------------------------------------------------</span><span>
+</span><span id="line-34"></span><span class="hs-comment">--  Points  ------------------------------------------------</span><span>
+</span><span id="line-35"></span><span class="hs-comment">------------------------------------------------------------</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- | @Point@ is a newtype wrapper around vectors used to represent</span><span>
+</span><span id="line-38"></span><span class="hs-comment">--   points, so we don't get them mixed up. The distinction between</span><span>
+</span><span id="line-39"></span><span class="hs-comment">--   vectors and points is important: translations affect points, but</span><span>
+</span><span id="line-40"></span><span class="hs-comment">--   leave vectors unchanged.  Points are instances of the</span><span>
+</span><span id="line-41"></span><span class="hs-comment">--   'AffineSpace' class from &quot;Data.AffineSpace&quot;.</span><span>
+</span><span id="line-42"></span><span class="hs-keyword">newtype</span><span> </span><span id="Point"><span class="annot"><a href="Data.AffineSpace.Point.html#Point"><span class="hs-identifier hs-var">Point</span></a></span></span><span> </span><span id="local-6989586621680560719"><span class="annot"><a href="#local-6989586621680560719"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="P"><span class="annot"><a href="Data.AffineSpace.Point.html#P"><span class="hs-identifier hs-var">P</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621680560719"><span class="hs-identifier hs-type">v</span></a></span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680560682"><span id="local-6989586621680560684"><span class="annot"><span class="annottext">Point v -&gt; Point v -&gt; Bool
+(Point v -&gt; Point v -&gt; Bool)
+-&gt; (Point v -&gt; Point v -&gt; Bool) -&gt; Eq (Point v)
+forall v. Eq v =&gt; Point v -&gt; Point v -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Point v -&gt; Point v -&gt; Bool
+$c/= :: forall v. Eq v =&gt; Point v -&gt; Point v -&gt; Bool
+== :: Point v -&gt; Point v -&gt; Bool
+$c== :: forall v. Eq v =&gt; Point v -&gt; Point v -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680560666"><span id="local-6989586621680560668"><span id="local-6989586621680560670"><span id="local-6989586621680560672"><span id="local-6989586621680560674"><span id="local-6989586621680560676"><span id="local-6989586621680560678"><span class="annot"><span class="annottext">Eq (Point v)
+Eq (Point v) =&gt;
+(Point v -&gt; Point v -&gt; Ordering)
+-&gt; (Point v -&gt; Point v -&gt; Bool)
+-&gt; (Point v -&gt; Point v -&gt; Bool)
+-&gt; (Point v -&gt; Point v -&gt; Bool)
+-&gt; (Point v -&gt; Point v -&gt; Bool)
+-&gt; (Point v -&gt; Point v -&gt; Point v)
+-&gt; (Point v -&gt; Point v -&gt; Point v)
+-&gt; Ord (Point v)
+Point v -&gt; Point v -&gt; Bool
+Point v -&gt; Point v -&gt; Ordering
+Point v -&gt; Point v -&gt; Point v
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall v. Ord v =&gt; Eq (Point v)
+forall v. Ord v =&gt; Point v -&gt; Point v -&gt; Bool
+forall v. Ord v =&gt; Point v -&gt; Point v -&gt; Ordering
+forall v. Ord v =&gt; Point v -&gt; Point v -&gt; Point v
+min :: Point v -&gt; Point v -&gt; Point v
+$cmin :: forall v. Ord v =&gt; Point v -&gt; Point v -&gt; Point v
+max :: Point v -&gt; Point v -&gt; Point v
+$cmax :: forall v. Ord v =&gt; Point v -&gt; Point v -&gt; Point v
+&gt;= :: Point v -&gt; Point v -&gt; Bool
+$c&gt;= :: forall v. Ord v =&gt; Point v -&gt; Point v -&gt; Bool
+&gt; :: Point v -&gt; Point v -&gt; Bool
+$c&gt; :: forall v. Ord v =&gt; Point v -&gt; Point v -&gt; Bool
+&lt;= :: Point v -&gt; Point v -&gt; Bool
+$c&lt;= :: forall v. Ord v =&gt; Point v -&gt; Point v -&gt; Bool
+&lt; :: Point v -&gt; Point v -&gt; Bool
+$c&lt; :: forall v. Ord v =&gt; Point v -&gt; Point v -&gt; Bool
+compare :: Point v -&gt; Point v -&gt; Ordering
+$ccompare :: forall v. Ord v =&gt; Point v -&gt; Point v -&gt; Ordering
+$cp1Ord :: forall v. Ord v =&gt; Eq (Point v)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680560657"><span id="local-6989586621680560659"><span id="local-6989586621680560661"><span id="local-6989586621680560663"><span class="annot"><span class="annottext">ReadPrec [Point v]
+ReadPrec (Point v)
+Int -&gt; ReadS (Point v)
+ReadS [Point v]
+(Int -&gt; ReadS (Point v))
+-&gt; ReadS [Point v]
+-&gt; ReadPrec (Point v)
+-&gt; ReadPrec [Point v]
+-&gt; Read (Point v)
+forall v. Read v =&gt; ReadPrec [Point v]
+forall v. Read v =&gt; ReadPrec (Point v)
+forall v. Read v =&gt; Int -&gt; ReadS (Point v)
+forall v. Read v =&gt; ReadS [Point v]
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Point v]
+$creadListPrec :: forall v. Read v =&gt; ReadPrec [Point v]
+readPrec :: ReadPrec (Point v)
+$creadPrec :: forall v. Read v =&gt; ReadPrec (Point v)
+readList :: ReadS [Point v]
+$creadList :: forall v. Read v =&gt; ReadS [Point v]
+readsPrec :: Int -&gt; ReadS (Point v)
+$creadsPrec :: forall v. Read v =&gt; Int -&gt; ReadS (Point v)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680560650"><span id="local-6989586621680560652"><span id="local-6989586621680560654"><span class="annot"><span class="annottext">Int -&gt; Point v -&gt; ShowS
+[Point v] -&gt; ShowS
+Point v -&gt; String
+(Int -&gt; Point v -&gt; ShowS)
+-&gt; (Point v -&gt; String) -&gt; ([Point v] -&gt; ShowS) -&gt; Show (Point v)
+forall v. Show v =&gt; Int -&gt; Point v -&gt; ShowS
+forall v. Show v =&gt; [Point v] -&gt; ShowS
+forall v. Show v =&gt; Point v -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Point v] -&gt; ShowS
+$cshowList :: forall v. Show v =&gt; [Point v] -&gt; ShowS
+show :: Point v -&gt; String
+$cshow :: forall v. Show v =&gt; Point v -&gt; String
+showsPrec :: Int -&gt; Point v -&gt; ShowS
+$cshowsPrec :: forall v. Show v =&gt; Int -&gt; Point v -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="%24cP"><span id="%24tPoint"><span id="local-6989586621680560620"><span id="local-6989586621680560622"><span id="local-6989586621680560624"><span id="local-6989586621680560626"><span id="local-6989586621680560628"><span id="local-6989586621680560630"><span id="local-6989586621680560632"><span id="local-6989586621680560634"><span id="local-6989586621680560636"><span id="local-6989586621680560638"><span id="local-6989586621680560640"><span id="local-6989586621680560642"><span id="local-6989586621680560644"><span id="local-6989586621680560646"><span class="annot"><span class="annottext">Typeable (Point v)
+DataType
+Constr
+Typeable (Point v) =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; Point v -&gt; c (Point v))
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Point v))
+-&gt; (Point v -&gt; Constr)
+-&gt; (Point v -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Point v)))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Point v)))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; Point v -&gt; Point v)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Point v -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r)
+    -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Point v -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Point v -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Point v -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v))
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v))
+-&gt; Data (Point v)
+Point v -&gt; DataType
+Point v -&gt; Constr
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Point v))
+(forall b. Data b =&gt; b -&gt; b) -&gt; Point v -&gt; Point v
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Point v -&gt; c (Point v)
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Point v)
+forall v. Data v =&gt; Typeable (Point v)
+forall v. Data v =&gt; Point v -&gt; DataType
+forall v. Data v =&gt; Point v -&gt; Constr
+forall v.
+Data v =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; Point v -&gt; Point v
+forall v u.
+Data v =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Point v -&gt; u
+forall v u.
+Data v =&gt;
+(forall d. Data d =&gt; d -&gt; u) -&gt; Point v -&gt; [u]
+forall v r r'.
+Data v =&gt;
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Point v -&gt; r
+forall v r r'.
+Data v =&gt;
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Point v -&gt; r
+forall v (m :: * -&gt; *).
+(Data v, Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v)
+forall v (m :: * -&gt; *).
+(Data v, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v)
+forall v (c :: * -&gt; *).
+Data v =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Point v)
+forall v (c :: * -&gt; *).
+Data v =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Point v -&gt; c (Point v)
+forall v (t :: * -&gt; *) (c :: * -&gt; *).
+(Data v, Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Point v))
+forall v (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Data v, Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Point v))
+forall a.
+Typeable a =&gt;
+(forall (c :: * -&gt; *).
+ (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+ -&gt; (forall g. g -&gt; c g) -&gt; a -&gt; c a)
+-&gt; (forall (c :: * -&gt; *).
+    (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+    -&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c a)
+-&gt; (a -&gt; Constr)
+-&gt; (a -&gt; DataType)
+-&gt; (forall (t :: * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c a))
+-&gt; (forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+    Typeable t =&gt;
+    (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c a))
+-&gt; ((forall b. Data b =&gt; b -&gt; b) -&gt; a -&gt; a)
+-&gt; (forall r r'.
+    (r -&gt; r' -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall r r'.
+    (r' -&gt; r -&gt; r) -&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; a -&gt; r)
+-&gt; (forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; [u])
+-&gt; (forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; a -&gt; u)
+-&gt; (forall (m :: * -&gt; *).
+    Monad m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; (forall (m :: * -&gt; *).
+    MonadPlus m =&gt;
+    (forall d. Data d =&gt; d -&gt; m d) -&gt; a -&gt; m a)
+-&gt; Data a
+forall u. Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Point v -&gt; u
+forall u. (forall d. Data d =&gt; d -&gt; u) -&gt; Point v -&gt; [u]
+forall r r'.
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Point v -&gt; r
+forall r r'.
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Point v -&gt; r
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v)
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v)
+forall (c :: * -&gt; *).
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Point v)
+forall (c :: * -&gt; *).
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Point v -&gt; c (Point v)
+forall (t :: * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Point v))
+forall (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+Typeable t =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Point v))
+$cP :: Constr
+$tPoint :: DataType
+gmapMo :: (forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v)
+$cgmapMo :: forall v (m :: * -&gt; *).
+(Data v, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v)
+gmapMp :: (forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v)
+$cgmapMp :: forall v (m :: * -&gt; *).
+(Data v, MonadPlus m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v)
+gmapM :: (forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v)
+$cgmapM :: forall v (m :: * -&gt; *).
+(Data v, Monad m) =&gt;
+(forall d. Data d =&gt; d -&gt; m d) -&gt; Point v -&gt; m (Point v)
+gmapQi :: Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Point v -&gt; u
+$cgmapQi :: forall v u.
+Data v =&gt;
+Int -&gt; (forall d. Data d =&gt; d -&gt; u) -&gt; Point v -&gt; u
+gmapQ :: (forall d. Data d =&gt; d -&gt; u) -&gt; Point v -&gt; [u]
+$cgmapQ :: forall v u.
+Data v =&gt;
+(forall d. Data d =&gt; d -&gt; u) -&gt; Point v -&gt; [u]
+gmapQr :: (r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Point v -&gt; r
+$cgmapQr :: forall v r r'.
+Data v =&gt;
+(r' -&gt; r -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Point v -&gt; r
+gmapQl :: (r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Point v -&gt; r
+$cgmapQl :: forall v r r'.
+Data v =&gt;
+(r -&gt; r' -&gt; r)
+-&gt; r -&gt; (forall d. Data d =&gt; d -&gt; r') -&gt; Point v -&gt; r
+gmapT :: (forall b. Data b =&gt; b -&gt; b) -&gt; Point v -&gt; Point v
+$cgmapT :: forall v.
+Data v =&gt;
+(forall b. Data b =&gt; b -&gt; b) -&gt; Point v -&gt; Point v
+dataCast2 :: (forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Point v))
+$cdataCast2 :: forall v (t :: * -&gt; * -&gt; *) (c :: * -&gt; *).
+(Data v, Typeable t) =&gt;
+(forall d e. (Data d, Data e) =&gt; c (t d e)) -&gt; Maybe (c (Point v))
+dataCast1 :: (forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Point v))
+$cdataCast1 :: forall v (t :: * -&gt; *) (c :: * -&gt; *).
+(Data v, Typeable t) =&gt;
+(forall d. Data d =&gt; c (t d)) -&gt; Maybe (c (Point v))
+dataTypeOf :: Point v -&gt; DataType
+$cdataTypeOf :: forall v. Data v =&gt; Point v -&gt; DataType
+toConstr :: Point v -&gt; Constr
+$ctoConstr :: forall v. Data v =&gt; Point v -&gt; Constr
+gunfold :: (forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Point v)
+$cgunfold :: forall v (c :: * -&gt; *).
+Data v =&gt;
+(forall b r. Data b =&gt; c (b -&gt; r) -&gt; c r)
+-&gt; (forall r. r -&gt; c r) -&gt; Constr -&gt; c (Point v)
+gfoldl :: (forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Point v -&gt; c (Point v)
+$cgfoldl :: forall v (c :: * -&gt; *).
+Data v =&gt;
+(forall d b. Data d =&gt; c (d -&gt; b) -&gt; d -&gt; c b)
+-&gt; (forall g. g -&gt; c g) -&gt; Point v -&gt; c (Point v)
+$cp1Data :: forall v. Data v =&gt; Typeable (Point v)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Data</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680560613"><span id="local-6989586621680560615"><span class="annot"><span class="annottext">a -&gt; Point b -&gt; Point a
+(a -&gt; b) -&gt; Point a -&gt; Point b
+(forall a b. (a -&gt; b) -&gt; Point a -&gt; Point b)
+-&gt; (forall a b. a -&gt; Point b -&gt; Point a) -&gt; Functor Point
+forall a b. a -&gt; Point b -&gt; Point a
+forall a b. (a -&gt; b) -&gt; Point a -&gt; Point b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; Point b -&gt; Point a
+$c&lt;$ :: forall a b. a -&gt; Point b -&gt; Point a
+fmap :: (a -&gt; b) -&gt; Point a -&gt; Point b
+$cfmap :: forall a b. (a -&gt; b) -&gt; Point a -&gt; Point b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- | Convert a point @p@ into the vector from the origin to @p@.  This</span><span>
+</span><span id="line-46"></span><span class="hs-comment">--   should be considered a \&quot;semantically unsafe\&quot; operation; think</span><span>
+</span><span id="line-47"></span><span class="hs-comment">--   carefully about whether and why you need to use it.  The</span><span>
+</span><span id="line-48"></span><span class="hs-comment">--   recommended way to do this conversion would be to write @(p</span><span>
+</span><span id="line-49"></span><span class="hs-comment">--   '.-.' 'origin')@.</span><span>
+</span><span id="line-50"></span><span id="local-6989586621680560611"><span class="annot"><a href="Data.AffineSpace.Point.html#unPoint"><span class="hs-identifier hs-type">unPoint</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560611"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560611"><span class="hs-identifier hs-type">v</span></a></span></span><span>
+</span><span id="line-51"></span><span id="unPoint"><span class="annot"><span class="annottext">unPoint :: Point v -&gt; v
+</span><a href="Data.AffineSpace.Point.html#unPoint"><span class="hs-identifier hs-var hs-var">unPoint</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.AffineSpace.Point.html#P"><span class="hs-identifier hs-type">P</span></a></span><span> </span><span id="local-6989586621680560610"><span class="annot"><span class="annottext">v :: v
+</span><a href="#local-6989586621680560610"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621680560610"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- | The origin of the vector space @v@.</span><span>
+</span><span id="line-54"></span><span id="local-6989586621680560706"><span class="annot"><a href="Data.AffineSpace.Point.html#origin"><span class="hs-identifier hs-type">origin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AdditiveGroup</span></span><span> </span><span class="annot"><a href="#local-6989586621680560706"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560706"><span class="hs-identifier hs-type">v</span></a></span></span><span>
+</span><span id="line-55"></span><span id="origin"><span class="annot"><span class="annottext">origin :: Point v
+</span><a href="Data.AffineSpace.Point.html#origin"><span class="hs-identifier hs-var hs-var">origin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v -&gt; Point v
+forall v. v -&gt; Point v
+</span><a href="Data.AffineSpace.Point.html#P"><span class="hs-identifier hs-var">P</span></a></span><span> </span><span class="annot"><span class="annottext">v
+forall v. AdditiveGroup v =&gt; v
+</span><span class="hs-identifier hs-var">zeroV</span></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span id="local-6989586621680560608"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AdditiveGroup</span></span><span> </span><span class="annot"><a href="#local-6989586621680560608"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AffineSpace</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.AffineSpace.Point.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560608"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Diff"><span class="annot"><span class="hs-identifier hs-var">Diff</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.AffineSpace.Point.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560608"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621680560608"><span class="hs-identifier hs-type">v</span></a></span><span>
+</span><span id="line-59"></span><span>  </span><span class="annot"><a href="Data.AffineSpace.Point.html#P"><span class="hs-identifier hs-type">P</span></a></span><span> </span><span id="local-6989586621680560603"><span class="annot"><span class="annottext">v1 :: v
+</span><a href="#local-6989586621680560603"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span id="local-6989586621680560602"><span class="annot"><span class="annottext">.-. :: Point v -&gt; Point v -&gt; Diff (Point v)
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">.-.</span></span></span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#P"><span class="hs-identifier hs-type">P</span></a></span><span> </span><span id="local-6989586621680560600"><span class="annot"><span class="annottext">v2 :: v
+</span><a href="#local-6989586621680560600"><span class="hs-identifier hs-var">v2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621680560603"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">v -&gt; v -&gt; v
+forall v. AdditiveGroup v =&gt; v -&gt; v -&gt; v
+</span><span class="hs-operator hs-var">^-^</span></span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621680560600"><span class="hs-identifier hs-var">v2</span></a></span><span>
+</span><span id="line-60"></span><span>  </span><span class="annot"><a href="Data.AffineSpace.Point.html#P"><span class="hs-identifier hs-type">P</span></a></span><span> </span><span id="local-6989586621680560598"><span class="annot"><span class="annottext">v1 :: v
+</span><a href="#local-6989586621680560598"><span class="hs-identifier hs-var">v1</span></a></span></span><span> </span><span id="local-6989586621680560597"><span class="annot"><span class="annottext">.+^ :: Point v -&gt; Diff (Point v) -&gt; Point v
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">.+^</span></span></span><span> </span><span id="local-6989586621680560595"><span class="annot"><span class="annottext">v2 :: Diff (Point v)
+</span><a href="#local-6989586621680560595"><span class="hs-identifier hs-var">v2</span></a></span></span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v -&gt; Point v
+forall v. v -&gt; Point v
+</span><a href="Data.AffineSpace.Point.html#P"><span class="hs-identifier hs-var">P</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621680560598"><span class="hs-identifier hs-var">v1</span></a></span><span> </span><span class="annot"><span class="annottext">v -&gt; v -&gt; v
+forall v. AdditiveGroup v =&gt; v -&gt; v -&gt; v
+</span><span class="hs-operator hs-var">^+^</span></span><span> </span><span class="annot"><span class="annottext">v
+Diff (Point v)
+</span><a href="#local-6989586621680560595"><span class="hs-identifier hs-var">v2</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- | Scale a point by a scalar.</span><span>
+</span><span id="line-63"></span><span id="local-6989586621680560593"><span class="annot"><a href="Data.AffineSpace.Point.html#%2A."><span class="hs-operator hs-type">(*.)</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VectorSpace</span></span><span> </span><span class="annot"><a href="#local-6989586621680560593"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Scalar</span></span><span> </span><span class="annot"><a href="#local-6989586621680560593"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560593"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560593"><span class="hs-identifier hs-type">v</span></a></span></span><span>
+</span><span id="line-64"></span><span id="local-6989586621680560592"><span class="annot"><span class="annottext">s :: Scalar v
+</span><a href="#local-6989586621680560592"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="%2A."><span class="annot"><span class="annottext">*. :: Scalar v -&gt; Point v -&gt; Point v
+</span><a href="Data.AffineSpace.Point.html#%2A."><span class="hs-operator hs-var hs-var">*.</span></a></span></span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#P"><span class="hs-identifier hs-type">P</span></a></span><span> </span><span id="local-6989586621680560591"><span class="annot"><span class="annottext">v :: v
+</span><a href="#local-6989586621680560591"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v -&gt; Point v
+forall v. v -&gt; Point v
+</span><a href="Data.AffineSpace.Point.html#P"><span class="hs-identifier hs-var">P</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Scalar v
+</span><a href="#local-6989586621680560592"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Scalar v -&gt; v -&gt; v
+forall v. VectorSpace v =&gt; Scalar v -&gt; v -&gt; v
+</span><span class="hs-operator hs-var">*^</span></span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621680560591"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- | Reflect a point through the 'origin'.</span><span>
+</span><span id="line-67"></span><span id="local-6989586621680560589"><span class="annot"><a href="Data.AffineSpace.Point.html#mirror"><span class="hs-identifier hs-type">mirror</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AdditiveGroup</span></span><span> </span><span class="annot"><a href="#local-6989586621680560589"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560589"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680560589"><span class="hs-identifier hs-type">v</span></a></span></span><span>
+</span><span id="line-68"></span><span id="mirror"><span class="annot"><span class="annottext">mirror :: Point v -&gt; Point v
+</span><a href="Data.AffineSpace.Point.html#mirror"><span class="hs-identifier hs-var hs-var">mirror</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Point v -&gt; Point v -&gt; Point v
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; p
+</span><a href="Data.AffineSpace.Point.html#reflectThrough"><span class="hs-identifier hs-var">reflectThrough</span></a></span><span> </span><span class="annot"><span class="annottext">Point v
+forall v. AdditiveGroup v =&gt; Point v
+</span><a href="Data.AffineSpace.Point.html#origin"><span class="hs-identifier hs-var">origin</span></a></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-comment">-- | Apply a transformation relative to the given point.</span><span>
+</span><span id="line-71"></span><span id="local-6989586621680560695"><span class="annot"><a href="Data.AffineSpace.Point.html#relative"><span class="hs-identifier hs-type">relative</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AffineSpace</span></span><span> </span><span class="annot"><a href="#local-6989586621680560695"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560695"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Diff</span></span><span> </span><span class="annot"><a href="#local-6989586621680560695"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diff</span></span><span> </span><span class="annot"><a href="#local-6989586621680560695"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560695"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560695"><span class="hs-identifier hs-type">p</span></a></span></span><span>
+</span><span id="line-72"></span><span id="relative"><span class="annot"><span class="annottext">relative :: p -&gt; (Diff p -&gt; Diff p) -&gt; p -&gt; p
+</span><a href="Data.AffineSpace.Point.html#relative"><span class="hs-identifier hs-var hs-var">relative</span></a></span></span><span> </span><span id="local-6989586621680560588"><span class="annot"><span class="annottext">p :: p
+</span><a href="#local-6989586621680560588"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680560587"><span class="annot"><span class="annottext">f :: Diff p -&gt; Diff p
+</span><a href="#local-6989586621680560587"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560588"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">p -&gt; Diff p -&gt; p
+forall p. AffineSpace p =&gt; p -&gt; Diff p -&gt; p
+</span><span class="hs-operator hs-var">.+^</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Diff p -&gt; p) -&gt; (p -&gt; Diff p) -&gt; p -&gt; p
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Diff p -&gt; Diff p
+</span><a href="#local-6989586621680560587"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">(Diff p -&gt; Diff p) -&gt; (p -&gt; Diff p) -&gt; p -&gt; Diff p
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p -&gt; p -&gt; Diff p
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560588"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- | Apply a transformation relative to the given point.</span><span>
+</span><span id="line-75"></span><span id="local-6989586621680560585"><span class="annot"><a href="Data.AffineSpace.Point.html#relative2"><span class="hs-identifier hs-type">relative2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AffineSpace</span></span><span> </span><span class="annot"><a href="#local-6989586621680560585"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560585"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Diff</span></span><span> </span><span class="annot"><a href="#local-6989586621680560585"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diff</span></span><span> </span><span class="annot"><a href="#local-6989586621680560585"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diff</span></span><span> </span><span class="annot"><a href="#local-6989586621680560585"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560585"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560585"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560585"><span class="hs-identifier hs-type">p</span></a></span></span><span>
+</span><span id="line-76"></span><span id="relative2"><span class="annot"><span class="annottext">relative2 :: p -&gt; (Diff p -&gt; Diff p -&gt; Diff p) -&gt; p -&gt; p -&gt; p
+</span><a href="Data.AffineSpace.Point.html#relative2"><span class="hs-identifier hs-var hs-var">relative2</span></a></span></span><span> </span><span id="local-6989586621680560584"><span class="annot"><span class="annottext">p :: p
+</span><a href="#local-6989586621680560584"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680560583"><span class="annot"><span class="annottext">f :: Diff p -&gt; Diff p -&gt; Diff p
+</span><a href="#local-6989586621680560583"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680560582"><span class="annot"><span class="annottext">x :: p
+</span><a href="#local-6989586621680560582"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680560581"><span class="annot"><span class="annottext">y :: p
+</span><a href="#local-6989586621680560581"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560584"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">p -&gt; Diff p -&gt; p
+forall p. AffineSpace p =&gt; p -&gt; Diff p -&gt; p
+</span><span class="hs-operator hs-var">.+^</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Diff p -&gt; p) -&gt; Diff p -&gt; p
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Diff p -&gt; Diff p -&gt; Diff p
+</span><a href="#local-6989586621680560583"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p -&gt; Diff p
+</span><a href="#local-6989586621680560580"><span class="hs-identifier hs-var">inj</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560582"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p -&gt; Diff p
+</span><a href="#local-6989586621680560580"><span class="hs-identifier hs-var">inj</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560581"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680560580"><span class="annot"><span class="annottext">inj :: p -&gt; Diff p
+</span><a href="#local-6989586621680560580"><span class="hs-identifier hs-var hs-var">inj</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p -&gt; p -&gt; Diff p
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560584"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- | Apply a transformation relative to the given point.</span><span>
+</span><span id="line-79"></span><span id="local-6989586621680560579"><span class="annot"><a href="Data.AffineSpace.Point.html#relative3"><span class="hs-identifier hs-type">relative3</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AffineSpace</span></span><span> </span><span class="annot"><a href="#local-6989586621680560579"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560579"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Diff</span></span><span> </span><span class="annot"><a href="#local-6989586621680560579"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diff</span></span><span> </span><span class="annot"><a href="#local-6989586621680560579"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diff</span></span><span> </span><span class="annot"><a href="#local-6989586621680560579"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Diff</span></span><span> </span><span class="annot"><a href="#local-6989586621680560579"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560579"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560579"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560579"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560579"><span class="hs-identifier hs-type">p</span></a></span></span><span>
+</span><span id="line-80"></span><span id="relative3"><span class="annot"><span class="annottext">relative3 :: p -&gt; (Diff p -&gt; Diff p -&gt; Diff p -&gt; Diff p) -&gt; p -&gt; p -&gt; p -&gt; p
+</span><a href="Data.AffineSpace.Point.html#relative3"><span class="hs-identifier hs-var hs-var">relative3</span></a></span></span><span> </span><span id="local-6989586621680560578"><span class="annot"><span class="annottext">p :: p
+</span><a href="#local-6989586621680560578"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680560577"><span class="annot"><span class="annottext">f :: Diff p -&gt; Diff p -&gt; Diff p -&gt; Diff p
+</span><a href="#local-6989586621680560577"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680560576"><span class="annot"><span class="annottext">x :: p
+</span><a href="#local-6989586621680560576"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680560575"><span class="annot"><span class="annottext">y :: p
+</span><a href="#local-6989586621680560575"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span id="local-6989586621680560574"><span class="annot"><span class="annottext">z :: p
+</span><a href="#local-6989586621680560574"><span class="hs-identifier hs-var">z</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560578"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">p -&gt; Diff p -&gt; p
+forall p. AffineSpace p =&gt; p -&gt; Diff p -&gt; p
+</span><span class="hs-operator hs-var">.+^</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Diff p -&gt; p) -&gt; Diff p -&gt; p
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Diff p -&gt; Diff p -&gt; Diff p -&gt; Diff p
+</span><a href="#local-6989586621680560577"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p -&gt; Diff p
+</span><a href="#local-6989586621680560573"><span class="hs-identifier hs-var">inj</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560576"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p -&gt; Diff p
+</span><a href="#local-6989586621680560573"><span class="hs-identifier hs-var">inj</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560575"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p -&gt; Diff p
+</span><a href="#local-6989586621680560573"><span class="hs-identifier hs-var">inj</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560574"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680560573"><span class="annot"><span class="annottext">inj :: p -&gt; Diff p
+</span><a href="#local-6989586621680560573"><span class="hs-identifier hs-var hs-var">inj</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p -&gt; p -&gt; Diff p
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560578"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- | Mirror a point through a given point.</span><span>
+</span><span id="line-83"></span><span id="local-6989586621680560707"><span class="annot"><a href="Data.AffineSpace.Point.html#reflectThrough"><span class="hs-identifier hs-type">reflectThrough</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AffineSpace</span></span><span> </span><span class="annot"><a href="#local-6989586621680560707"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560707"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560707"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680560707"><span class="hs-identifier hs-type">p</span></a></span></span><span>
+</span><span id="line-84"></span><span id="reflectThrough"><span class="annot"><span class="annottext">reflectThrough :: p -&gt; p -&gt; p
+</span><a href="Data.AffineSpace.Point.html#reflectThrough"><span class="hs-identifier hs-var hs-var">reflectThrough</span></a></span></span><span> </span><span id="local-6989586621680560572"><span class="annot"><span class="annottext">o :: p
+</span><a href="#local-6989586621680560572"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p -&gt; (Diff p -&gt; Diff p) -&gt; p -&gt; p
+forall p. AffineSpace p =&gt; p -&gt; (Diff p -&gt; Diff p) -&gt; p -&gt; p
+</span><a href="Data.AffineSpace.Point.html#relative"><span class="hs-identifier hs-var">relative</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680560572"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Diff p -&gt; Diff p
+forall v. AdditiveGroup v =&gt; v -&gt; v
+</span><span class="hs-identifier hs-var">negateV</span></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span></pre></body></html>

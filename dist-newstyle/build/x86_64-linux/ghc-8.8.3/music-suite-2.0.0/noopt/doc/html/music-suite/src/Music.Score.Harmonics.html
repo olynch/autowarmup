@@ -1,0 +1,653 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_Az9cN1Zf9LRAd3XtDJyKO4"></span><span class="hs-pragma">{-# LANGUAGE DefaultSignatures #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE TupleSections #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-matches
+  -fno-warn-unused-imports #-}</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- | Provides a representation of harmonics.</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Harmonics</span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Harmonics</span></span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier">HasHarmonic</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Score.Harmonics.html#Harmonics"><span class="hs-identifier">Harmonics</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier">HarmonicT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Score.Harmonics.html#runHarmonicT"><span class="hs-identifier">runHarmonicT</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Music.Score.Harmonics.html#harmonic"><span class="hs-identifier">harmonic</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Music.Score.Harmonics.html#artificial"><span class="hs-identifier">artificial</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Comonad</span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html"><span class="hs-identifier">Data.Functor.Couple</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Ratio</span></a></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Word</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html"><span class="hs-identifier">Music.Pitch.Alterable</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html"><span class="hs-identifier">Music.Pitch.Augmentable</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Phrases.html"><span class="hs-identifier">Music.Score.Phrases</span></a></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Score.html"><span class="hs-identifier">Music.Time.Score</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Numeric.Natural</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">class</span><span> </span><span id="HasHarmonic"><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-var">HasHarmonic</span></a></span></span><span> </span><span id="local-6989586621680582715"><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span>  </span><span id="setNatural"><span class="annot"><a href="Music.Score.Harmonics.html#setNatural"><span class="hs-identifier hs-type">setNatural</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-comment">-- 0 for none, positive for natural, negative for artificial</span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-comment">-- (isNatural, overtone series index where 0 is fundamental)</span><span>
+</span><span id="line-49"></span><span>  </span><span id="setHarmonic"><span class="annot"><a href="Music.Score.Harmonics.html#setHarmonic"><span class="hs-identifier hs-type">setHarmonic</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-keyword">default</span><span> </span><span id="setNatural"><span class="annot"><a href="Music.Score.Harmonics.html#setNatural"><span class="hs-identifier hs-type">setNatural</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680582520"><span class="annot"><a href="#local-6989586621680582520"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621680582519"><span class="annot"><a href="#local-6989586621680582519"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">~</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582520"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582519"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582520"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582519"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-52"></span><span>  </span><span id="local-6989586621680582518"><span class="annot"><a href="Music.Score.Harmonics.html#setNatural"><span class="hs-identifier hs-var hs-var">setNatural</span></a></span><span> </span><span id="local-6989586621680582517"><span class="annot"><span class="annottext">s :: Bool
+</span><a href="#local-6989586621680582517"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(b -&gt; b) -&gt; f b -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; b -&gt; b
+forall a. HasHarmonic a =&gt; Bool -&gt; a -&gt; a
+</span><a href="Music.Score.Harmonics.html#setNatural"><span class="hs-identifier hs-var">setNatural</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680582517"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-keyword">default</span><span> </span><span id="setHarmonic"><span class="annot"><a href="Music.Score.Harmonics.html#setHarmonic"><span class="hs-identifier hs-type">setHarmonic</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680582516"><span class="annot"><a href="#local-6989586621680582516"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621680582515"><span class="annot"><a href="#local-6989586621680582515"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">~</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582516"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582515"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582516"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582515"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582715"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-55"></span><span>  </span><span id="local-6989586621680582514"><span class="annot"><a href="Music.Score.Harmonics.html#setHarmonic"><span class="hs-identifier hs-var hs-var">setHarmonic</span></a></span><span> </span><span id="local-6989586621680582513"><span class="annot"><span class="annottext">s :: Int
+</span><a href="#local-6989586621680582513"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(b -&gt; b) -&gt; f b -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; b -&gt; b
+forall a. HasHarmonic a =&gt; Int -&gt; a -&gt; a
+</span><a href="Music.Score.Harmonics.html#setHarmonic"><span class="hs-identifier hs-var">setHarmonic</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680582513"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">newtype</span><span> </span><span id="HarmonicT"><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-var">HarmonicT</span></a></span></span><span> </span><span id="local-6989586621680582560"><span class="annot"><a href="#local-6989586621680582560"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="HarmonicT"><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-var">HarmonicT</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getHarmonicT"><span class="annot"><span class="annottext">HarmonicT a -&gt; Couple (Any, Sum Int) a
+</span><a href="Music.Score.Harmonics.html#getHarmonicT"><span class="hs-identifier hs-var hs-var">getHarmonicT</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Any</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Sum</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680582560"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-keyword">deriving</span><span>
+</span><span id="line-59"></span><span>    </span><span class="hs-special">(</span><span> </span><span id="local-6989586621680582507"><span id="local-6989586621680582509"><span class="annot"><span class="annottext">HarmonicT a -&gt; HarmonicT a -&gt; Bool
+(HarmonicT a -&gt; HarmonicT a -&gt; Bool)
+-&gt; (HarmonicT a -&gt; HarmonicT a -&gt; Bool) -&gt; Eq (HarmonicT a)
+forall a. Eq a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: HarmonicT a -&gt; HarmonicT a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; Bool
+== :: HarmonicT a -&gt; HarmonicT a -&gt; Bool
+$c== :: forall a. Eq a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-60"></span><span>      </span><span id="local-6989586621680582500"><span id="local-6989586621680582502"><span id="local-6989586621680582504"><span class="annot"><span class="annottext">Int -&gt; HarmonicT a -&gt; ShowS
+[HarmonicT a] -&gt; ShowS
+HarmonicT a -&gt; String
+(Int -&gt; HarmonicT a -&gt; ShowS)
+-&gt; (HarmonicT a -&gt; String)
+-&gt; ([HarmonicT a] -&gt; ShowS)
+-&gt; Show (HarmonicT a)
+forall a. Show a =&gt; Int -&gt; HarmonicT a -&gt; ShowS
+forall a. Show a =&gt; [HarmonicT a] -&gt; ShowS
+forall a. Show a =&gt; HarmonicT a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [HarmonicT a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [HarmonicT a] -&gt; ShowS
+show :: HarmonicT a -&gt; String
+$cshow :: forall a. Show a =&gt; HarmonicT a -&gt; String
+showsPrec :: Int -&gt; HarmonicT a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; HarmonicT a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-61"></span><span>      </span><span id="local-6989586621680582484"><span id="local-6989586621680582486"><span id="local-6989586621680582488"><span id="local-6989586621680582490"><span id="local-6989586621680582492"><span id="local-6989586621680582494"><span id="local-6989586621680582496"><span class="annot"><span class="annottext">Eq (HarmonicT a)
+Eq (HarmonicT a) =&gt;
+(HarmonicT a -&gt; HarmonicT a -&gt; Ordering)
+-&gt; (HarmonicT a -&gt; HarmonicT a -&gt; Bool)
+-&gt; (HarmonicT a -&gt; HarmonicT a -&gt; Bool)
+-&gt; (HarmonicT a -&gt; HarmonicT a -&gt; Bool)
+-&gt; (HarmonicT a -&gt; HarmonicT a -&gt; Bool)
+-&gt; (HarmonicT a -&gt; HarmonicT a -&gt; HarmonicT a)
+-&gt; (HarmonicT a -&gt; HarmonicT a -&gt; HarmonicT a)
+-&gt; Ord (HarmonicT a)
+HarmonicT a -&gt; HarmonicT a -&gt; Bool
+HarmonicT a -&gt; HarmonicT a -&gt; Ordering
+HarmonicT a -&gt; HarmonicT a -&gt; HarmonicT a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (HarmonicT a)
+forall a. Ord a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; Bool
+forall a. Ord a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; Ordering
+forall a. Ord a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; HarmonicT a
+min :: HarmonicT a -&gt; HarmonicT a -&gt; HarmonicT a
+$cmin :: forall a. Ord a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; HarmonicT a
+max :: HarmonicT a -&gt; HarmonicT a -&gt; HarmonicT a
+$cmax :: forall a. Ord a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; HarmonicT a
+&gt;= :: HarmonicT a -&gt; HarmonicT a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; Bool
+&gt; :: HarmonicT a -&gt; HarmonicT a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; Bool
+&lt;= :: HarmonicT a -&gt; HarmonicT a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; Bool
+&lt; :: HarmonicT a -&gt; HarmonicT a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; Bool
+compare :: HarmonicT a -&gt; HarmonicT a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; HarmonicT a -&gt; HarmonicT a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (HarmonicT a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-62"></span><span>      </span><span id="local-6989586621680582479"><span id="local-6989586621680582481"><span class="annot"><span class="annottext">a -&gt; HarmonicT b -&gt; HarmonicT a
+(a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+(forall a b. (a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b)
+-&gt; (forall a b. a -&gt; HarmonicT b -&gt; HarmonicT a)
+-&gt; Functor HarmonicT
+forall a b. a -&gt; HarmonicT b -&gt; HarmonicT a
+forall a b. (a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; HarmonicT b -&gt; HarmonicT a
+$c&lt;$ :: forall a b. a -&gt; HarmonicT b -&gt; HarmonicT a
+fmap :: (a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+$cfmap :: forall a b. (a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-63"></span><span>      </span><span id="local-6989586621680582444"><span id="local-6989586621680582446"><span id="local-6989586621680582448"><span id="local-6989586621680582450"><span id="local-6989586621680582452"><span id="local-6989586621680582454"><span id="local-6989586621680582456"><span id="local-6989586621680582458"><span id="local-6989586621680582460"><span id="local-6989586621680582462"><span id="local-6989586621680582464"><span id="local-6989586621680582466"><span id="local-6989586621680582468"><span id="local-6989586621680582470"><span id="local-6989586621680582472"><span id="local-6989586621680582474"><span id="local-6989586621680582476"><span class="annot"><span class="annottext">a -&gt; HarmonicT a -&gt; Bool
+HarmonicT m -&gt; m
+HarmonicT a -&gt; [a]
+HarmonicT a -&gt; Bool
+HarmonicT a -&gt; Int
+HarmonicT a -&gt; a
+HarmonicT a -&gt; a
+HarmonicT a -&gt; a
+HarmonicT a -&gt; a
+(a -&gt; m) -&gt; HarmonicT a -&gt; m
+(a -&gt; m) -&gt; HarmonicT a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+(a -&gt; a -&gt; a) -&gt; HarmonicT a -&gt; a
+(a -&gt; a -&gt; a) -&gt; HarmonicT a -&gt; a
+(forall m. Monoid m =&gt; HarmonicT m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; HarmonicT a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; HarmonicT a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; HarmonicT a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; HarmonicT a -&gt; a)
+-&gt; (forall a. HarmonicT a -&gt; [a])
+-&gt; (forall a. HarmonicT a -&gt; Bool)
+-&gt; (forall a. HarmonicT a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; HarmonicT a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; HarmonicT a -&gt; a)
+-&gt; (forall a. Ord a =&gt; HarmonicT a -&gt; a)
+-&gt; (forall a. Num a =&gt; HarmonicT a -&gt; a)
+-&gt; (forall a. Num a =&gt; HarmonicT a -&gt; a)
+-&gt; Foldable HarmonicT
+forall a. Eq a =&gt; a -&gt; HarmonicT a -&gt; Bool
+forall a. Num a =&gt; HarmonicT a -&gt; a
+forall a. Ord a =&gt; HarmonicT a -&gt; a
+forall m. Monoid m =&gt; HarmonicT m -&gt; m
+forall a. HarmonicT a -&gt; Bool
+forall a. HarmonicT a -&gt; Int
+forall a. HarmonicT a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; HarmonicT a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; HarmonicT a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: HarmonicT a -&gt; a
+$cproduct :: forall a. Num a =&gt; HarmonicT a -&gt; a
+sum :: HarmonicT a -&gt; a
+$csum :: forall a. Num a =&gt; HarmonicT a -&gt; a
+minimum :: HarmonicT a -&gt; a
+$cminimum :: forall a. Ord a =&gt; HarmonicT a -&gt; a
+maximum :: HarmonicT a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; HarmonicT a -&gt; a
+elem :: a -&gt; HarmonicT a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; HarmonicT a -&gt; Bool
+length :: HarmonicT a -&gt; Int
+$clength :: forall a. HarmonicT a -&gt; Int
+null :: HarmonicT a -&gt; Bool
+$cnull :: forall a. HarmonicT a -&gt; Bool
+toList :: HarmonicT a -&gt; [a]
+$ctoList :: forall a. HarmonicT a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; HarmonicT a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; HarmonicT a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; HarmonicT a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; HarmonicT a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; HarmonicT a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; HarmonicT a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; HarmonicT a -&gt; m
+foldMap :: (a -&gt; m) -&gt; HarmonicT a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; HarmonicT a -&gt; m
+fold :: HarmonicT m -&gt; m
+$cfold :: forall m. Monoid m =&gt; HarmonicT m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-64"></span><span>      </span><span id="local-6989586621680582433"><span id="local-6989586621680582435"><span id="local-6989586621680582437"><span id="local-6989586621680582439"><span class="annot"><span class="annottext">Functor HarmonicT
+Foldable HarmonicT
+(Functor HarmonicT, Foldable HarmonicT) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; HarmonicT a -&gt; f (HarmonicT b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    HarmonicT (f a) -&gt; f (HarmonicT a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; HarmonicT a -&gt; m (HarmonicT b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    HarmonicT (m a) -&gt; m (HarmonicT a))
+-&gt; Traversable HarmonicT
+(a -&gt; f b) -&gt; HarmonicT a -&gt; f (HarmonicT b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a.
+Monad m =&gt;
+HarmonicT (m a) -&gt; m (HarmonicT a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+HarmonicT (f a) -&gt; f (HarmonicT a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; HarmonicT a -&gt; m (HarmonicT b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; HarmonicT a -&gt; f (HarmonicT b)
+sequence :: HarmonicT (m a) -&gt; m (HarmonicT a)
+$csequence :: forall (m :: * -&gt; *) a.
+Monad m =&gt;
+HarmonicT (m a) -&gt; m (HarmonicT a)
+mapM :: (a -&gt; m b) -&gt; HarmonicT a -&gt; m (HarmonicT b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; HarmonicT a -&gt; m (HarmonicT b)
+sequenceA :: HarmonicT (f a) -&gt; f (HarmonicT a)
+$csequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+HarmonicT (f a) -&gt; f (HarmonicT a)
+traverse :: (a -&gt; f b) -&gt; HarmonicT a -&gt; f (HarmonicT b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; HarmonicT a -&gt; f (HarmonicT b)
+$cp2Traversable :: Foldable HarmonicT
+$cp1Traversable :: Functor HarmonicT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-65"></span><span>      </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-66"></span><span>      </span><span id="local-6989586621680582421"><span id="local-6989586621680582423"><span id="local-6989586621680582425"><span id="local-6989586621680582427"><span id="local-6989586621680582429"><span class="annot"><span class="annottext">Functor HarmonicT
+a -&gt; HarmonicT a
+Functor HarmonicT =&gt;
+(forall a. a -&gt; HarmonicT a)
+-&gt; (forall a b. HarmonicT (a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT c)
+-&gt; (forall a b. HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT b)
+-&gt; (forall a b. HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT a)
+-&gt; Applicative HarmonicT
+HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT b
+HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT a
+HarmonicT (a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+(a -&gt; b -&gt; c) -&gt; HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT c
+forall a. a -&gt; HarmonicT a
+forall a b. HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT a
+forall a b. HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT b
+forall a b. HarmonicT (a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+forall a b c.
+(a -&gt; b -&gt; c) -&gt; HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT a
+$c&lt;* :: forall a b. HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT a
+*&gt; :: HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT b
+$c*&gt; :: forall a b. HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT c
+$cliftA2 :: forall a b c.
+(a -&gt; b -&gt; c) -&gt; HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT c
+&lt;*&gt; :: HarmonicT (a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+$c&lt;*&gt; :: forall a b. HarmonicT (a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+pure :: a -&gt; HarmonicT a
+$cpure :: forall a. a -&gt; HarmonicT a
+$cp1Applicative :: Functor HarmonicT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-67"></span><span>      </span><span id="local-6989586621680582413"><span id="local-6989586621680582415"><span id="local-6989586621680582417"><span class="annot"><span class="annottext">Applicative HarmonicT
+a -&gt; HarmonicT a
+Applicative HarmonicT =&gt;
+(forall a b. HarmonicT a -&gt; (a -&gt; HarmonicT b) -&gt; HarmonicT b)
+-&gt; (forall a b. HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT b)
+-&gt; (forall a. a -&gt; HarmonicT a)
+-&gt; Monad HarmonicT
+HarmonicT a -&gt; (a -&gt; HarmonicT b) -&gt; HarmonicT b
+HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT b
+forall a. a -&gt; HarmonicT a
+forall a b. HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT b
+forall a b. HarmonicT a -&gt; (a -&gt; HarmonicT b) -&gt; HarmonicT b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; HarmonicT a
+$creturn :: forall a. a -&gt; HarmonicT a
+&gt;&gt; :: HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT b
+$c&gt;&gt; :: forall a b. HarmonicT a -&gt; HarmonicT b -&gt; HarmonicT b
+&gt;&gt;= :: HarmonicT a -&gt; (a -&gt; HarmonicT b) -&gt; HarmonicT b
+$c&gt;&gt;= :: forall a b. HarmonicT a -&gt; (a -&gt; HarmonicT b) -&gt; HarmonicT b
+$cp1Monad :: Applicative HarmonicT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-68"></span><span>      </span><span id="local-6989586621680582405"><span id="local-6989586621680582407"><span id="local-6989586621680582409"><span class="annot"><span class="annottext">Functor HarmonicT
+Functor HarmonicT =&gt;
+(forall a. HarmonicT a -&gt; a)
+-&gt; (forall a. HarmonicT a -&gt; HarmonicT (HarmonicT a))
+-&gt; (forall a b. (HarmonicT a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b)
+-&gt; Comonad HarmonicT
+HarmonicT a -&gt; a
+HarmonicT a -&gt; HarmonicT (HarmonicT a)
+(HarmonicT a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+forall a. HarmonicT a -&gt; a
+forall a. HarmonicT a -&gt; HarmonicT (HarmonicT a)
+forall a b. (HarmonicT a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (HarmonicT a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+$cextend :: forall a b. (HarmonicT a -&gt; b) -&gt; HarmonicT a -&gt; HarmonicT b
+duplicate :: HarmonicT a -&gt; HarmonicT (HarmonicT a)
+$cduplicate :: forall a. HarmonicT a -&gt; HarmonicT (HarmonicT a)
+extract :: HarmonicT a -&gt; a
+$cextract :: forall a. HarmonicT a -&gt; a
+$cp1Comonad :: Functor HarmonicT
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></span></span></span></span><span>
+</span><span id="line-69"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">data</span><span> </span><span id="Harmonics"><span class="annot"><a href="Music.Score.Harmonics.html#Harmonics"><span class="hs-identifier hs-var">Harmonics</span></a></span></span><span>
+</span><span id="line-72"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="NaturalHarmonic"><span class="annot"><a href="Music.Score.Harmonics.html#NaturalHarmonic"><span class="hs-identifier hs-var">NaturalHarmonic</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Natural</span></a></span><span>
+</span><span id="line-73"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ArtificialHarmonic"><span class="annot"><a href="Music.Score.Harmonics.html#ArtificialHarmonic"><span class="hs-identifier hs-var">ArtificialHarmonic</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Natural</span></a></span><span>
+</span><span id="line-74"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680582398"><span id="local-6989586621680582400"><span class="annot"><span class="annottext">Harmonics -&gt; Harmonics -&gt; Bool
+(Harmonics -&gt; Harmonics -&gt; Bool)
+-&gt; (Harmonics -&gt; Harmonics -&gt; Bool) -&gt; Eq Harmonics
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Harmonics -&gt; Harmonics -&gt; Bool
+$c/= :: Harmonics -&gt; Harmonics -&gt; Bool
+== :: Harmonics -&gt; Harmonics -&gt; Bool
+$c== :: Harmonics -&gt; Harmonics -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680582383"><span id="local-6989586621680582385"><span id="local-6989586621680582387"><span id="local-6989586621680582389"><span id="local-6989586621680582391"><span id="local-6989586621680582393"><span id="local-6989586621680582395"><span class="annot"><span class="annottext">Eq Harmonics
+Eq Harmonics =&gt;
+(Harmonics -&gt; Harmonics -&gt; Ordering)
+-&gt; (Harmonics -&gt; Harmonics -&gt; Bool)
+-&gt; (Harmonics -&gt; Harmonics -&gt; Bool)
+-&gt; (Harmonics -&gt; Harmonics -&gt; Bool)
+-&gt; (Harmonics -&gt; Harmonics -&gt; Bool)
+-&gt; (Harmonics -&gt; Harmonics -&gt; Harmonics)
+-&gt; (Harmonics -&gt; Harmonics -&gt; Harmonics)
+-&gt; Ord Harmonics
+Harmonics -&gt; Harmonics -&gt; Bool
+Harmonics -&gt; Harmonics -&gt; Ordering
+Harmonics -&gt; Harmonics -&gt; Harmonics
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Harmonics -&gt; Harmonics -&gt; Harmonics
+$cmin :: Harmonics -&gt; Harmonics -&gt; Harmonics
+max :: Harmonics -&gt; Harmonics -&gt; Harmonics
+$cmax :: Harmonics -&gt; Harmonics -&gt; Harmonics
+&gt;= :: Harmonics -&gt; Harmonics -&gt; Bool
+$c&gt;= :: Harmonics -&gt; Harmonics -&gt; Bool
+&gt; :: Harmonics -&gt; Harmonics -&gt; Bool
+$c&gt; :: Harmonics -&gt; Harmonics -&gt; Bool
+&lt;= :: Harmonics -&gt; Harmonics -&gt; Bool
+$c&lt;= :: Harmonics -&gt; Harmonics -&gt; Bool
+&lt; :: Harmonics -&gt; Harmonics -&gt; Bool
+$c&lt; :: Harmonics -&gt; Harmonics -&gt; Bool
+compare :: Harmonics -&gt; Harmonics -&gt; Ordering
+$ccompare :: Harmonics -&gt; Harmonics -&gt; Ordering
+$cp1Ord :: Eq Harmonics
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680582377"><span id="local-6989586621680582379"><span id="local-6989586621680582381"><span class="annot"><span class="annottext">Int -&gt; Harmonics -&gt; ShowS
+[Harmonics] -&gt; ShowS
+Harmonics -&gt; String
+(Int -&gt; Harmonics -&gt; ShowS)
+-&gt; (Harmonics -&gt; String)
+-&gt; ([Harmonics] -&gt; ShowS)
+-&gt; Show Harmonics
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Harmonics] -&gt; ShowS
+$cshowList :: [Harmonics] -&gt; ShowS
+show :: Harmonics -&gt; String
+$cshow :: Harmonics -&gt; String
+showsPrec :: Int -&gt; Harmonics -&gt; ShowS
+$cshowsPrec :: Int -&gt; Harmonics -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span id="local-6989586621680582376"><span class="annot"><a href="Music.Score.Harmonics.html#runHarmonicT"><span class="hs-identifier hs-type">runHarmonicT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582376"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#Harmonics"><span class="hs-identifier hs-type">Harmonics</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680582376"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-77"></span><span id="runHarmonicT"><span class="annot"><span class="annottext">runHarmonicT :: HarmonicT a -&gt; (Harmonics, a)
+</span><a href="Music.Score.Harmonics.html#runHarmonicT"><span class="hs-identifier hs-var hs-var">runHarmonicT</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680582374"><span class="annot"><span class="annottext">hs :: (Any, Sum Int)
+</span><a href="#local-6989586621680582374"><span class="hs-identifier hs-var">hs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680582373"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680582373"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-special">,</span></span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680582373"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Harmonics -&gt; (Harmonics, a)) -&gt; Harmonics -&gt; (Harmonics, a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Any, Sum Int)
+</span><a href="#local-6989586621680582374"><span class="hs-identifier hs-var">hs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-78"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Any</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">False</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Sum</span></a></span><span> </span><span id="local-6989586621680582370"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621680582370"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Natural -&gt; Harmonics
+</span><a href="Music.Score.Harmonics.html#ArtificialHarmonic"><span class="hs-identifier hs-var">ArtificialHarmonic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Natural
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680582370"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Any</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">True</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Sum</span></a></span><span> </span><span id="local-6989586621680582369"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621680582369"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Natural -&gt; Harmonics
+</span><a href="Music.Score.Harmonics.html#NaturalHarmonic"><span class="hs-identifier hs-var">NaturalHarmonic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Natural
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680582369"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span id="local-6989586621680582367"><span id="local-6989586621680582368"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680582363"><span id="local-6989586621680582365"><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582368"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680582367"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680582368"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span id="local-6989586621680582361"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680582357"><span id="local-6989586621680582359"><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582361"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582361"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span id="local-6989586621680582355"><span id="local-6989586621680582356"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680582351"><span id="local-6989586621680582353"><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582356"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582355"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582356"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span id="local-6989586621680582350"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680582346"><span id="local-6989586621680582348"><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582350"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680582350"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span></span></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span id="local-6989586621680582345"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680582341"><span id="local-6989586621680582343"><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582345"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582345"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span id="local-6989586621680582340"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582340"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582340"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Any</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Sum</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680582340"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span>  </span><span id="local-6989586621680582337"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (HarmonicT a)) (f (Unwrapped (HarmonicT a)))
+-&gt; p (HarmonicT a) (f (HarmonicT a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(HarmonicT a -&gt; Couple (Any, Sum Int) a)
+-&gt; (Couple (Any, Sum Int) a -&gt; HarmonicT a)
+-&gt; Iso
+     (HarmonicT a)
+     (HarmonicT a)
+     (Couple (Any, Sum Int) a)
+     (Couple (Any, Sum Int) a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">HarmonicT a -&gt; Couple (Any, Sum Int) a
+forall a. HarmonicT a -&gt; Couple (Any, Sum Int) a
+</span><a href="Music.Score.Harmonics.html#getHarmonicT"><span class="hs-identifier hs-var hs-var">getHarmonicT</span></a></span><span> </span><span class="annot"><span class="annottext">Couple (Any, Sum Int) a -&gt; HarmonicT a
+forall a. Couple (Any, Sum Int) a -&gt; HarmonicT a
+</span><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-var">HarmonicT</span></a></span></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span id="local-6989586621680582333"><span id="local-6989586621680582334"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582334"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582333"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span id="local-6989586621680582330"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582330"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span>  </span><span id="local-6989586621680582327"><span class="annot"><span class="annottext">setNatural :: Bool -&gt; HarmonicT a -&gt; HarmonicT a
+</span><a href="#local-6989586621680582327"><span class="hs-identifier hs-var hs-var hs-var hs-var">setNatural</span></a></span></span><span> </span><span id="local-6989586621680582326"><span class="annot"><span class="annottext">b :: Bool
+</span><a href="#local-6989586621680582326"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter
+  (HarmonicT a) (HarmonicT a) ((Any, Sum Int), a) ((Any, Sum Int), a)
+-&gt; (((Any, Sum Int), a) -&gt; ((Any, Sum Int), a))
+-&gt; HarmonicT a
+-&gt; HarmonicT a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Couple (Any, Sum Int) a -&gt; Identity (Couple (Any, Sum Int) a))
+-&gt; HarmonicT a -&gt; Identity (HarmonicT a)
+forall s. Wrapped s =&gt; Iso' s (Unwrapped s)
+</span><span class="hs-identifier hs-var">_Wrapped'</span></span><span> </span><span class="annot"><span class="annottext">((Couple (Any, Sum Int) a -&gt; Identity (Couple (Any, Sum Int) a))
+ -&gt; HarmonicT a -&gt; Identity (HarmonicT a))
+-&gt; ((((Any, Sum Int), a) -&gt; Identity ((Any, Sum Int), a))
+    -&gt; Couple (Any, Sum Int) a -&gt; Identity (Couple (Any, Sum Int) a))
+-&gt; ASetter
+     (HarmonicT a) (HarmonicT a) ((Any, Sum Int), a) ((Any, Sum Int), a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(((Any, Sum Int), a) -&gt; Identity ((Any, Sum Int), a))
+-&gt; Couple (Any, Sum Int) a -&gt; Identity (Couple (Any, Sum Int) a)
+forall s. Wrapped s =&gt; Iso' s (Unwrapped s)
+</span><span class="hs-identifier hs-var">_Wrapped'</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((((Any, Sum Int), a) -&gt; ((Any, Sum Int), a))
+ -&gt; HarmonicT a -&gt; HarmonicT a)
+-&gt; (((Any, Sum Int), a) -&gt; ((Any, Sum Int), a))
+-&gt; HarmonicT a
+-&gt; HarmonicT a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680582323"><span class="annot"><span class="annottext">n :: Sum Int
+</span><a href="#local-6989586621680582323"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680582322"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680582322"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; Any
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Any</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680582326"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Sum Int
+</span><a href="#local-6989586621680582323"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680582322"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span>  </span><span id="local-6989586621680582321"><span class="annot"><span class="annottext">setHarmonic :: Int -&gt; HarmonicT a -&gt; HarmonicT a
+</span><a href="#local-6989586621680582321"><span class="hs-identifier hs-var hs-var hs-var hs-var">setHarmonic</span></a></span></span><span> </span><span id="local-6989586621680582320"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621680582320"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter
+  (HarmonicT a) (HarmonicT a) ((Any, Sum Int), a) ((Any, Sum Int), a)
+-&gt; (((Any, Sum Int), a) -&gt; ((Any, Sum Int), a))
+-&gt; HarmonicT a
+-&gt; HarmonicT a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Couple (Any, Sum Int) a -&gt; Identity (Couple (Any, Sum Int) a))
+-&gt; HarmonicT a -&gt; Identity (HarmonicT a)
+forall s. Wrapped s =&gt; Iso' s (Unwrapped s)
+</span><span class="hs-identifier hs-var">_Wrapped'</span></span><span> </span><span class="annot"><span class="annottext">((Couple (Any, Sum Int) a -&gt; Identity (Couple (Any, Sum Int) a))
+ -&gt; HarmonicT a -&gt; Identity (HarmonicT a))
+-&gt; ((((Any, Sum Int), a) -&gt; Identity ((Any, Sum Int), a))
+    -&gt; Couple (Any, Sum Int) a -&gt; Identity (Couple (Any, Sum Int) a))
+-&gt; ASetter
+     (HarmonicT a) (HarmonicT a) ((Any, Sum Int), a) ((Any, Sum Int), a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(((Any, Sum Int), a) -&gt; Identity ((Any, Sum Int), a))
+-&gt; Couple (Any, Sum Int) a -&gt; Identity (Couple (Any, Sum Int) a)
+forall s. Wrapped s =&gt; Iso' s (Unwrapped s)
+</span><span class="hs-identifier hs-var">_Wrapped'</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((((Any, Sum Int), a) -&gt; ((Any, Sum Int), a))
+ -&gt; HarmonicT a -&gt; HarmonicT a)
+-&gt; (((Any, Sum Int), a) -&gt; ((Any, Sum Int), a))
+-&gt; HarmonicT a
+-&gt; HarmonicT a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680582319"><span class="annot"><span class="annottext">nat :: Any
+</span><a href="#local-6989586621680582319"><span class="hs-identifier hs-var">nat</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680582318"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680582318"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Any
+</span><a href="#local-6989586621680582319"><span class="hs-identifier hs-var">nat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Sum Int
+forall a. a -&gt; Sum a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Sum</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680582320"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680582318"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span class="hs-comment">-- Lifted instances</span><span>
+</span><span id="line-106"></span><span id="local-6989586621680582303"><span id="local-6989586621680582305"><span id="local-6989586621680582307"><span id="local-6989586621680582309"><span id="local-6989586621680582311"><span id="local-6989586621680582313"><span id="local-6989586621680582315"><span id="local-6989586621680582317"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582317"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582317"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span id="local-6989586621680582294"><span id="local-6989586621680582296"><span id="local-6989586621680582298"><span id="local-6989586621680582301"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582301"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582301"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span id="local-6989586621680582247"><span id="local-6989586621680582249"><span id="local-6989586621680582251"><span id="local-6989586621680582253"><span id="local-6989586621680582255"><span id="local-6989586621680582257"><span id="local-6989586621680582259"><span id="local-6989586621680582261"><span id="local-6989586621680582263"><span id="local-6989586621680582265"><span id="local-6989586621680582267"><span id="local-6989586621680582269"><span id="local-6989586621680582271"><span id="local-6989586621680582273"><span id="local-6989586621680582275"><span id="local-6989586621680582277"><span id="local-6989586621680582279"><span id="local-6989586621680582281"><span id="local-6989586621680582283"><span id="local-6989586621680582285"><span id="local-6989586621680582287"><span id="local-6989586621680582289"><span id="local-6989586621680582292"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582292"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582292"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span id="local-6989586621680582229"><span id="local-6989586621680582231"><span id="local-6989586621680582233"><span id="local-6989586621680582235"><span id="local-6989586621680582237"><span id="local-6989586621680582239"><span id="local-6989586621680582241"><span id="local-6989586621680582243"><span id="local-6989586621680582245"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582245"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582245"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span id="local-6989586621680582223"><span id="local-6989586621680582225"><span id="local-6989586621680582227"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582227"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582227"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span id="local-6989586621680582217"><span id="local-6989586621680582221"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582221"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582221"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582221"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582221"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span id="local-6989586621680582199"><span id="local-6989586621680582201"><span id="local-6989586621680582203"><span id="local-6989586621680582205"><span id="local-6989586621680582207"><span id="local-6989586621680582209"><span id="local-6989586621680582211"><span id="local-6989586621680582215"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582215"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582215"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582215"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Harmonics.html#HarmonicT"><span class="hs-identifier hs-type">HarmonicT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582215"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-121"></span><span class="hs-comment">-- Make all notes natural harmonics on the given overtone (1 for octave, 2 for fifth etc).</span><span>
+</span><span id="line-122"></span><span class="hs-comment">-- Sounding pitch is unaffected, but notated output is transposed automatically.</span><span>
+</span><span id="line-123"></span><span id="local-6989586621680582197"><span class="annot"><a href="Music.Score.Harmonics.html#harmonic"><span class="hs-identifier hs-type">harmonic</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582197"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582197"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582197"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-124"></span><span id="harmonic"><span class="annot"><span class="annottext">harmonic :: Int -&gt; a -&gt; a
+</span><a href="Music.Score.Harmonics.html#harmonic"><span class="hs-identifier hs-var hs-var">harmonic</span></a></span></span><span> </span><span id="local-6989586621680582196"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621680582196"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; a -&gt; a
+forall a. HasHarmonic a =&gt; Bool -&gt; a -&gt; a
+</span><a href="Music.Score.Harmonics.html#setNatural"><span class="hs-identifier hs-var">setNatural</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; (a -&gt; a) -&gt; a -&gt; a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a -&gt; a
+forall a. HasHarmonic a =&gt; Int -&gt; a -&gt; a
+</span><a href="Music.Score.Harmonics.html#setHarmonic"><span class="hs-identifier hs-var">setHarmonic</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680582196"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="hs-comment">-- TODO verify this can actually be played</span><span>
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-129"></span><span class="hs-comment">-- Make all notes natural harmonics on the given overtone (1 for octave, 2 for fifth etc).</span><span>
+</span><span id="line-130"></span><span class="hs-comment">-- Sounding pitch is unaffected, but notated output is transposed automatically.</span><span>
+</span><span id="line-131"></span><span id="local-6989586621680582195"><span class="annot"><a href="Music.Score.Harmonics.html#artificial"><span class="hs-identifier hs-type">artificial</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680582195"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582195"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680582195"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-132"></span><span id="artificial"><span class="annot"><span class="annottext">artificial :: a -&gt; a
+</span><a href="Music.Score.Harmonics.html#artificial"><span class="hs-identifier hs-var hs-var">artificial</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; a -&gt; a
+forall a. HasHarmonic a =&gt; Bool -&gt; a -&gt; a
+</span><a href="Music.Score.Harmonics.html#setNatural"><span class="hs-identifier hs-var">setNatural</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; (a -&gt; a) -&gt; a -&gt; a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a -&gt; a
+forall a. HasHarmonic a =&gt; Int -&gt; a -&gt; a
+</span><a href="Music.Score.Harmonics.html#setHarmonic"><span class="hs-identifier hs-var">setHarmonic</span></a></span><span> </span><span class="annot"><span class="hs-number">3</span></span><span>
+</span><span id="line-133"></span></pre></body></html>

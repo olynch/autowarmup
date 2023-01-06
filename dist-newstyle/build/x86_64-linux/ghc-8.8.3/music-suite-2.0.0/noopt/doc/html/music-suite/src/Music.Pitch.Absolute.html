@@ -1,0 +1,1424 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- | Absolute pitch representation.</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Pitch.Absolute</span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Absolute pitch representation</span></span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier">Hertz</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-comment">-- Octaves,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Music.Pitch.Absolute.html#Cents"><span class="hs-identifier">Cents</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Pitch.Absolute.html#Fifths"><span class="hs-identifier">Fifths</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-comment">-- * HasFrequency class</span></span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Music.Pitch.Absolute.html#HasFrequency"><span class="hs-identifier">HasFrequency</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Music.Pitch.Absolute.html#octaves"><span class="hs-identifier">octaves</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Music.Pitch.Absolute.html#fifths"><span class="hs-identifier">fifths</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Music.Pitch.Absolute.html#cents"><span class="hs-identifier">cents</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AdditiveGroup</span></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Either</span></a></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Ratio</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.VectorSpace</span></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Transform.html"><span class="hs-identifier">Music.Time.Transform</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- Absolute frequency in Hertz.</span><span>
+</span><span id="line-40"></span><span class="hs-keyword">newtype</span><span> </span><span id="Hertz"><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-var">Hertz</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Hertz"><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-var">Hertz</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getHertz"><span class="annot"><span class="annottext">Hertz -&gt; Double
+</span><a href="Music.Pitch.Absolute.html#getHertz"><span class="hs-identifier hs-var hs-var">getHertz</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680575320"><span id="local-6989586621680575322"><span id="local-6989586621680575324"><span class="annot"><span class="annottext">Int -&gt; Hertz -&gt; ShowS
+[Hertz] -&gt; ShowS
+Hertz -&gt; String
+(Int -&gt; Hertz -&gt; ShowS)
+-&gt; (Hertz -&gt; String) -&gt; ([Hertz] -&gt; ShowS) -&gt; Show Hertz
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Hertz] -&gt; ShowS
+$cshowList :: [Hertz] -&gt; ShowS
+show :: Hertz -&gt; String
+$cshow :: Hertz -&gt; String
+showsPrec :: Int -&gt; Hertz -&gt; ShowS
+$cshowsPrec :: Int -&gt; Hertz -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575315"><span id="local-6989586621680575317"><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Bool
+(Hertz -&gt; Hertz -&gt; Bool) -&gt; (Hertz -&gt; Hertz -&gt; Bool) -&gt; Eq Hertz
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Hertz -&gt; Hertz -&gt; Bool
+$c/= :: Hertz -&gt; Hertz -&gt; Bool
+== :: Hertz -&gt; Hertz -&gt; Bool
+$c== :: Hertz -&gt; Hertz -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575298"><span id="local-6989586621680575300"><span id="local-6989586621680575302"><span id="local-6989586621680575304"><span id="local-6989586621680575306"><span id="local-6989586621680575308"><span id="local-6989586621680575310"><span id="local-6989586621680575312"><span class="annot"><span class="annottext">Int -&gt; Hertz
+Hertz -&gt; Int
+Hertz -&gt; [Hertz]
+Hertz -&gt; Hertz
+Hertz -&gt; Hertz -&gt; [Hertz]
+Hertz -&gt; Hertz -&gt; Hertz -&gt; [Hertz]
+(Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Int -&gt; Hertz)
+-&gt; (Hertz -&gt; Int)
+-&gt; (Hertz -&gt; [Hertz])
+-&gt; (Hertz -&gt; Hertz -&gt; [Hertz])
+-&gt; (Hertz -&gt; Hertz -&gt; [Hertz])
+-&gt; (Hertz -&gt; Hertz -&gt; Hertz -&gt; [Hertz])
+-&gt; Enum Hertz
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+enumFromThenTo :: Hertz -&gt; Hertz -&gt; Hertz -&gt; [Hertz]
+$cenumFromThenTo :: Hertz -&gt; Hertz -&gt; Hertz -&gt; [Hertz]
+enumFromTo :: Hertz -&gt; Hertz -&gt; [Hertz]
+$cenumFromTo :: Hertz -&gt; Hertz -&gt; [Hertz]
+enumFromThen :: Hertz -&gt; Hertz -&gt; [Hertz]
+$cenumFromThen :: Hertz -&gt; Hertz -&gt; [Hertz]
+enumFrom :: Hertz -&gt; [Hertz]
+$cenumFrom :: Hertz -&gt; [Hertz]
+fromEnum :: Hertz -&gt; Int
+$cfromEnum :: Hertz -&gt; Int
+toEnum :: Int -&gt; Hertz
+$ctoEnum :: Int -&gt; Hertz
+pred :: Hertz -&gt; Hertz
+$cpred :: Hertz -&gt; Hertz
+succ :: Hertz -&gt; Hertz
+$csucc :: Hertz -&gt; Hertz
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575283"><span id="local-6989586621680575285"><span id="local-6989586621680575287"><span id="local-6989586621680575289"><span id="local-6989586621680575291"><span id="local-6989586621680575293"><span id="local-6989586621680575295"><span class="annot"><span class="annottext">Integer -&gt; Hertz
+Hertz -&gt; Hertz
+Hertz -&gt; Hertz -&gt; Hertz
+(Hertz -&gt; Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Integer -&gt; Hertz)
+-&gt; Num Hertz
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Integer -&gt; a)
+-&gt; Num a
+fromInteger :: Integer -&gt; Hertz
+$cfromInteger :: Integer -&gt; Hertz
+signum :: Hertz -&gt; Hertz
+$csignum :: Hertz -&gt; Hertz
+abs :: Hertz -&gt; Hertz
+$cabs :: Hertz -&gt; Hertz
+negate :: Hertz -&gt; Hertz
+$cnegate :: Hertz -&gt; Hertz
+* :: Hertz -&gt; Hertz -&gt; Hertz
+$c* :: Hertz -&gt; Hertz -&gt; Hertz
+- :: Hertz -&gt; Hertz -&gt; Hertz
+$c- :: Hertz -&gt; Hertz -&gt; Hertz
++ :: Hertz -&gt; Hertz -&gt; Hertz
+$c+ :: Hertz -&gt; Hertz -&gt; Hertz
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575267"><span id="local-6989586621680575269"><span id="local-6989586621680575271"><span id="local-6989586621680575273"><span id="local-6989586621680575275"><span id="local-6989586621680575277"><span id="local-6989586621680575279"><span class="annot"><span class="annottext">Eq Hertz
+Eq Hertz =&gt;
+(Hertz -&gt; Hertz -&gt; Ordering)
+-&gt; (Hertz -&gt; Hertz -&gt; Bool)
+-&gt; (Hertz -&gt; Hertz -&gt; Bool)
+-&gt; (Hertz -&gt; Hertz -&gt; Bool)
+-&gt; (Hertz -&gt; Hertz -&gt; Bool)
+-&gt; (Hertz -&gt; Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz -&gt; Hertz)
+-&gt; Ord Hertz
+Hertz -&gt; Hertz -&gt; Bool
+Hertz -&gt; Hertz -&gt; Ordering
+Hertz -&gt; Hertz -&gt; Hertz
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Hertz -&gt; Hertz -&gt; Hertz
+$cmin :: Hertz -&gt; Hertz -&gt; Hertz
+max :: Hertz -&gt; Hertz -&gt; Hertz
+$cmax :: Hertz -&gt; Hertz -&gt; Hertz
+&gt;= :: Hertz -&gt; Hertz -&gt; Bool
+$c&gt;= :: Hertz -&gt; Hertz -&gt; Bool
+&gt; :: Hertz -&gt; Hertz -&gt; Bool
+$c&gt; :: Hertz -&gt; Hertz -&gt; Bool
+&lt;= :: Hertz -&gt; Hertz -&gt; Bool
+$c&lt;= :: Hertz -&gt; Hertz -&gt; Bool
+&lt; :: Hertz -&gt; Hertz -&gt; Bool
+$c&lt; :: Hertz -&gt; Hertz -&gt; Bool
+compare :: Hertz -&gt; Hertz -&gt; Ordering
+$ccompare :: Hertz -&gt; Hertz -&gt; Ordering
+$cp1Ord :: Eq Hertz
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575259"><span id="local-6989586621680575261"><span id="local-6989586621680575263"><span class="annot"><span class="annottext">Num Hertz
+Num Hertz =&gt;
+(Hertz -&gt; Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz) -&gt; (Rational -&gt; Hertz) -&gt; Fractional Hertz
+Rational -&gt; Hertz
+Hertz -&gt; Hertz
+Hertz -&gt; Hertz -&gt; Hertz
+forall a.
+Num a =&gt;
+(a -&gt; a -&gt; a) -&gt; (a -&gt; a) -&gt; (Rational -&gt; a) -&gt; Fractional a
+fromRational :: Rational -&gt; Hertz
+$cfromRational :: Rational -&gt; Hertz
+recip :: Hertz -&gt; Hertz
+$crecip :: Hertz -&gt; Hertz
+/ :: Hertz -&gt; Hertz -&gt; Hertz
+$c/ :: Hertz -&gt; Hertz -&gt; Hertz
+$cp1Fractional :: Num Hertz
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Fractional</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575213"><span id="local-6989586621680575215"><span id="local-6989586621680575217"><span id="local-6989586621680575219"><span id="local-6989586621680575221"><span id="local-6989586621680575223"><span id="local-6989586621680575225"><span id="local-6989586621680575227"><span id="local-6989586621680575229"><span id="local-6989586621680575231"><span id="local-6989586621680575233"><span id="local-6989586621680575235"><span id="local-6989586621680575237"><span id="local-6989586621680575239"><span id="local-6989586621680575241"><span id="local-6989586621680575243"><span id="local-6989586621680575245"><span id="local-6989586621680575247"><span id="local-6989586621680575249"><span id="local-6989586621680575251"><span id="local-6989586621680575253"><span id="local-6989586621680575255"><span class="annot"><span class="annottext">Fractional Hertz
+Hertz
+Fractional Hertz =&gt;
+Hertz
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; (Hertz -&gt; Hertz)
+-&gt; Floating Hertz
+Hertz -&gt; Hertz
+Hertz -&gt; Hertz -&gt; Hertz
+forall a.
+Fractional a =&gt;
+a
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; Floating a
+log1mexp :: Hertz -&gt; Hertz
+$clog1mexp :: Hertz -&gt; Hertz
+log1pexp :: Hertz -&gt; Hertz
+$clog1pexp :: Hertz -&gt; Hertz
+expm1 :: Hertz -&gt; Hertz
+$cexpm1 :: Hertz -&gt; Hertz
+log1p :: Hertz -&gt; Hertz
+$clog1p :: Hertz -&gt; Hertz
+atanh :: Hertz -&gt; Hertz
+$catanh :: Hertz -&gt; Hertz
+acosh :: Hertz -&gt; Hertz
+$cacosh :: Hertz -&gt; Hertz
+asinh :: Hertz -&gt; Hertz
+$casinh :: Hertz -&gt; Hertz
+tanh :: Hertz -&gt; Hertz
+$ctanh :: Hertz -&gt; Hertz
+cosh :: Hertz -&gt; Hertz
+$ccosh :: Hertz -&gt; Hertz
+sinh :: Hertz -&gt; Hertz
+$csinh :: Hertz -&gt; Hertz
+atan :: Hertz -&gt; Hertz
+$catan :: Hertz -&gt; Hertz
+acos :: Hertz -&gt; Hertz
+$cacos :: Hertz -&gt; Hertz
+asin :: Hertz -&gt; Hertz
+$casin :: Hertz -&gt; Hertz
+tan :: Hertz -&gt; Hertz
+$ctan :: Hertz -&gt; Hertz
+cos :: Hertz -&gt; Hertz
+$ccos :: Hertz -&gt; Hertz
+sin :: Hertz -&gt; Hertz
+$csin :: Hertz -&gt; Hertz
+logBase :: Hertz -&gt; Hertz -&gt; Hertz
+$clogBase :: Hertz -&gt; Hertz -&gt; Hertz
+** :: Hertz -&gt; Hertz -&gt; Hertz
+$c** :: Hertz -&gt; Hertz -&gt; Hertz
+sqrt :: Hertz -&gt; Hertz
+$csqrt :: Hertz -&gt; Hertz
+log :: Hertz -&gt; Hertz
+$clog :: Hertz -&gt; Hertz
+exp :: Hertz -&gt; Hertz
+$cexp :: Hertz -&gt; Hertz
+pi :: Hertz
+$cpi :: Hertz
+$cp1Floating :: Fractional Hertz
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Floating</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575208"><span class="annot"><span class="annottext">Num Hertz
+Ord Hertz
+(Num Hertz, Ord Hertz) =&gt; (Hertz -&gt; Rational) -&gt; Real Hertz
+Hertz -&gt; Rational
+forall a. (Num a, Ord a) =&gt; (a -&gt; Rational) -&gt; Real a
+toRational :: Hertz -&gt; Rational
+$ctoRational :: Hertz -&gt; Rational
+$cp2Real :: Ord Hertz
+$cp1Real :: Num Hertz
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Real</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575195"><span id="local-6989586621680575197"><span id="local-6989586621680575199"><span id="local-6989586621680575201"><span id="local-6989586621680575203"><span class="annot"><span class="annottext">Fractional Hertz
+Real Hertz
+(Real Hertz, Fractional Hertz) =&gt;
+(forall b. Integral b =&gt; Hertz -&gt; (b, Hertz))
+-&gt; (forall b. Integral b =&gt; Hertz -&gt; b)
+-&gt; (forall b. Integral b =&gt; Hertz -&gt; b)
+-&gt; (forall b. Integral b =&gt; Hertz -&gt; b)
+-&gt; (forall b. Integral b =&gt; Hertz -&gt; b)
+-&gt; RealFrac Hertz
+Hertz -&gt; b
+Hertz -&gt; b
+Hertz -&gt; b
+Hertz -&gt; b
+Hertz -&gt; (b, Hertz)
+forall b. Integral b =&gt; Hertz -&gt; b
+forall b. Integral b =&gt; Hertz -&gt; (b, Hertz)
+forall a.
+(Real a, Fractional a) =&gt;
+(forall b. Integral b =&gt; a -&gt; (b, a))
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; RealFrac a
+floor :: Hertz -&gt; b
+$cfloor :: forall b. Integral b =&gt; Hertz -&gt; b
+ceiling :: Hertz -&gt; b
+$cceiling :: forall b. Integral b =&gt; Hertz -&gt; b
+round :: Hertz -&gt; b
+$cround :: forall b. Integral b =&gt; Hertz -&gt; b
+truncate :: Hertz -&gt; b
+$ctruncate :: forall b. Integral b =&gt; Hertz -&gt; b
+properFraction :: Hertz -&gt; (b, Hertz)
+$cproperFraction :: forall b. Integral b =&gt; Hertz -&gt; (b, Hertz)
+$cp2RealFrac :: Fractional Hertz
+$cp1RealFrac :: Real Hertz
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">RealFrac</span></a></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- Number of pure octaves.</span><span>
+</span><span id="line-45"></span><span class="hs-comment">--</span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- Octaves are a logarithmic representation of frequency such that</span><span>
+</span><span id="line-47"></span><span class="hs-comment">--</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- &gt; f * (2/1) = frequency (octaves f + 1)</span><span>
+</span><span id="line-49"></span><span class="hs-keyword">newtype</span><span> </span><span id="Octaves"><span class="annot"><a href="Music.Pitch.Absolute.html#Octaves"><span class="hs-identifier hs-var">Octaves</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Octaves"><span class="annot"><a href="Music.Pitch.Absolute.html#Octaves"><span class="hs-identifier hs-var">Octaves</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getOctaves"><span class="annot"><span class="annottext">Octaves -&gt; Hertz
+</span><a href="Music.Pitch.Absolute.html#getOctaves"><span class="hs-identifier hs-var hs-var">getOctaves</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-type">Hertz</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680575186"><span id="local-6989586621680575188"><span id="local-6989586621680575190"><span class="annot"><span class="annottext">Int -&gt; Octaves -&gt; ShowS
+[Octaves] -&gt; ShowS
+Octaves -&gt; String
+(Int -&gt; Octaves -&gt; ShowS)
+-&gt; (Octaves -&gt; String) -&gt; ([Octaves] -&gt; ShowS) -&gt; Show Octaves
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Octaves] -&gt; ShowS
+$cshowList :: [Octaves] -&gt; ShowS
+show :: Octaves -&gt; String
+$cshow :: Octaves -&gt; String
+showsPrec :: Int -&gt; Octaves -&gt; ShowS
+$cshowsPrec :: Int -&gt; Octaves -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575182"><span id="local-6989586621680575184"><span class="annot"><span class="annottext">Octaves -&gt; Octaves -&gt; Bool
+(Octaves -&gt; Octaves -&gt; Bool)
+-&gt; (Octaves -&gt; Octaves -&gt; Bool) -&gt; Eq Octaves
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Octaves -&gt; Octaves -&gt; Bool
+$c/= :: Octaves -&gt; Octaves -&gt; Bool
+== :: Octaves -&gt; Octaves -&gt; Bool
+$c== :: Octaves -&gt; Octaves -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575166"><span id="local-6989586621680575168"><span id="local-6989586621680575170"><span id="local-6989586621680575172"><span id="local-6989586621680575174"><span id="local-6989586621680575176"><span id="local-6989586621680575178"><span id="local-6989586621680575180"><span class="annot"><span class="annottext">Int -&gt; Octaves
+Octaves -&gt; Int
+Octaves -&gt; [Octaves]
+Octaves -&gt; Octaves
+Octaves -&gt; Octaves -&gt; [Octaves]
+Octaves -&gt; Octaves -&gt; Octaves -&gt; [Octaves]
+(Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Int -&gt; Octaves)
+-&gt; (Octaves -&gt; Int)
+-&gt; (Octaves -&gt; [Octaves])
+-&gt; (Octaves -&gt; Octaves -&gt; [Octaves])
+-&gt; (Octaves -&gt; Octaves -&gt; [Octaves])
+-&gt; (Octaves -&gt; Octaves -&gt; Octaves -&gt; [Octaves])
+-&gt; Enum Octaves
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+enumFromThenTo :: Octaves -&gt; Octaves -&gt; Octaves -&gt; [Octaves]
+$cenumFromThenTo :: Octaves -&gt; Octaves -&gt; Octaves -&gt; [Octaves]
+enumFromTo :: Octaves -&gt; Octaves -&gt; [Octaves]
+$cenumFromTo :: Octaves -&gt; Octaves -&gt; [Octaves]
+enumFromThen :: Octaves -&gt; Octaves -&gt; [Octaves]
+$cenumFromThen :: Octaves -&gt; Octaves -&gt; [Octaves]
+enumFrom :: Octaves -&gt; [Octaves]
+$cenumFrom :: Octaves -&gt; [Octaves]
+fromEnum :: Octaves -&gt; Int
+$cfromEnum :: Octaves -&gt; Int
+toEnum :: Int -&gt; Octaves
+$ctoEnum :: Int -&gt; Octaves
+pred :: Octaves -&gt; Octaves
+$cpred :: Octaves -&gt; Octaves
+succ :: Octaves -&gt; Octaves
+$csucc :: Octaves -&gt; Octaves
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575152"><span id="local-6989586621680575154"><span id="local-6989586621680575156"><span id="local-6989586621680575158"><span id="local-6989586621680575160"><span id="local-6989586621680575162"><span id="local-6989586621680575164"><span class="annot"><span class="annottext">Integer -&gt; Octaves
+Octaves -&gt; Octaves
+Octaves -&gt; Octaves -&gt; Octaves
+(Octaves -&gt; Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Integer -&gt; Octaves)
+-&gt; Num Octaves
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Integer -&gt; a)
+-&gt; Num a
+fromInteger :: Integer -&gt; Octaves
+$cfromInteger :: Integer -&gt; Octaves
+signum :: Octaves -&gt; Octaves
+$csignum :: Octaves -&gt; Octaves
+abs :: Octaves -&gt; Octaves
+$cabs :: Octaves -&gt; Octaves
+negate :: Octaves -&gt; Octaves
+$cnegate :: Octaves -&gt; Octaves
+* :: Octaves -&gt; Octaves -&gt; Octaves
+$c* :: Octaves -&gt; Octaves -&gt; Octaves
+- :: Octaves -&gt; Octaves -&gt; Octaves
+$c- :: Octaves -&gt; Octaves -&gt; Octaves
++ :: Octaves -&gt; Octaves -&gt; Octaves
+$c+ :: Octaves -&gt; Octaves -&gt; Octaves
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575137"><span id="local-6989586621680575139"><span id="local-6989586621680575141"><span id="local-6989586621680575143"><span id="local-6989586621680575145"><span id="local-6989586621680575147"><span id="local-6989586621680575149"><span class="annot"><span class="annottext">Eq Octaves
+Eq Octaves =&gt;
+(Octaves -&gt; Octaves -&gt; Ordering)
+-&gt; (Octaves -&gt; Octaves -&gt; Bool)
+-&gt; (Octaves -&gt; Octaves -&gt; Bool)
+-&gt; (Octaves -&gt; Octaves -&gt; Bool)
+-&gt; (Octaves -&gt; Octaves -&gt; Bool)
+-&gt; (Octaves -&gt; Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves -&gt; Octaves)
+-&gt; Ord Octaves
+Octaves -&gt; Octaves -&gt; Bool
+Octaves -&gt; Octaves -&gt; Ordering
+Octaves -&gt; Octaves -&gt; Octaves
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Octaves -&gt; Octaves -&gt; Octaves
+$cmin :: Octaves -&gt; Octaves -&gt; Octaves
+max :: Octaves -&gt; Octaves -&gt; Octaves
+$cmax :: Octaves -&gt; Octaves -&gt; Octaves
+&gt;= :: Octaves -&gt; Octaves -&gt; Bool
+$c&gt;= :: Octaves -&gt; Octaves -&gt; Bool
+&gt; :: Octaves -&gt; Octaves -&gt; Bool
+$c&gt; :: Octaves -&gt; Octaves -&gt; Bool
+&lt;= :: Octaves -&gt; Octaves -&gt; Bool
+$c&lt;= :: Octaves -&gt; Octaves -&gt; Bool
+&lt; :: Octaves -&gt; Octaves -&gt; Bool
+$c&lt; :: Octaves -&gt; Octaves -&gt; Bool
+compare :: Octaves -&gt; Octaves -&gt; Ordering
+$ccompare :: Octaves -&gt; Octaves -&gt; Ordering
+$cp1Ord :: Eq Octaves
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575130"><span id="local-6989586621680575132"><span id="local-6989586621680575134"><span class="annot"><span class="annottext">Num Octaves
+Num Octaves =&gt;
+(Octaves -&gt; Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Rational -&gt; Octaves)
+-&gt; Fractional Octaves
+Rational -&gt; Octaves
+Octaves -&gt; Octaves
+Octaves -&gt; Octaves -&gt; Octaves
+forall a.
+Num a =&gt;
+(a -&gt; a -&gt; a) -&gt; (a -&gt; a) -&gt; (Rational -&gt; a) -&gt; Fractional a
+fromRational :: Rational -&gt; Octaves
+$cfromRational :: Rational -&gt; Octaves
+recip :: Octaves -&gt; Octaves
+$crecip :: Octaves -&gt; Octaves
+/ :: Octaves -&gt; Octaves -&gt; Octaves
+$c/ :: Octaves -&gt; Octaves -&gt; Octaves
+$cp1Fractional :: Num Octaves
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Fractional</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575085"><span id="local-6989586621680575087"><span id="local-6989586621680575089"><span id="local-6989586621680575091"><span id="local-6989586621680575093"><span id="local-6989586621680575095"><span id="local-6989586621680575097"><span id="local-6989586621680575099"><span id="local-6989586621680575101"><span id="local-6989586621680575103"><span id="local-6989586621680575105"><span id="local-6989586621680575107"><span id="local-6989586621680575109"><span id="local-6989586621680575111"><span id="local-6989586621680575113"><span id="local-6989586621680575115"><span id="local-6989586621680575117"><span id="local-6989586621680575119"><span id="local-6989586621680575121"><span id="local-6989586621680575123"><span id="local-6989586621680575125"><span id="local-6989586621680575127"><span class="annot"><span class="annottext">Fractional Octaves
+Octaves
+Fractional Octaves =&gt;
+Octaves
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; (Octaves -&gt; Octaves)
+-&gt; Floating Octaves
+Octaves -&gt; Octaves
+Octaves -&gt; Octaves -&gt; Octaves
+forall a.
+Fractional a =&gt;
+a
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; Floating a
+log1mexp :: Octaves -&gt; Octaves
+$clog1mexp :: Octaves -&gt; Octaves
+log1pexp :: Octaves -&gt; Octaves
+$clog1pexp :: Octaves -&gt; Octaves
+expm1 :: Octaves -&gt; Octaves
+$cexpm1 :: Octaves -&gt; Octaves
+log1p :: Octaves -&gt; Octaves
+$clog1p :: Octaves -&gt; Octaves
+atanh :: Octaves -&gt; Octaves
+$catanh :: Octaves -&gt; Octaves
+acosh :: Octaves -&gt; Octaves
+$cacosh :: Octaves -&gt; Octaves
+asinh :: Octaves -&gt; Octaves
+$casinh :: Octaves -&gt; Octaves
+tanh :: Octaves -&gt; Octaves
+$ctanh :: Octaves -&gt; Octaves
+cosh :: Octaves -&gt; Octaves
+$ccosh :: Octaves -&gt; Octaves
+sinh :: Octaves -&gt; Octaves
+$csinh :: Octaves -&gt; Octaves
+atan :: Octaves -&gt; Octaves
+$catan :: Octaves -&gt; Octaves
+acos :: Octaves -&gt; Octaves
+$cacos :: Octaves -&gt; Octaves
+asin :: Octaves -&gt; Octaves
+$casin :: Octaves -&gt; Octaves
+tan :: Octaves -&gt; Octaves
+$ctan :: Octaves -&gt; Octaves
+cos :: Octaves -&gt; Octaves
+$ccos :: Octaves -&gt; Octaves
+sin :: Octaves -&gt; Octaves
+$csin :: Octaves -&gt; Octaves
+logBase :: Octaves -&gt; Octaves -&gt; Octaves
+$clogBase :: Octaves -&gt; Octaves -&gt; Octaves
+** :: Octaves -&gt; Octaves -&gt; Octaves
+$c** :: Octaves -&gt; Octaves -&gt; Octaves
+sqrt :: Octaves -&gt; Octaves
+$csqrt :: Octaves -&gt; Octaves
+log :: Octaves -&gt; Octaves
+$clog :: Octaves -&gt; Octaves
+exp :: Octaves -&gt; Octaves
+$cexp :: Octaves -&gt; Octaves
+pi :: Octaves
+$cpi :: Octaves
+$cp1Floating :: Fractional Octaves
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Floating</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575081"><span class="annot"><span class="annottext">Num Octaves
+Ord Octaves
+(Num Octaves, Ord Octaves) =&gt; (Octaves -&gt; Rational) -&gt; Real Octaves
+Octaves -&gt; Rational
+forall a. (Num a, Ord a) =&gt; (a -&gt; Rational) -&gt; Real a
+toRational :: Octaves -&gt; Rational
+$ctoRational :: Octaves -&gt; Rational
+$cp2Real :: Ord Octaves
+$cp1Real :: Num Octaves
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Real</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575069"><span id="local-6989586621680575071"><span id="local-6989586621680575073"><span id="local-6989586621680575075"><span id="local-6989586621680575077"><span class="annot"><span class="annottext">Fractional Octaves
+Real Octaves
+(Real Octaves, Fractional Octaves) =&gt;
+(forall b. Integral b =&gt; Octaves -&gt; (b, Octaves))
+-&gt; (forall b. Integral b =&gt; Octaves -&gt; b)
+-&gt; (forall b. Integral b =&gt; Octaves -&gt; b)
+-&gt; (forall b. Integral b =&gt; Octaves -&gt; b)
+-&gt; (forall b. Integral b =&gt; Octaves -&gt; b)
+-&gt; RealFrac Octaves
+Octaves -&gt; b
+Octaves -&gt; b
+Octaves -&gt; b
+Octaves -&gt; b
+Octaves -&gt; (b, Octaves)
+forall b. Integral b =&gt; Octaves -&gt; b
+forall b. Integral b =&gt; Octaves -&gt; (b, Octaves)
+forall a.
+(Real a, Fractional a) =&gt;
+(forall b. Integral b =&gt; a -&gt; (b, a))
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; RealFrac a
+floor :: Octaves -&gt; b
+$cfloor :: forall b. Integral b =&gt; Octaves -&gt; b
+ceiling :: Octaves -&gt; b
+$cceiling :: forall b. Integral b =&gt; Octaves -&gt; b
+round :: Octaves -&gt; b
+$cround :: forall b. Integral b =&gt; Octaves -&gt; b
+truncate :: Octaves -&gt; b
+$ctruncate :: forall b. Integral b =&gt; Octaves -&gt; b
+properFraction :: Octaves -&gt; (b, Octaves)
+$cproperFraction :: forall b. Integral b =&gt; Octaves -&gt; (b, Octaves)
+$cp2RealFrac :: Fractional Octaves
+$cp1RealFrac :: Real Octaves
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">RealFrac</span></a></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- Number of pure fifths.</span><span>
+</span><span id="line-54"></span><span class="hs-comment">--</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- Fifths are a logarithmic representation of frequency.</span><span>
+</span><span id="line-56"></span><span class="hs-comment">--</span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- &gt; f * (3/2) = frequency (fifths f + 1)</span><span>
+</span><span id="line-58"></span><span class="hs-keyword">newtype</span><span> </span><span id="Fifths"><span class="annot"><a href="Music.Pitch.Absolute.html#Fifths"><span class="hs-identifier hs-var">Fifths</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Fifths"><span class="annot"><a href="Music.Pitch.Absolute.html#Fifths"><span class="hs-identifier hs-var">Fifths</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getFifths"><span class="annot"><span class="annottext">Fifths -&gt; Hertz
+</span><a href="Music.Pitch.Absolute.html#getFifths"><span class="hs-identifier hs-var hs-var">getFifths</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-type">Hertz</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680575061"><span id="local-6989586621680575063"><span id="local-6989586621680575065"><span class="annot"><span class="annottext">Int -&gt; Fifths -&gt; ShowS
+[Fifths] -&gt; ShowS
+Fifths -&gt; String
+(Int -&gt; Fifths -&gt; ShowS)
+-&gt; (Fifths -&gt; String) -&gt; ([Fifths] -&gt; ShowS) -&gt; Show Fifths
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Fifths] -&gt; ShowS
+$cshowList :: [Fifths] -&gt; ShowS
+show :: Fifths -&gt; String
+$cshow :: Fifths -&gt; String
+showsPrec :: Int -&gt; Fifths -&gt; ShowS
+$cshowsPrec :: Int -&gt; Fifths -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575057"><span id="local-6989586621680575059"><span class="annot"><span class="annottext">Fifths -&gt; Fifths -&gt; Bool
+(Fifths -&gt; Fifths -&gt; Bool)
+-&gt; (Fifths -&gt; Fifths -&gt; Bool) -&gt; Eq Fifths
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Fifths -&gt; Fifths -&gt; Bool
+$c/= :: Fifths -&gt; Fifths -&gt; Bool
+== :: Fifths -&gt; Fifths -&gt; Bool
+$c== :: Fifths -&gt; Fifths -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575041"><span id="local-6989586621680575043"><span id="local-6989586621680575045"><span id="local-6989586621680575047"><span id="local-6989586621680575049"><span id="local-6989586621680575051"><span id="local-6989586621680575053"><span id="local-6989586621680575055"><span class="annot"><span class="annottext">Int -&gt; Fifths
+Fifths -&gt; Int
+Fifths -&gt; [Fifths]
+Fifths -&gt; Fifths
+Fifths -&gt; Fifths -&gt; [Fifths]
+Fifths -&gt; Fifths -&gt; Fifths -&gt; [Fifths]
+(Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Int -&gt; Fifths)
+-&gt; (Fifths -&gt; Int)
+-&gt; (Fifths -&gt; [Fifths])
+-&gt; (Fifths -&gt; Fifths -&gt; [Fifths])
+-&gt; (Fifths -&gt; Fifths -&gt; [Fifths])
+-&gt; (Fifths -&gt; Fifths -&gt; Fifths -&gt; [Fifths])
+-&gt; Enum Fifths
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+enumFromThenTo :: Fifths -&gt; Fifths -&gt; Fifths -&gt; [Fifths]
+$cenumFromThenTo :: Fifths -&gt; Fifths -&gt; Fifths -&gt; [Fifths]
+enumFromTo :: Fifths -&gt; Fifths -&gt; [Fifths]
+$cenumFromTo :: Fifths -&gt; Fifths -&gt; [Fifths]
+enumFromThen :: Fifths -&gt; Fifths -&gt; [Fifths]
+$cenumFromThen :: Fifths -&gt; Fifths -&gt; [Fifths]
+enumFrom :: Fifths -&gt; [Fifths]
+$cenumFrom :: Fifths -&gt; [Fifths]
+fromEnum :: Fifths -&gt; Int
+$cfromEnum :: Fifths -&gt; Int
+toEnum :: Int -&gt; Fifths
+$ctoEnum :: Int -&gt; Fifths
+pred :: Fifths -&gt; Fifths
+$cpred :: Fifths -&gt; Fifths
+succ :: Fifths -&gt; Fifths
+$csucc :: Fifths -&gt; Fifths
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575027"><span id="local-6989586621680575029"><span id="local-6989586621680575031"><span id="local-6989586621680575033"><span id="local-6989586621680575035"><span id="local-6989586621680575037"><span id="local-6989586621680575039"><span class="annot"><span class="annottext">Integer -&gt; Fifths
+Fifths -&gt; Fifths
+Fifths -&gt; Fifths -&gt; Fifths
+(Fifths -&gt; Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Integer -&gt; Fifths)
+-&gt; Num Fifths
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Integer -&gt; a)
+-&gt; Num a
+fromInteger :: Integer -&gt; Fifths
+$cfromInteger :: Integer -&gt; Fifths
+signum :: Fifths -&gt; Fifths
+$csignum :: Fifths -&gt; Fifths
+abs :: Fifths -&gt; Fifths
+$cabs :: Fifths -&gt; Fifths
+negate :: Fifths -&gt; Fifths
+$cnegate :: Fifths -&gt; Fifths
+* :: Fifths -&gt; Fifths -&gt; Fifths
+$c* :: Fifths -&gt; Fifths -&gt; Fifths
+- :: Fifths -&gt; Fifths -&gt; Fifths
+$c- :: Fifths -&gt; Fifths -&gt; Fifths
++ :: Fifths -&gt; Fifths -&gt; Fifths
+$c+ :: Fifths -&gt; Fifths -&gt; Fifths
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575012"><span id="local-6989586621680575014"><span id="local-6989586621680575016"><span id="local-6989586621680575018"><span id="local-6989586621680575020"><span id="local-6989586621680575022"><span id="local-6989586621680575024"><span class="annot"><span class="annottext">Eq Fifths
+Eq Fifths =&gt;
+(Fifths -&gt; Fifths -&gt; Ordering)
+-&gt; (Fifths -&gt; Fifths -&gt; Bool)
+-&gt; (Fifths -&gt; Fifths -&gt; Bool)
+-&gt; (Fifths -&gt; Fifths -&gt; Bool)
+-&gt; (Fifths -&gt; Fifths -&gt; Bool)
+-&gt; (Fifths -&gt; Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths -&gt; Fifths)
+-&gt; Ord Fifths
+Fifths -&gt; Fifths -&gt; Bool
+Fifths -&gt; Fifths -&gt; Ordering
+Fifths -&gt; Fifths -&gt; Fifths
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Fifths -&gt; Fifths -&gt; Fifths
+$cmin :: Fifths -&gt; Fifths -&gt; Fifths
+max :: Fifths -&gt; Fifths -&gt; Fifths
+$cmax :: Fifths -&gt; Fifths -&gt; Fifths
+&gt;= :: Fifths -&gt; Fifths -&gt; Bool
+$c&gt;= :: Fifths -&gt; Fifths -&gt; Bool
+&gt; :: Fifths -&gt; Fifths -&gt; Bool
+$c&gt; :: Fifths -&gt; Fifths -&gt; Bool
+&lt;= :: Fifths -&gt; Fifths -&gt; Bool
+$c&lt;= :: Fifths -&gt; Fifths -&gt; Bool
+&lt; :: Fifths -&gt; Fifths -&gt; Bool
+$c&lt; :: Fifths -&gt; Fifths -&gt; Bool
+compare :: Fifths -&gt; Fifths -&gt; Ordering
+$ccompare :: Fifths -&gt; Fifths -&gt; Ordering
+$cp1Ord :: Eq Fifths
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680575005"><span id="local-6989586621680575007"><span id="local-6989586621680575009"><span class="annot"><span class="annottext">Num Fifths
+Num Fifths =&gt;
+(Fifths -&gt; Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths) -&gt; (Rational -&gt; Fifths) -&gt; Fractional Fifths
+Rational -&gt; Fifths
+Fifths -&gt; Fifths
+Fifths -&gt; Fifths -&gt; Fifths
+forall a.
+Num a =&gt;
+(a -&gt; a -&gt; a) -&gt; (a -&gt; a) -&gt; (Rational -&gt; a) -&gt; Fractional a
+fromRational :: Rational -&gt; Fifths
+$cfromRational :: Rational -&gt; Fifths
+recip :: Fifths -&gt; Fifths
+$crecip :: Fifths -&gt; Fifths
+/ :: Fifths -&gt; Fifths -&gt; Fifths
+$c/ :: Fifths -&gt; Fifths -&gt; Fifths
+$cp1Fractional :: Num Fifths
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Fractional</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574960"><span id="local-6989586621680574962"><span id="local-6989586621680574964"><span id="local-6989586621680574966"><span id="local-6989586621680574968"><span id="local-6989586621680574970"><span id="local-6989586621680574972"><span id="local-6989586621680574974"><span id="local-6989586621680574976"><span id="local-6989586621680574978"><span id="local-6989586621680574980"><span id="local-6989586621680574982"><span id="local-6989586621680574984"><span id="local-6989586621680574986"><span id="local-6989586621680574988"><span id="local-6989586621680574990"><span id="local-6989586621680574992"><span id="local-6989586621680574994"><span id="local-6989586621680574996"><span id="local-6989586621680574998"><span id="local-6989586621680575000"><span id="local-6989586621680575002"><span class="annot"><span class="annottext">Fractional Fifths
+Fifths
+Fractional Fifths =&gt;
+Fifths
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; (Fifths -&gt; Fifths)
+-&gt; Floating Fifths
+Fifths -&gt; Fifths
+Fifths -&gt; Fifths -&gt; Fifths
+forall a.
+Fractional a =&gt;
+a
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; Floating a
+log1mexp :: Fifths -&gt; Fifths
+$clog1mexp :: Fifths -&gt; Fifths
+log1pexp :: Fifths -&gt; Fifths
+$clog1pexp :: Fifths -&gt; Fifths
+expm1 :: Fifths -&gt; Fifths
+$cexpm1 :: Fifths -&gt; Fifths
+log1p :: Fifths -&gt; Fifths
+$clog1p :: Fifths -&gt; Fifths
+atanh :: Fifths -&gt; Fifths
+$catanh :: Fifths -&gt; Fifths
+acosh :: Fifths -&gt; Fifths
+$cacosh :: Fifths -&gt; Fifths
+asinh :: Fifths -&gt; Fifths
+$casinh :: Fifths -&gt; Fifths
+tanh :: Fifths -&gt; Fifths
+$ctanh :: Fifths -&gt; Fifths
+cosh :: Fifths -&gt; Fifths
+$ccosh :: Fifths -&gt; Fifths
+sinh :: Fifths -&gt; Fifths
+$csinh :: Fifths -&gt; Fifths
+atan :: Fifths -&gt; Fifths
+$catan :: Fifths -&gt; Fifths
+acos :: Fifths -&gt; Fifths
+$cacos :: Fifths -&gt; Fifths
+asin :: Fifths -&gt; Fifths
+$casin :: Fifths -&gt; Fifths
+tan :: Fifths -&gt; Fifths
+$ctan :: Fifths -&gt; Fifths
+cos :: Fifths -&gt; Fifths
+$ccos :: Fifths -&gt; Fifths
+sin :: Fifths -&gt; Fifths
+$csin :: Fifths -&gt; Fifths
+logBase :: Fifths -&gt; Fifths -&gt; Fifths
+$clogBase :: Fifths -&gt; Fifths -&gt; Fifths
+** :: Fifths -&gt; Fifths -&gt; Fifths
+$c** :: Fifths -&gt; Fifths -&gt; Fifths
+sqrt :: Fifths -&gt; Fifths
+$csqrt :: Fifths -&gt; Fifths
+log :: Fifths -&gt; Fifths
+$clog :: Fifths -&gt; Fifths
+exp :: Fifths -&gt; Fifths
+$cexp :: Fifths -&gt; Fifths
+pi :: Fifths
+$cpi :: Fifths
+$cp1Floating :: Fractional Fifths
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Floating</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574956"><span class="annot"><span class="annottext">Num Fifths
+Ord Fifths
+(Num Fifths, Ord Fifths) =&gt; (Fifths -&gt; Rational) -&gt; Real Fifths
+Fifths -&gt; Rational
+forall a. (Num a, Ord a) =&gt; (a -&gt; Rational) -&gt; Real a
+toRational :: Fifths -&gt; Rational
+$ctoRational :: Fifths -&gt; Rational
+$cp2Real :: Ord Fifths
+$cp1Real :: Num Fifths
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Real</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574944"><span id="local-6989586621680574946"><span id="local-6989586621680574948"><span id="local-6989586621680574950"><span id="local-6989586621680574952"><span class="annot"><span class="annottext">Fractional Fifths
+Real Fifths
+(Real Fifths, Fractional Fifths) =&gt;
+(forall b. Integral b =&gt; Fifths -&gt; (b, Fifths))
+-&gt; (forall b. Integral b =&gt; Fifths -&gt; b)
+-&gt; (forall b. Integral b =&gt; Fifths -&gt; b)
+-&gt; (forall b. Integral b =&gt; Fifths -&gt; b)
+-&gt; (forall b. Integral b =&gt; Fifths -&gt; b)
+-&gt; RealFrac Fifths
+Fifths -&gt; b
+Fifths -&gt; b
+Fifths -&gt; b
+Fifths -&gt; b
+Fifths -&gt; (b, Fifths)
+forall b. Integral b =&gt; Fifths -&gt; b
+forall b. Integral b =&gt; Fifths -&gt; (b, Fifths)
+forall a.
+(Real a, Fractional a) =&gt;
+(forall b. Integral b =&gt; a -&gt; (b, a))
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; RealFrac a
+floor :: Fifths -&gt; b
+$cfloor :: forall b. Integral b =&gt; Fifths -&gt; b
+ceiling :: Fifths -&gt; b
+$cceiling :: forall b. Integral b =&gt; Fifths -&gt; b
+round :: Fifths -&gt; b
+$cround :: forall b. Integral b =&gt; Fifths -&gt; b
+truncate :: Fifths -&gt; b
+$ctruncate :: forall b. Integral b =&gt; Fifths -&gt; b
+properFraction :: Fifths -&gt; (b, Fifths)
+$cproperFraction :: forall b. Integral b =&gt; Fifths -&gt; (b, Fifths)
+$cp2RealFrac :: Fractional Fifths
+$cp1RealFrac :: Real Fifths
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">RealFrac</span></a></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- Number of cents.</span><span>
+</span><span id="line-63"></span><span class="hs-comment">--</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- Cents are a logarithmic representation of frequency such that</span><span>
+</span><span id="line-65"></span><span class="hs-comment">--</span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- &gt; f * (2/1) = frequency (cents f + 1200)</span><span>
+</span><span id="line-67"></span><span class="hs-keyword">newtype</span><span> </span><span id="Cents"><span class="annot"><a href="Music.Pitch.Absolute.html#Cents"><span class="hs-identifier hs-var">Cents</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Cents"><span class="annot"><a href="Music.Pitch.Absolute.html#Cents"><span class="hs-identifier hs-var">Cents</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getCents"><span class="annot"><span class="annottext">Cents -&gt; Hertz
+</span><a href="Music.Pitch.Absolute.html#getCents"><span class="hs-identifier hs-var hs-var">getCents</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-type">Hertz</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-68"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680574936"><span id="local-6989586621680574938"><span id="local-6989586621680574940"><span class="annot"><span class="annottext">Int -&gt; Cents -&gt; ShowS
+[Cents] -&gt; ShowS
+Cents -&gt; String
+(Int -&gt; Cents -&gt; ShowS)
+-&gt; (Cents -&gt; String) -&gt; ([Cents] -&gt; ShowS) -&gt; Show Cents
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Cents] -&gt; ShowS
+$cshowList :: [Cents] -&gt; ShowS
+show :: Cents -&gt; String
+$cshow :: Cents -&gt; String
+showsPrec :: Int -&gt; Cents -&gt; ShowS
+$cshowsPrec :: Int -&gt; Cents -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574932"><span id="local-6989586621680574934"><span class="annot"><span class="annottext">Cents -&gt; Cents -&gt; Bool
+(Cents -&gt; Cents -&gt; Bool) -&gt; (Cents -&gt; Cents -&gt; Bool) -&gt; Eq Cents
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Cents -&gt; Cents -&gt; Bool
+$c/= :: Cents -&gt; Cents -&gt; Bool
+== :: Cents -&gt; Cents -&gt; Bool
+$c== :: Cents -&gt; Cents -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574916"><span id="local-6989586621680574918"><span id="local-6989586621680574920"><span id="local-6989586621680574922"><span id="local-6989586621680574924"><span id="local-6989586621680574926"><span id="local-6989586621680574928"><span id="local-6989586621680574930"><span class="annot"><span class="annottext">Int -&gt; Cents
+Cents -&gt; Int
+Cents -&gt; [Cents]
+Cents -&gt; Cents
+Cents -&gt; Cents -&gt; [Cents]
+Cents -&gt; Cents -&gt; Cents -&gt; [Cents]
+(Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Int -&gt; Cents)
+-&gt; (Cents -&gt; Int)
+-&gt; (Cents -&gt; [Cents])
+-&gt; (Cents -&gt; Cents -&gt; [Cents])
+-&gt; (Cents -&gt; Cents -&gt; [Cents])
+-&gt; (Cents -&gt; Cents -&gt; Cents -&gt; [Cents])
+-&gt; Enum Cents
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+enumFromThenTo :: Cents -&gt; Cents -&gt; Cents -&gt; [Cents]
+$cenumFromThenTo :: Cents -&gt; Cents -&gt; Cents -&gt; [Cents]
+enumFromTo :: Cents -&gt; Cents -&gt; [Cents]
+$cenumFromTo :: Cents -&gt; Cents -&gt; [Cents]
+enumFromThen :: Cents -&gt; Cents -&gt; [Cents]
+$cenumFromThen :: Cents -&gt; Cents -&gt; [Cents]
+enumFrom :: Cents -&gt; [Cents]
+$cenumFrom :: Cents -&gt; [Cents]
+fromEnum :: Cents -&gt; Int
+$cfromEnum :: Cents -&gt; Int
+toEnum :: Int -&gt; Cents
+$ctoEnum :: Int -&gt; Cents
+pred :: Cents -&gt; Cents
+$cpred :: Cents -&gt; Cents
+succ :: Cents -&gt; Cents
+$csucc :: Cents -&gt; Cents
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574902"><span id="local-6989586621680574904"><span id="local-6989586621680574906"><span id="local-6989586621680574908"><span id="local-6989586621680574910"><span id="local-6989586621680574912"><span id="local-6989586621680574914"><span class="annot"><span class="annottext">Integer -&gt; Cents
+Cents -&gt; Cents
+Cents -&gt; Cents -&gt; Cents
+(Cents -&gt; Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Integer -&gt; Cents)
+-&gt; Num Cents
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Integer -&gt; a)
+-&gt; Num a
+fromInteger :: Integer -&gt; Cents
+$cfromInteger :: Integer -&gt; Cents
+signum :: Cents -&gt; Cents
+$csignum :: Cents -&gt; Cents
+abs :: Cents -&gt; Cents
+$cabs :: Cents -&gt; Cents
+negate :: Cents -&gt; Cents
+$cnegate :: Cents -&gt; Cents
+* :: Cents -&gt; Cents -&gt; Cents
+$c* :: Cents -&gt; Cents -&gt; Cents
+- :: Cents -&gt; Cents -&gt; Cents
+$c- :: Cents -&gt; Cents -&gt; Cents
++ :: Cents -&gt; Cents -&gt; Cents
+$c+ :: Cents -&gt; Cents -&gt; Cents
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574887"><span id="local-6989586621680574889"><span id="local-6989586621680574891"><span id="local-6989586621680574893"><span id="local-6989586621680574895"><span id="local-6989586621680574897"><span id="local-6989586621680574899"><span class="annot"><span class="annottext">Eq Cents
+Eq Cents =&gt;
+(Cents -&gt; Cents -&gt; Ordering)
+-&gt; (Cents -&gt; Cents -&gt; Bool)
+-&gt; (Cents -&gt; Cents -&gt; Bool)
+-&gt; (Cents -&gt; Cents -&gt; Bool)
+-&gt; (Cents -&gt; Cents -&gt; Bool)
+-&gt; (Cents -&gt; Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents -&gt; Cents)
+-&gt; Ord Cents
+Cents -&gt; Cents -&gt; Bool
+Cents -&gt; Cents -&gt; Ordering
+Cents -&gt; Cents -&gt; Cents
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Cents -&gt; Cents -&gt; Cents
+$cmin :: Cents -&gt; Cents -&gt; Cents
+max :: Cents -&gt; Cents -&gt; Cents
+$cmax :: Cents -&gt; Cents -&gt; Cents
+&gt;= :: Cents -&gt; Cents -&gt; Bool
+$c&gt;= :: Cents -&gt; Cents -&gt; Bool
+&gt; :: Cents -&gt; Cents -&gt; Bool
+$c&gt; :: Cents -&gt; Cents -&gt; Bool
+&lt;= :: Cents -&gt; Cents -&gt; Bool
+$c&lt;= :: Cents -&gt; Cents -&gt; Bool
+&lt; :: Cents -&gt; Cents -&gt; Bool
+$c&lt; :: Cents -&gt; Cents -&gt; Bool
+compare :: Cents -&gt; Cents -&gt; Ordering
+$ccompare :: Cents -&gt; Cents -&gt; Ordering
+$cp1Ord :: Eq Cents
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574880"><span id="local-6989586621680574882"><span id="local-6989586621680574884"><span class="annot"><span class="annottext">Num Cents
+Num Cents =&gt;
+(Cents -&gt; Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents) -&gt; (Rational -&gt; Cents) -&gt; Fractional Cents
+Rational -&gt; Cents
+Cents -&gt; Cents
+Cents -&gt; Cents -&gt; Cents
+forall a.
+Num a =&gt;
+(a -&gt; a -&gt; a) -&gt; (a -&gt; a) -&gt; (Rational -&gt; a) -&gt; Fractional a
+fromRational :: Rational -&gt; Cents
+$cfromRational :: Rational -&gt; Cents
+recip :: Cents -&gt; Cents
+$crecip :: Cents -&gt; Cents
+/ :: Cents -&gt; Cents -&gt; Cents
+$c/ :: Cents -&gt; Cents -&gt; Cents
+$cp1Fractional :: Num Cents
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Fractional</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574835"><span id="local-6989586621680574837"><span id="local-6989586621680574839"><span id="local-6989586621680574841"><span id="local-6989586621680574843"><span id="local-6989586621680574845"><span id="local-6989586621680574847"><span id="local-6989586621680574849"><span id="local-6989586621680574851"><span id="local-6989586621680574853"><span id="local-6989586621680574855"><span id="local-6989586621680574857"><span id="local-6989586621680574859"><span id="local-6989586621680574861"><span id="local-6989586621680574863"><span id="local-6989586621680574865"><span id="local-6989586621680574867"><span id="local-6989586621680574869"><span id="local-6989586621680574871"><span id="local-6989586621680574873"><span id="local-6989586621680574875"><span id="local-6989586621680574877"><span class="annot"><span class="annottext">Fractional Cents
+Cents
+Fractional Cents =&gt;
+Cents
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; (Cents -&gt; Cents)
+-&gt; Floating Cents
+Cents -&gt; Cents
+Cents -&gt; Cents -&gt; Cents
+forall a.
+Fractional a =&gt;
+a
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; Floating a
+log1mexp :: Cents -&gt; Cents
+$clog1mexp :: Cents -&gt; Cents
+log1pexp :: Cents -&gt; Cents
+$clog1pexp :: Cents -&gt; Cents
+expm1 :: Cents -&gt; Cents
+$cexpm1 :: Cents -&gt; Cents
+log1p :: Cents -&gt; Cents
+$clog1p :: Cents -&gt; Cents
+atanh :: Cents -&gt; Cents
+$catanh :: Cents -&gt; Cents
+acosh :: Cents -&gt; Cents
+$cacosh :: Cents -&gt; Cents
+asinh :: Cents -&gt; Cents
+$casinh :: Cents -&gt; Cents
+tanh :: Cents -&gt; Cents
+$ctanh :: Cents -&gt; Cents
+cosh :: Cents -&gt; Cents
+$ccosh :: Cents -&gt; Cents
+sinh :: Cents -&gt; Cents
+$csinh :: Cents -&gt; Cents
+atan :: Cents -&gt; Cents
+$catan :: Cents -&gt; Cents
+acos :: Cents -&gt; Cents
+$cacos :: Cents -&gt; Cents
+asin :: Cents -&gt; Cents
+$casin :: Cents -&gt; Cents
+tan :: Cents -&gt; Cents
+$ctan :: Cents -&gt; Cents
+cos :: Cents -&gt; Cents
+$ccos :: Cents -&gt; Cents
+sin :: Cents -&gt; Cents
+$csin :: Cents -&gt; Cents
+logBase :: Cents -&gt; Cents -&gt; Cents
+$clogBase :: Cents -&gt; Cents -&gt; Cents
+** :: Cents -&gt; Cents -&gt; Cents
+$c** :: Cents -&gt; Cents -&gt; Cents
+sqrt :: Cents -&gt; Cents
+$csqrt :: Cents -&gt; Cents
+log :: Cents -&gt; Cents
+$clog :: Cents -&gt; Cents
+exp :: Cents -&gt; Cents
+$cexp :: Cents -&gt; Cents
+pi :: Cents
+$cpi :: Cents
+$cp1Floating :: Fractional Cents
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Floating</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574831"><span class="annot"><span class="annottext">Num Cents
+Ord Cents
+(Num Cents, Ord Cents) =&gt; (Cents -&gt; Rational) -&gt; Real Cents
+Cents -&gt; Rational
+forall a. (Num a, Ord a) =&gt; (a -&gt; Rational) -&gt; Real a
+toRational :: Cents -&gt; Rational
+$ctoRational :: Cents -&gt; Rational
+$cp2Real :: Ord Cents
+$cp1Real :: Num Cents
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Real</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680574819"><span id="local-6989586621680574821"><span id="local-6989586621680574823"><span id="local-6989586621680574825"><span id="local-6989586621680574827"><span class="annot"><span class="annottext">Fractional Cents
+Real Cents
+(Real Cents, Fractional Cents) =&gt;
+(forall b. Integral b =&gt; Cents -&gt; (b, Cents))
+-&gt; (forall b. Integral b =&gt; Cents -&gt; b)
+-&gt; (forall b. Integral b =&gt; Cents -&gt; b)
+-&gt; (forall b. Integral b =&gt; Cents -&gt; b)
+-&gt; (forall b. Integral b =&gt; Cents -&gt; b)
+-&gt; RealFrac Cents
+Cents -&gt; b
+Cents -&gt; b
+Cents -&gt; b
+Cents -&gt; b
+Cents -&gt; (b, Cents)
+forall b. Integral b =&gt; Cents -&gt; b
+forall b. Integral b =&gt; Cents -&gt; (b, Cents)
+forall a.
+(Real a, Fractional a) =&gt;
+(forall b. Integral b =&gt; a -&gt; (b, a))
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; RealFrac a
+floor :: Cents -&gt; b
+$cfloor :: forall b. Integral b =&gt; Cents -&gt; b
+ceiling :: Cents -&gt; b
+$cceiling :: forall b. Integral b =&gt; Cents -&gt; b
+round :: Cents -&gt; b
+$cround :: forall b. Integral b =&gt; Cents -&gt; b
+truncate :: Cents -&gt; b
+$ctruncate :: forall b. Integral b =&gt; Cents -&gt; b
+properFraction :: Cents -&gt; (b, Cents)
+$cproperFraction :: forall b. Integral b =&gt; Cents -&gt; (b, Cents)
+$cp2RealFrac :: Fractional Cents
+$cp1RealFrac :: Real Cents
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">RealFrac</span></a></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680574814"><span id="local-6989586621680574816"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-type">Hertz</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680574812"><span class="annot"><span class="annottext">&lt;&gt; :: Hertz -&gt; Hertz -&gt; Hertz
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(*)</span></a></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680574806"><span id="local-6989586621680574808"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680574805"><span class="annot"><span class="annottext">&lt;&gt; :: Octaves -&gt; Octaves -&gt; Octaves
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Octaves -&gt; Octaves -&gt; Octaves
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(+)</span></a></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680574799"><span id="local-6989586621680574801"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Fifths"><span class="hs-identifier hs-type">Fifths</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680574798"><span class="annot"><span class="annottext">&lt;&gt; :: Fifths -&gt; Fifths -&gt; Fifths
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Fifths -&gt; Fifths -&gt; Fifths
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(+)</span></a></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680574793"><span id="local-6989586621680574795"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Cents"><span class="hs-identifier hs-type">Cents</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680574792"><span class="annot"><span class="annottext">&lt;&gt; :: Cents -&gt; Cents -&gt; Cents
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cents -&gt; Cents -&gt; Cents
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(+)</span></a></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680574786"><span id="local-6989586621680574788"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-type">Hertz</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680574784"><span class="annot"><span class="annottext">mempty :: Hertz
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680574778"><span id="local-6989586621680574780"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680574777"><span class="annot"><span class="annottext">mempty :: Octaves
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680574771"><span id="local-6989586621680574773"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Fifths"><span class="hs-identifier hs-type">Fifths</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680574770"><span class="annot"><span class="annottext">mempty :: Fifths
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680574764"><span id="local-6989586621680574766"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Cents"><span class="hs-identifier hs-type">Cents</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680574763"><span class="annot"><span class="annottext">mempty :: Cents
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AffineSpace</span></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-type">Hertz</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Diff"><span class="annot"><span class="hs-identifier hs-var">Diff</span></span></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-type">Hertz</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span>  </span><span id="local-6989586621680574758"><span class="annot"><span class="annottext">.-. :: Hertz -&gt; Hertz -&gt; Diff Hertz
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">(.-.)</span></span></span><span> </span><span id="local-6989586621680574756"><span class="annot"><span class="annottext">f1 :: Hertz
+</span><a href="#local-6989586621680574756"><span class="hs-identifier hs-var">f1</span></a></span></span><span> </span><span id="local-6989586621680574755"><span class="annot"><span class="annottext">f2 :: Hertz
+</span><a href="#local-6989586621680574755"><span class="hs-identifier hs-var">f2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Hertz -&gt; Double
+</span><a href="Music.Pitch.Absolute.html#getHertz"><span class="hs-identifier hs-var hs-var">getHertz</span></a></span><span> </span><span class="annot"><span class="annottext">Hertz
+</span><a href="#local-6989586621680574756"><span class="hs-identifier hs-var">f1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Hertz -&gt; Double
+</span><a href="Music.Pitch.Absolute.html#getHertz"><span class="hs-identifier hs-var hs-var">getHertz</span></a></span><span> </span><span class="annot"><span class="annottext">Hertz
+</span><a href="#local-6989586621680574755"><span class="hs-identifier hs-var">f2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span>  </span><span id="local-6989586621680574753"><span class="annot"><span class="annottext">.+^ :: Hertz -&gt; Diff Hertz -&gt; Hertz
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">(.+^)</span></span></span><span> </span><span id="local-6989586621680574751"><span class="annot"><span class="annottext">f :: Hertz
+</span><a href="#local-6989586621680574751"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680574750"><span class="annot"><span class="annottext">x :: Diff Hertz
+</span><a href="#local-6989586621680574750"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Hertz
+</span><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-var">Hertz</span></a></span><span> </span><span class="annot"><span class="annottext">(Double -&gt; Hertz) -&gt; Double -&gt; Hertz
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Hertz -&gt; Double
+</span><a href="Music.Pitch.Absolute.html#getHertz"><span class="hs-identifier hs-var hs-var">getHertz</span></a></span><span> </span><span class="annot"><span class="annottext">Hertz
+</span><a href="#local-6989586621680574751"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="annottext">Double
+Diff Hertz
+</span><a href="#local-6989586621680574750"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span class="hs-keyword">class</span><span> </span><span id="HasFrequency"><span class="annot"><a href="Music.Pitch.Absolute.html#HasFrequency"><span class="hs-identifier hs-var">HasFrequency</span></a></span></span><span> </span><span id="local-6989586621680575338"><span class="annot"><a href="#local-6989586621680575338"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-95"></span><span>  </span><span id="frequency"><span class="annot"><a href="Music.Pitch.Absolute.html#frequency"><span class="hs-identifier hs-type">frequency</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680575338"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-type">Hertz</span></a></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#HasFrequency"><span class="hs-identifier hs-type">HasFrequency</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-type">Hertz</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-98"></span><span>  </span><span id="local-6989586621680574746"><span class="annot"><span class="annottext">frequency :: Hertz -&gt; Hertz
+</span><a href="#local-6989586621680574746"><span class="hs-identifier hs-var hs-var hs-var hs-var">frequency</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#HasFrequency"><span class="hs-identifier hs-type">HasFrequency</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-101"></span><span>  </span><span id="local-6989586621680574743"><span class="annot"><span class="annottext">frequency :: Octaves -&gt; Hertz
+</span><a href="#local-6989586621680574743"><span class="hs-identifier hs-var hs-var hs-var hs-var">frequency</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Absolute.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span><span> </span><span id="local-6989586621680574742"><span class="annot"><span class="annottext">f :: Hertz
+</span><a href="#local-6989586621680574742"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Floating a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">**</span></a></span><span> </span><span class="annot"><span class="annottext">Hertz
+</span><a href="#local-6989586621680574742"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#HasFrequency"><span class="hs-identifier hs-type">HasFrequency</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Fifths"><span class="hs-identifier hs-type">Fifths</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621680574739"><span class="annot"><span class="annottext">frequency :: Fifths -&gt; Hertz
+</span><a href="#local-6989586621680574739"><span class="hs-identifier hs-var hs-var hs-var hs-var">frequency</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Absolute.html#Fifths"><span class="hs-identifier hs-type">Fifths</span></a></span><span> </span><span id="local-6989586621680574738"><span class="annot"><span class="annottext">f :: Hertz
+</span><a href="#local-6989586621680574738"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">2</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Floating a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">**</span></a></span><span> </span><span class="annot"><span class="annottext">Hertz
+</span><a href="#local-6989586621680574738"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#HasFrequency"><span class="hs-identifier hs-type">HasFrequency</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Cents"><span class="hs-identifier hs-type">Cents</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-107"></span><span>  </span><span id="local-6989586621680574736"><span class="annot"><span class="annottext">frequency :: Cents -&gt; Hertz
+</span><a href="#local-6989586621680574736"><span class="hs-identifier hs-var hs-var hs-var hs-var">frequency</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Absolute.html#Cents"><span class="hs-identifier hs-type">Cents</span></a></span><span> </span><span id="local-6989586621680574735"><span class="annot"><span class="annottext">f :: Hertz
+</span><a href="#local-6989586621680574735"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Floating a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">**</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Hertz
+</span><a href="#local-6989586621680574735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1200</span></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Hertz"><span class="hs-identifier hs-type">Hertz</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-110"></span><span>  </span><span id="local-6989586621680574732"><span class="annot"><span class="annottext">transform :: Span -&gt; Hertz -&gt; Hertz
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- | &#160;Convert a frequency to octaves.</span><span>
+</span><span id="line-113"></span><span id="local-6989586621680574730"><span class="annot"><a href="Music.Pitch.Absolute.html#octaves"><span class="hs-identifier hs-type">octaves</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#HasFrequency"><span class="hs-identifier hs-type">HasFrequency</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680574730"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680574730"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span></span><span>
+</span><span id="line-114"></span><span id="octaves"><span class="annot"><span class="annottext">octaves :: a -&gt; Octaves
+</span><a href="Music.Pitch.Absolute.html#octaves"><span class="hs-identifier hs-var hs-var">octaves</span></a></span></span><span> </span><span id="local-6989586621680574729"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680574729"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Octaves
+</span><a href="Music.Pitch.Absolute.html#Octaves"><span class="hs-identifier hs-var">Octaves</span></a></span><span> </span><span class="annot"><span class="annottext">(Hertz -&gt; Octaves) -&gt; Hertz -&gt; Octaves
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Floating a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">logBase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Hertz
+forall a. HasFrequency a =&gt; a -&gt; Hertz
+</span><a href="Music.Pitch.Absolute.html#frequency"><span class="hs-identifier hs-var">frequency</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680574729"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="hs-comment">-- | &#160;Convert a frequency to fifths.</span><span>
+</span><span id="line-117"></span><span id="local-6989586621680574727"><span class="annot"><a href="Music.Pitch.Absolute.html#fifths"><span class="hs-identifier hs-type">fifths</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#HasFrequency"><span class="hs-identifier hs-type">HasFrequency</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680574727"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680574727"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Fifths"><span class="hs-identifier hs-type">Fifths</span></a></span></span><span>
+</span><span id="line-118"></span><span id="fifths"><span class="annot"><span class="annottext">fifths :: a -&gt; Fifths
+</span><a href="Music.Pitch.Absolute.html#fifths"><span class="hs-identifier hs-var hs-var">fifths</span></a></span></span><span> </span><span id="local-6989586621680574726"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680574726"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Fifths
+</span><a href="Music.Pitch.Absolute.html#Fifths"><span class="hs-identifier hs-var">Fifths</span></a></span><span> </span><span class="annot"><span class="annottext">(Hertz -&gt; Fifths) -&gt; Hertz -&gt; Fifths
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Floating a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">logBase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">2</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Hertz
+forall a. HasFrequency a =&gt; a -&gt; Hertz
+</span><a href="Music.Pitch.Absolute.html#frequency"><span class="hs-identifier hs-var">frequency</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680574726"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- | &#160;Convert a frequency to cents.</span><span>
+</span><span id="line-121"></span><span id="local-6989586621680574725"><span class="annot"><a href="Music.Pitch.Absolute.html#cents"><span class="hs-identifier hs-type">cents</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#HasFrequency"><span class="hs-identifier hs-type">HasFrequency</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680574725"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680574725"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Absolute.html#Cents"><span class="hs-identifier hs-type">Cents</span></a></span></span><span>
+</span><span id="line-122"></span><span id="cents"><span class="annot"><span class="annottext">cents :: a -&gt; Cents
+</span><a href="Music.Pitch.Absolute.html#cents"><span class="hs-identifier hs-var hs-var">cents</span></a></span></span><span> </span><span id="local-6989586621680574724"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680574724"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Cents
+</span><a href="Music.Pitch.Absolute.html#Cents"><span class="hs-identifier hs-var">Cents</span></a></span><span> </span><span class="annot"><span class="annottext">(Hertz -&gt; Cents) -&gt; Hertz -&gt; Cents
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Floating a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">logBase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Hertz
+forall a. HasFrequency a =&gt; a -&gt; Hertz
+</span><a href="Music.Pitch.Absolute.html#frequency"><span class="hs-identifier hs-var">frequency</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680574724"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Hertz -&gt; Hertz -&gt; Hertz
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="hs-number">1200</span></span><span>
+</span><span id="line-123"></span><span class="hs-comment">{-
+-- Calculate spectral dissonance.
+-- Only works as exp for freqs &gt; 1
+--
+-- TODO should use NonEmpty
+diss :: RealFrac a =&gt; [a] -&gt; a
+diss xs = lcms xs / minimum xs
+
+-- gcdG :: RealFrac a =&gt; a -&gt; a -&gt; a
+-- gcdG a b = let f = (unRatio . toRational); (a1, a2) = f a; (b1, b2) = f b in fromIntegral (gcd a1 b1) / fromIntegral (lcm a2 b2)
+
+lcmG :: RealFrac a =&gt; a -&gt; a -&gt; a
+lcmG a b = let f = (unRatio . toRational); (a1, a2) = f a; (b1, b2) = f b in fromIntegral (lcm a1 b1) / fromIntegral (gcd a2 b2)
+
+lcms :: RealFrac a =&gt; [a] -&gt; a
+lcms = foldr lcmG 1
+-}</span><span>
+</span><span id="line-140"></span></pre></body></html>

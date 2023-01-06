@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE DeriveFoldable #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE DeriveFunctor #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE DeriveTraversable #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-11"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-12"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports #-}</span><span>
+</span><span id="line-19"></span><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-26"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012-2014</span><span>
+</span><span id="line-27"></span><span class="hs-comment">--</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-29"></span><span class="hs-comment">--</span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- Portability : non-portable (TF,GNTD)</span><span>
+</span><span id="line-33"></span><span class="hs-comment">--</span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- Provides a basic way annotating scores.</span><span>
+</span><span id="line-35"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Meta.Annotations</span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Music.Score.Meta.Annotations.html#Annotation"><span class="hs-identifier">Annotation</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Annotations.html#getAnnotation"><span class="hs-identifier">getAnnotation</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Annotations.html#annotate"><span class="hs-identifier">annotate</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Annotations.html#annotateSpan"><span class="hs-identifier">annotateSpan</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Annotations.html#showAnnotations"><span class="hs-identifier">showAnnotations</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Annotations.html#showAnnotations%27"><span class="hs-identifier">showAnnotations'</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Annotations.html#withAnnotations"><span class="hs-identifier">withAnnotations</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Plus</span></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.String</span></a></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.html"><span class="hs-identifier">Music.Score.Meta</span></a></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Text.html"><span class="hs-identifier">Music.Score.Text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier">HasText</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Text.html#text"><span class="hs-identifier">text</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html"><span class="hs-identifier">Music.Time.Reactive</span></a></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-58"></span><span class="hs-comment">--   An annotation is a unique textual value attached to parts of a score.</span><span>
+</span><span id="line-59"></span><span class="hs-comment">--   They are ignored by default, but can be collected with 'withAnnotations'.</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">newtype</span><span> </span><span id="Annotation"><span class="annot"><a href="Music.Score.Meta.Annotations.html#Annotation"><span class="hs-identifier hs-var">Annotation</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Annotation"><span class="annot"><a href="Music.Score.Meta.Annotations.html#Annotation"><span class="hs-identifier hs-var">Annotation</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getAnnotation_"><span class="annot"><span class="annottext">Annotation -&gt; [String]
+</span><a href="Music.Score.Meta.Annotations.html#getAnnotation_"><span class="hs-identifier hs-var hs-var">getAnnotation_</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">]</span><span class="hs-special">}</span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680595592"><span id="local-6989586621680595594"><span id="local-6989586621680595596"><span class="annot"><span class="annottext">b -&gt; Annotation -&gt; Annotation
+NonEmpty Annotation -&gt; Annotation
+Annotation -&gt; Annotation -&gt; Annotation
+(Annotation -&gt; Annotation -&gt; Annotation)
+-&gt; (NonEmpty Annotation -&gt; Annotation)
+-&gt; (forall b. Integral b =&gt; b -&gt; Annotation -&gt; Annotation)
+-&gt; Semigroup Annotation
+forall b. Integral b =&gt; b -&gt; Annotation -&gt; Annotation
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+stimes :: b -&gt; Annotation -&gt; Annotation
+$cstimes :: forall b. Integral b =&gt; b -&gt; Annotation -&gt; Annotation
+sconcat :: NonEmpty Annotation -&gt; Annotation
+$csconcat :: NonEmpty Annotation -&gt; Annotation
+&lt;&gt; :: Annotation -&gt; Annotation -&gt; Annotation
+$c&lt;&gt; :: Annotation -&gt; Annotation -&gt; Annotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680595584"><span id="local-6989586621680595586"><span id="local-6989586621680595588"><span class="annot"><span class="annottext">Semigroup Annotation
+Annotation
+Semigroup Annotation =&gt;
+Annotation
+-&gt; (Annotation -&gt; Annotation -&gt; Annotation)
+-&gt; ([Annotation] -&gt; Annotation)
+-&gt; Monoid Annotation
+[Annotation] -&gt; Annotation
+Annotation -&gt; Annotation -&gt; Annotation
+forall a.
+Semigroup a =&gt;
+a -&gt; (a -&gt; a -&gt; a) -&gt; ([a] -&gt; a) -&gt; Monoid a
+mconcat :: [Annotation] -&gt; Annotation
+$cmconcat :: [Annotation] -&gt; Annotation
+mappend :: Annotation -&gt; Annotation -&gt; Annotation
+$cmappend :: Annotation -&gt; Annotation -&gt; Annotation
+mempty :: Annotation
+$cmempty :: Annotation
+$cp1Monoid :: Semigroup Annotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">IsString</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Annotations.html#Annotation"><span class="hs-identifier hs-type">Annotation</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680595580"><span class="annot"><span class="annottext">fromString :: String -&gt; Annotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromString</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; Annotation
+</span><a href="Music.Score.Meta.Annotations.html#Annotation"><span class="hs-identifier hs-var">Annotation</span></a></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; Annotation)
+-&gt; (String -&gt; [String]) -&gt; String -&gt; Annotation
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String]
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="annot"><a href="Music.Score.Meta.Annotations.html#getAnnotation"><span class="hs-identifier hs-type">getAnnotation</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Annotations.html#Annotation"><span class="hs-identifier hs-type">Annotation</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-66"></span><span id="getAnnotation"><span class="annot"><span class="annottext">getAnnotation :: Annotation -&gt; [String]
+</span><a href="Music.Score.Meta.Annotations.html#getAnnotation"><span class="hs-identifier hs-var hs-var">getAnnotation</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; [String]
+forall a. Eq a =&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Data.List.nub</span></a></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; [String])
+-&gt; (Annotation -&gt; [String]) -&gt; Annotation -&gt; [String]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Annotation -&gt; [String]
+</span><a href="Music.Score.Meta.Annotations.html#getAnnotation_"><span class="hs-identifier hs-var hs-var">getAnnotation_</span></a></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-comment">-- | Annotate the whole score.</span><span>
+</span><span id="line-69"></span><span id="local-6989586621680595577"><span class="annot"><a href="Music.Score.Meta.Annotations.html#annotate"><span class="hs-identifier hs-type">annotate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595577"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595577"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-70"></span><span id="annotate"><span class="annot"><span class="annottext">annotate :: String -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.Annotations.html#annotate"><span class="hs-identifier hs-var hs-var">annotate</span></a></span></span><span> </span><span id="local-6989586621680595576"><span class="annot"><span class="annottext">str :: String
+</span><a href="#local-6989586621680595576"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span id="local-6989586621680595575"><span class="annot"><span class="annottext">x :: Score a
+</span><a href="#local-6989586621680595575"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Score a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680595575"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-71"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680595575"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-72"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680595573"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680595573"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Span -&gt; String -&gt; Score a -&gt; Score a
+forall a. Span -&gt; String -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.Annotations.html#annotateSpan"><span class="hs-identifier hs-var">annotateSpan</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680595573"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680595576"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680595575"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- | Annotate a part of the score.</span><span>
+</span><span id="line-75"></span><span id="local-6989586621680595638"><span class="annot"><a href="Music.Score.Meta.Annotations.html#annotateSpan"><span class="hs-identifier hs-type">annotateSpan</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595638"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595638"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-76"></span><span id="annotateSpan"><span class="annot"><span class="annottext">annotateSpan :: Span -&gt; String -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.Annotations.html#annotateSpan"><span class="hs-identifier hs-var hs-var">annotateSpan</span></a></span></span><span> </span><span id="local-6989586621680595572"><span class="annot"><span class="annottext">span :: Span
+</span><a href="#local-6989586621680595572"><span class="hs-identifier hs-var">span</span></a></span></span><span> </span><span id="local-6989586621680595571"><span class="annot"><span class="annottext">str :: String
+</span><a href="#local-6989586621680595571"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span id="local-6989586621680595570"><span class="annot"><span class="annottext">x :: Score a
+</span><a href="#local-6989586621680595570"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Event Annotation -&gt; Score a -&gt; Score a
+forall a b. (AttributeClass a, HasMeta b) =&gt; Event a -&gt; b -&gt; b
+</span><a href="Music.Score.Meta.html#addMetaNote"><span class="hs-identifier hs-var">addMetaNote</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; Event Annotation -&gt; Event Annotation
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680595572"><span class="hs-identifier hs-var">span</span></a></span><span> </span><span class="annot"><span class="annottext">(Event Annotation -&gt; Event Annotation)
+-&gt; Event Annotation -&gt; Event Annotation
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Annotation -&gt; Event Annotation
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">(Annotation -&gt; Event Annotation) -&gt; Annotation -&gt; Event Annotation
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[String] -&gt; Annotation
+</span><a href="Music.Score.Meta.Annotations.html#Annotation"><span class="hs-identifier hs-var">Annotation</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680595571"><span class="hs-identifier hs-var">str</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680595570"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- | Show all annotations in the score.</span><span>
+</span><span id="line-79"></span><span id="local-6989586621680595567"><span class="annot"><a href="Music.Score.Meta.Annotations.html#showAnnotations"><span class="hs-identifier hs-type">showAnnotations</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Part.html#HasParts%27"><span class="hs-identifier hs-type">HasParts'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595567"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Part.html#Part"><span class="hs-identifier hs-type">Part</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595567"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595567"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595567"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595567"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-80"></span><span id="showAnnotations"><span class="annot"><span class="annottext">showAnnotations :: Score a -&gt; Score a
+</span><a href="Music.Score.Meta.Annotations.html#showAnnotations"><span class="hs-identifier hs-var hs-var">showAnnotations</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Score a -&gt; Score a
+forall a.
+(HasParts' a, Ord (Part a), HasText a) =&gt;
+String -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.Annotations.html#showAnnotations%27"><span class="hs-identifier hs-var">showAnnotations'</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;:&quot;</span></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- | Show all annotations in the score using the given prefix.</span><span>
+</span><span id="line-83"></span><span id="local-6989586621680595625"><span class="annot"><a href="Music.Score.Meta.Annotations.html#showAnnotations%27"><span class="hs-identifier hs-type">showAnnotations'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Part.html#HasParts%27"><span class="hs-identifier hs-type">HasParts'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595625"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Part.html#Part"><span class="hs-identifier hs-type">Part</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595625"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595625"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595625"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595625"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-84"></span><span id="showAnnotations%27"><span class="annot"><span class="annottext">showAnnotations' :: String -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.Annotations.html#showAnnotations%27"><span class="hs-identifier hs-var hs-var">showAnnotations'</span></a></span></span><span> </span><span id="local-6989586621680595566"><span class="annot"><span class="annottext">prefix :: String
+</span><a href="#local-6989586621680595566"><span class="hs-identifier hs-var">prefix</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([String] -&gt; Score a -&gt; Score a) -&gt; Score a -&gt; Score a
+forall a. ([String] -&gt; Score a -&gt; Score a) -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.Annotations.html#withAnnotations"><span class="hs-identifier hs-var">withAnnotations</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Score a -&gt; [String] -&gt; Score a) -&gt; [String] -&gt; Score a -&gt; Score a
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">flip</span></a></span><span> </span><span class="annot"><span class="annottext">((Score a -&gt; [String] -&gt; Score a)
+ -&gt; [String] -&gt; Score a -&gt; Score a)
+-&gt; (Score a -&gt; [String] -&gt; Score a)
+-&gt; [String]
+-&gt; Score a
+-&gt; Score a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680595564"><span class="annot"><span class="annottext">s :: Score a
+</span><a href="#local-6989586621680595564"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Score a -&gt; Score a) -&gt; Score a -&gt; [String] -&gt; Score a
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">foldr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Score a -&gt; Score a
+forall s a. (HasPhrases' s a, HasText a) =&gt; String -&gt; s -&gt; s
+</span><a href="Music.Score.Text.html#text"><span class="hs-identifier hs-var">text</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Score a -&gt; Score a)
+-&gt; (String -&gt; String) -&gt; String -&gt; Score a -&gt; Score a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680595566"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680595564"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- | Handle the annotations in a score.</span><span>
+</span><span id="line-87"></span><span id="local-6989586621680595620"><span class="annot"><a href="Music.Score.Meta.Annotations.html#withAnnotations"><span class="hs-identifier hs-type">withAnnotations</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595620"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595620"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595620"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595620"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-88"></span><span id="withAnnotations"><span class="annot"><span class="annottext">withAnnotations :: ([String] -&gt; Score a -&gt; Score a) -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.Annotations.html#withAnnotations"><span class="hs-identifier hs-var hs-var">withAnnotations</span></a></span></span><span> </span><span id="local-6989586621680595562"><span class="annot"><span class="annottext">f :: [String] -&gt; Score a -&gt; Score a
+</span><a href="#local-6989586621680595562"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Annotation -&gt; Score a -&gt; Score a) -&gt; Score a -&gt; Score a
+forall a b.
+AttributeClass a =&gt;
+(a -&gt; Score b -&gt; Score b) -&gt; Score b -&gt; Score b
+</span><a href="Music.Score.Meta.html#withMeta"><span class="hs-identifier hs-var">withMeta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String] -&gt; Score a -&gt; Score a
+</span><a href="#local-6989586621680595562"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; Score a -&gt; Score a)
+-&gt; (Annotation -&gt; [String]) -&gt; Annotation -&gt; Score a -&gt; Score a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Annotation -&gt; [String]
+</span><a href="Music.Score.Meta.Annotations.html#getAnnotation"><span class="hs-identifier hs-var">getAnnotation</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span></pre></body></html>

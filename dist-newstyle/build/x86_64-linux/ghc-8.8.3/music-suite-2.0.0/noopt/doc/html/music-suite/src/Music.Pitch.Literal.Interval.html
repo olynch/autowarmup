@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE NoMonomorphismRestriction #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-missing-signatures #-}</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-17"></span><span class="hs-comment">--</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- Portability : portable</span><span>
+</span><span id="line-21"></span><span class="hs-comment">--</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- Provides overloaded interval literals.</span><span>
+</span><span id="line-23"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Pitch.Literal.Interval</span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * IsInterval class</span></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsInterval"><span class="hs-identifier">IsInterval</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Literal values</span></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Simple intervals</span></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d1"><span class="hs-identifier">d1</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_P1"><span class="hs-identifier">_P1</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A1"><span class="hs-identifier">_A1</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d2"><span class="hs-identifier">d2</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#m2"><span class="hs-identifier">m2</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_M2"><span class="hs-identifier">_M2</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A2"><span class="hs-identifier">_A2</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d3"><span class="hs-identifier">d3</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#m3"><span class="hs-identifier">m3</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_M3"><span class="hs-identifier">_M3</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A3"><span class="hs-identifier">_A3</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d4"><span class="hs-identifier">d4</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_P4"><span class="hs-identifier">_P4</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A4"><span class="hs-identifier">_A4</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d5"><span class="hs-identifier">d5</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_P5"><span class="hs-identifier">_P5</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A5"><span class="hs-identifier">_A5</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d6"><span class="hs-identifier">d6</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#m6"><span class="hs-identifier">m6</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_M6"><span class="hs-identifier">_M6</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-50"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A6"><span class="hs-identifier">_A6</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d7"><span class="hs-identifier">d7</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#m7"><span class="hs-identifier">m7</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_M7"><span class="hs-identifier">_M7</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A7"><span class="hs-identifier">_A7</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** One-octave compounds</span></span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d8"><span class="hs-identifier">d8</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_P8"><span class="hs-identifier">_P8</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A8"><span class="hs-identifier">_A8</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-60"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d9"><span class="hs-identifier">d9</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#m9"><span class="hs-identifier">m9</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_M9"><span class="hs-identifier">_M9</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A9"><span class="hs-identifier">_A9</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-64"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d10"><span class="hs-identifier">d10</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-65"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#m10"><span class="hs-identifier">m10</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_M10"><span class="hs-identifier">_M10</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A10"><span class="hs-identifier">_A10</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d11"><span class="hs-identifier">d11</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_P11"><span class="hs-identifier">_P11</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-70"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A11"><span class="hs-identifier">_A11</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-71"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d12"><span class="hs-identifier">d12</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-72"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_P12"><span class="hs-identifier">_P12</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A12"><span class="hs-identifier">_A12</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-74"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d13"><span class="hs-identifier">d13</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-75"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#m13"><span class="hs-identifier">m13</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-76"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_M13"><span class="hs-identifier">_M13</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-77"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A13"><span class="hs-identifier">_A13</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d14"><span class="hs-identifier">d14</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-79"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#m14"><span class="hs-identifier">m14</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-80"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_M14"><span class="hs-identifier">_M14</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-81"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A14"><span class="hs-identifier">_A14</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Two-octave compounds</span></span><span>
+</span><span id="line-84"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#d15"><span class="hs-identifier">d15</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-85"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_P15"><span class="hs-identifier">_P15</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-86"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#_A15"><span class="hs-identifier">_A15</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-87"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-88"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html"><span class="hs-identifier">Music.Pitch.Common.Internal</span></a></span><span>
+</span><span id="line-91"></span></pre></body></html>

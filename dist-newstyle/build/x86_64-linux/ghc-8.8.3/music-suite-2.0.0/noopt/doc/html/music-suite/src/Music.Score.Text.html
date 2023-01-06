@@ -1,0 +1,507 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DefaultSignatures #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-matches
+  -fno-warn-unused-imports #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- | Provides a way of adding text to notes.</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Text</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Text</span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier">HasText</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier">TextT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Score.Text.html#runTextT"><span class="hs-identifier">runTextT</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Score.Text.html#text"><span class="hs-identifier">text</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Score.Text.html#textLast"><span class="hs-identifier">textLast</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Comonad</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html"><span class="hs-identifier">Data.Functor.Couple</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Ratio</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Word</span></a></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html"><span class="hs-identifier">Music.Pitch.Alterable</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html"><span class="hs-identifier">Music.Pitch.Augmentable</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Phrases.html"><span class="hs-identifier">Music.Score.Phrases</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Note.html"><span class="hs-identifier">Music.Time.Note</span></a></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Score.html"><span class="hs-identifier">Music.Time.Score</span></a></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Voice.html"><span class="hs-identifier">Music.Time.Voice</span></a></span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- Class of types which allow setting text.</span><span>
+</span><span id="line-44"></span><span class="hs-comment">--</span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- ==== Laws</span><span>
+</span><span id="line-46"></span><span class="hs-comment">--</span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- [/identity/]</span><span>
+</span><span id="line-48"></span><span class="hs-comment">--</span><span>
+</span><span id="line-49"></span><span class="hs-comment">--    @'addText' mempty x = x@</span><span>
+</span><span id="line-50"></span><span class="hs-comment">--</span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- [/composition/]</span><span>
+</span><span id="line-52"></span><span class="hs-comment">--</span><span>
+</span><span id="line-53"></span><span class="hs-comment">--    @'addText' (m &lt;&gt; n) x = 'addText' m ('addText' n x)@</span><span>
+</span><span id="line-54"></span><span class="hs-keyword">class</span><span> </span><span id="HasText"><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-var">HasText</span></a></span></span><span> </span><span id="local-6989586621680581585"><span class="annot"><a href="#local-6989586621680581585"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span>  </span><span id="addText"><span class="annot"><a href="Music.Score.Text.html#addText"><span class="hs-identifier hs-type">addText</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680581585"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680581585"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-keyword">default</span><span> </span><span id="addText"><span class="annot"><a href="Music.Score.Text.html#addText"><span class="hs-identifier hs-type">addText</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680581383"><span class="annot"><a href="#local-6989586621680581383"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621680581382"><span class="annot"><a href="#local-6989586621680581382"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680581585"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">~</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581383"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581382"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581383"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581382"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680581585"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680581585"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-59"></span><span>  </span><span id="local-6989586621680581381"><span class="annot"><a href="Music.Score.Text.html#addText"><span class="hs-identifier hs-var hs-var">addText</span></a></span><span> </span><span id="local-6989586621680581380"><span class="annot"><span class="annottext">s :: [String]
+</span><a href="#local-6989586621680581380"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(b -&gt; b) -&gt; f b -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String] -&gt; b -&gt; b
+forall a. HasText a =&gt; [String] -&gt; a -&gt; a
+</span><a href="Music.Score.Text.html#addText"><span class="hs-identifier hs-var">addText</span></a></span><span> </span><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621680581380"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="hs-keyword">newtype</span><span> </span><span id="TextT"><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-var">TextT</span></a></span></span><span> </span><span id="local-6989586621680581436"><span class="annot"><a href="#local-6989586621680581436"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TextT"><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-var">TextT</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getTextT"><span class="annot"><span class="annottext">TextT a -&gt; Couple [String] a
+</span><a href="Music.Score.Text.html#getTextT"><span class="hs-identifier hs-var hs-var">getTextT</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621680581436"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">deriving</span><span>
+</span><span id="line-63"></span><span>    </span><span class="hs-special">(</span><span> </span><span id="local-6989586621680581374"><span id="local-6989586621680581376"><span class="annot"><span class="annottext">TextT a -&gt; TextT a -&gt; Bool
+(TextT a -&gt; TextT a -&gt; Bool)
+-&gt; (TextT a -&gt; TextT a -&gt; Bool) -&gt; Eq (TextT a)
+forall a. Eq a =&gt; TextT a -&gt; TextT a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: TextT a -&gt; TextT a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; TextT a -&gt; TextT a -&gt; Bool
+== :: TextT a -&gt; TextT a -&gt; Bool
+$c== :: forall a. Eq a =&gt; TextT a -&gt; TextT a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-64"></span><span>      </span><span id="local-6989586621680581367"><span id="local-6989586621680581369"><span id="local-6989586621680581371"><span class="annot"><span class="annottext">Int -&gt; TextT a -&gt; ShowS
+[TextT a] -&gt; ShowS
+TextT a -&gt; String
+(Int -&gt; TextT a -&gt; ShowS)
+-&gt; (TextT a -&gt; String) -&gt; ([TextT a] -&gt; ShowS) -&gt; Show (TextT a)
+forall a. Show a =&gt; Int -&gt; TextT a -&gt; ShowS
+forall a. Show a =&gt; [TextT a] -&gt; ShowS
+forall a. Show a =&gt; TextT a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [TextT a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [TextT a] -&gt; ShowS
+show :: TextT a -&gt; String
+$cshow :: forall a. Show a =&gt; TextT a -&gt; String
+showsPrec :: Int -&gt; TextT a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; TextT a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-65"></span><span>      </span><span id="local-6989586621680581351"><span id="local-6989586621680581353"><span id="local-6989586621680581355"><span id="local-6989586621680581357"><span id="local-6989586621680581359"><span id="local-6989586621680581361"><span id="local-6989586621680581363"><span class="annot"><span class="annottext">Eq (TextT a)
+Eq (TextT a) =&gt;
+(TextT a -&gt; TextT a -&gt; Ordering)
+-&gt; (TextT a -&gt; TextT a -&gt; Bool)
+-&gt; (TextT a -&gt; TextT a -&gt; Bool)
+-&gt; (TextT a -&gt; TextT a -&gt; Bool)
+-&gt; (TextT a -&gt; TextT a -&gt; Bool)
+-&gt; (TextT a -&gt; TextT a -&gt; TextT a)
+-&gt; (TextT a -&gt; TextT a -&gt; TextT a)
+-&gt; Ord (TextT a)
+TextT a -&gt; TextT a -&gt; Bool
+TextT a -&gt; TextT a -&gt; Ordering
+TextT a -&gt; TextT a -&gt; TextT a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (TextT a)
+forall a. Ord a =&gt; TextT a -&gt; TextT a -&gt; Bool
+forall a. Ord a =&gt; TextT a -&gt; TextT a -&gt; Ordering
+forall a. Ord a =&gt; TextT a -&gt; TextT a -&gt; TextT a
+min :: TextT a -&gt; TextT a -&gt; TextT a
+$cmin :: forall a. Ord a =&gt; TextT a -&gt; TextT a -&gt; TextT a
+max :: TextT a -&gt; TextT a -&gt; TextT a
+$cmax :: forall a. Ord a =&gt; TextT a -&gt; TextT a -&gt; TextT a
+&gt;= :: TextT a -&gt; TextT a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; TextT a -&gt; TextT a -&gt; Bool
+&gt; :: TextT a -&gt; TextT a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; TextT a -&gt; TextT a -&gt; Bool
+&lt;= :: TextT a -&gt; TextT a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; TextT a -&gt; TextT a -&gt; Bool
+&lt; :: TextT a -&gt; TextT a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; TextT a -&gt; TextT a -&gt; Bool
+compare :: TextT a -&gt; TextT a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; TextT a -&gt; TextT a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (TextT a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-66"></span><span>      </span><span id="local-6989586621680581346"><span id="local-6989586621680581348"><span class="annot"><span class="annottext">a -&gt; TextT b -&gt; TextT a
+(a -&gt; b) -&gt; TextT a -&gt; TextT b
+(forall a b. (a -&gt; b) -&gt; TextT a -&gt; TextT b)
+-&gt; (forall a b. a -&gt; TextT b -&gt; TextT a) -&gt; Functor TextT
+forall a b. a -&gt; TextT b -&gt; TextT a
+forall a b. (a -&gt; b) -&gt; TextT a -&gt; TextT b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; TextT b -&gt; TextT a
+$c&lt;$ :: forall a b. a -&gt; TextT b -&gt; TextT a
+fmap :: (a -&gt; b) -&gt; TextT a -&gt; TextT b
+$cfmap :: forall a b. (a -&gt; b) -&gt; TextT a -&gt; TextT b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-67"></span><span>      </span><span id="local-6989586621680581311"><span id="local-6989586621680581313"><span id="local-6989586621680581315"><span id="local-6989586621680581317"><span id="local-6989586621680581319"><span id="local-6989586621680581321"><span id="local-6989586621680581323"><span id="local-6989586621680581325"><span id="local-6989586621680581327"><span id="local-6989586621680581329"><span id="local-6989586621680581331"><span id="local-6989586621680581333"><span id="local-6989586621680581335"><span id="local-6989586621680581337"><span id="local-6989586621680581339"><span id="local-6989586621680581341"><span id="local-6989586621680581343"><span class="annot"><span class="annottext">a -&gt; TextT a -&gt; Bool
+TextT m -&gt; m
+TextT a -&gt; [a]
+TextT a -&gt; Bool
+TextT a -&gt; Int
+TextT a -&gt; a
+TextT a -&gt; a
+TextT a -&gt; a
+TextT a -&gt; a
+(a -&gt; m) -&gt; TextT a -&gt; m
+(a -&gt; m) -&gt; TextT a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+(a -&gt; a -&gt; a) -&gt; TextT a -&gt; a
+(a -&gt; a -&gt; a) -&gt; TextT a -&gt; a
+(forall m. Monoid m =&gt; TextT m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TextT a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TextT a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TextT a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TextT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TextT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TextT a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; TextT a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; TextT a -&gt; a)
+-&gt; (forall a. TextT a -&gt; [a])
+-&gt; (forall a. TextT a -&gt; Bool)
+-&gt; (forall a. TextT a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; TextT a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; TextT a -&gt; a)
+-&gt; (forall a. Ord a =&gt; TextT a -&gt; a)
+-&gt; (forall a. Num a =&gt; TextT a -&gt; a)
+-&gt; (forall a. Num a =&gt; TextT a -&gt; a)
+-&gt; Foldable TextT
+forall a. Eq a =&gt; a -&gt; TextT a -&gt; Bool
+forall a. Num a =&gt; TextT a -&gt; a
+forall a. Ord a =&gt; TextT a -&gt; a
+forall m. Monoid m =&gt; TextT m -&gt; m
+forall a. TextT a -&gt; Bool
+forall a. TextT a -&gt; Int
+forall a. TextT a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; TextT a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TextT a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: TextT a -&gt; a
+$cproduct :: forall a. Num a =&gt; TextT a -&gt; a
+sum :: TextT a -&gt; a
+$csum :: forall a. Num a =&gt; TextT a -&gt; a
+minimum :: TextT a -&gt; a
+$cminimum :: forall a. Ord a =&gt; TextT a -&gt; a
+maximum :: TextT a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; TextT a -&gt; a
+elem :: a -&gt; TextT a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; TextT a -&gt; Bool
+length :: TextT a -&gt; Int
+$clength :: forall a. TextT a -&gt; Int
+null :: TextT a -&gt; Bool
+$cnull :: forall a. TextT a -&gt; Bool
+toList :: TextT a -&gt; [a]
+$ctoList :: forall a. TextT a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; TextT a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; TextT a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; TextT a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; TextT a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TextT a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; TextT a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TextT a -&gt; m
+foldMap :: (a -&gt; m) -&gt; TextT a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TextT a -&gt; m
+fold :: TextT m -&gt; m
+$cfold :: forall m. Monoid m =&gt; TextT m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-68"></span><span>      </span><span id="local-6989586621680581300"><span id="local-6989586621680581302"><span id="local-6989586621680581304"><span id="local-6989586621680581306"><span class="annot"><span class="annottext">Functor TextT
+Foldable TextT
+(Functor TextT, Foldable TextT) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; TextT a -&gt; f (TextT b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    TextT (f a) -&gt; f (TextT a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; TextT a -&gt; m (TextT b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; TextT (m a) -&gt; m (TextT a))
+-&gt; Traversable TextT
+(a -&gt; f b) -&gt; TextT a -&gt; f (TextT b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; TextT (m a) -&gt; m (TextT a)
+forall (f :: * -&gt; *) a. Applicative f =&gt; TextT (f a) -&gt; f (TextT a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; TextT a -&gt; m (TextT b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TextT a -&gt; f (TextT b)
+sequence :: TextT (m a) -&gt; m (TextT a)
+$csequence :: forall (m :: * -&gt; *) a. Monad m =&gt; TextT (m a) -&gt; m (TextT a)
+mapM :: (a -&gt; m b) -&gt; TextT a -&gt; m (TextT b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; TextT a -&gt; m (TextT b)
+sequenceA :: TextT (f a) -&gt; f (TextT a)
+$csequenceA :: forall (f :: * -&gt; *) a. Applicative f =&gt; TextT (f a) -&gt; f (TextT a)
+traverse :: (a -&gt; f b) -&gt; TextT a -&gt; f (TextT b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TextT a -&gt; f (TextT b)
+$cp2Traversable :: Foldable TextT
+$cp1Traversable :: Functor TextT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-69"></span><span>      </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-70"></span><span>      </span><span id="local-6989586621680581288"><span id="local-6989586621680581290"><span id="local-6989586621680581292"><span id="local-6989586621680581294"><span id="local-6989586621680581296"><span class="annot"><span class="annottext">Functor TextT
+a -&gt; TextT a
+Functor TextT =&gt;
+(forall a. a -&gt; TextT a)
+-&gt; (forall a b. TextT (a -&gt; b) -&gt; TextT a -&gt; TextT b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; TextT a -&gt; TextT b -&gt; TextT c)
+-&gt; (forall a b. TextT a -&gt; TextT b -&gt; TextT b)
+-&gt; (forall a b. TextT a -&gt; TextT b -&gt; TextT a)
+-&gt; Applicative TextT
+TextT a -&gt; TextT b -&gt; TextT b
+TextT a -&gt; TextT b -&gt; TextT a
+TextT (a -&gt; b) -&gt; TextT a -&gt; TextT b
+(a -&gt; b -&gt; c) -&gt; TextT a -&gt; TextT b -&gt; TextT c
+forall a. a -&gt; TextT a
+forall a b. TextT a -&gt; TextT b -&gt; TextT a
+forall a b. TextT a -&gt; TextT b -&gt; TextT b
+forall a b. TextT (a -&gt; b) -&gt; TextT a -&gt; TextT b
+forall a b c. (a -&gt; b -&gt; c) -&gt; TextT a -&gt; TextT b -&gt; TextT c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: TextT a -&gt; TextT b -&gt; TextT a
+$c&lt;* :: forall a b. TextT a -&gt; TextT b -&gt; TextT a
+*&gt; :: TextT a -&gt; TextT b -&gt; TextT b
+$c*&gt; :: forall a b. TextT a -&gt; TextT b -&gt; TextT b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; TextT a -&gt; TextT b -&gt; TextT c
+$cliftA2 :: forall a b c. (a -&gt; b -&gt; c) -&gt; TextT a -&gt; TextT b -&gt; TextT c
+&lt;*&gt; :: TextT (a -&gt; b) -&gt; TextT a -&gt; TextT b
+$c&lt;*&gt; :: forall a b. TextT (a -&gt; b) -&gt; TextT a -&gt; TextT b
+pure :: a -&gt; TextT a
+$cpure :: forall a. a -&gt; TextT a
+$cp1Applicative :: Functor TextT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-71"></span><span>      </span><span id="local-6989586621680581280"><span id="local-6989586621680581282"><span id="local-6989586621680581284"><span class="annot"><span class="annottext">Applicative TextT
+a -&gt; TextT a
+Applicative TextT =&gt;
+(forall a b. TextT a -&gt; (a -&gt; TextT b) -&gt; TextT b)
+-&gt; (forall a b. TextT a -&gt; TextT b -&gt; TextT b)
+-&gt; (forall a. a -&gt; TextT a)
+-&gt; Monad TextT
+TextT a -&gt; (a -&gt; TextT b) -&gt; TextT b
+TextT a -&gt; TextT b -&gt; TextT b
+forall a. a -&gt; TextT a
+forall a b. TextT a -&gt; TextT b -&gt; TextT b
+forall a b. TextT a -&gt; (a -&gt; TextT b) -&gt; TextT b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; TextT a
+$creturn :: forall a. a -&gt; TextT a
+&gt;&gt; :: TextT a -&gt; TextT b -&gt; TextT b
+$c&gt;&gt; :: forall a b. TextT a -&gt; TextT b -&gt; TextT b
+&gt;&gt;= :: TextT a -&gt; (a -&gt; TextT b) -&gt; TextT b
+$c&gt;&gt;= :: forall a b. TextT a -&gt; (a -&gt; TextT b) -&gt; TextT b
+$cp1Monad :: Applicative TextT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-72"></span><span>      </span><span id="local-6989586621680581272"><span id="local-6989586621680581274"><span id="local-6989586621680581276"><span class="annot"><span class="annottext">Functor TextT
+Functor TextT =&gt;
+(forall a. TextT a -&gt; a)
+-&gt; (forall a. TextT a -&gt; TextT (TextT a))
+-&gt; (forall a b. (TextT a -&gt; b) -&gt; TextT a -&gt; TextT b)
+-&gt; Comonad TextT
+TextT a -&gt; a
+TextT a -&gt; TextT (TextT a)
+(TextT a -&gt; b) -&gt; TextT a -&gt; TextT b
+forall a. TextT a -&gt; a
+forall a. TextT a -&gt; TextT (TextT a)
+forall a b. (TextT a -&gt; b) -&gt; TextT a -&gt; TextT b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (TextT a -&gt; b) -&gt; TextT a -&gt; TextT b
+$cextend :: forall a b. (TextT a -&gt; b) -&gt; TextT a -&gt; TextT b
+duplicate :: TextT a -&gt; TextT (TextT a)
+$cduplicate :: forall a. TextT a -&gt; TextT (TextT a)
+extract :: TextT a -&gt; a
+$cextract :: forall a. TextT a -&gt; a
+$cp1Comonad :: Functor TextT
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></span></span></span></span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span id="local-6989586621680581270"><span class="annot"><a href="Music.Score.Text.html#runTextT"><span class="hs-identifier hs-type">runTextT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581270"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680581270"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-76"></span><span id="runTextT"><span class="annot"><span class="annottext">runTextT :: TextT a -&gt; ([String], a)
+</span><a href="Music.Score.Text.html#runTextT"><span class="hs-identifier hs-var hs-var">runTextT</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680581268"><span class="annot"><span class="annottext">ts :: [String]
+</span><a href="#local-6989586621680581268"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680581267"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680581267"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621680581268"><span class="hs-identifier hs-var">ts</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680581267"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span id="local-6989586621680581265"><span id="local-6989586621680581266"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680581263"><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581266"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680581265"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680581266"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span id="local-6989586621680581261"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680581259"><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581261"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581261"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span id="local-6989586621680581257"><span id="local-6989586621680581258"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680581255"><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581258"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581257"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581258"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span id="local-6989586621680581254"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680581252"><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581254"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680581254"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span id="local-6989586621680581251"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680581249"><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581251"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581251"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span id="local-6989586621680581248"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680581246"><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581248"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Voice.html#Voice"><span class="hs-identifier hs-type">Voice</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581248"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span id="local-6989586621680581245"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680581243"><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581245"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581245"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span id="local-6989586621680581242"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581242"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581242"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621680581242"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span>  </span><span id="local-6989586621680581239"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (TextT a)) (f (Unwrapped (TextT a)))
+-&gt; p (TextT a) (f (TextT a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TextT a -&gt; Couple [String] a)
+-&gt; (Couple [String] a -&gt; TextT a)
+-&gt; Iso (TextT a) (TextT a) (Couple [String] a) (Couple [String] a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">TextT a -&gt; Couple [String] a
+forall a. TextT a -&gt; Couple [String] a
+</span><a href="Music.Score.Text.html#getTextT"><span class="hs-identifier hs-var hs-var">getTextT</span></a></span><span> </span><span class="annot"><span class="annottext">Couple [String] a -&gt; TextT a
+forall a. Couple [String] a -&gt; TextT a
+</span><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-var">TextT</span></a></span></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span id="local-6989586621680581235"><span id="local-6989586621680581236"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581236"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581235"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span id="local-6989586621680581232"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581232"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-101"></span><span>  </span><span id="local-6989586621680581230"><span class="annot"><span class="annottext">addText :: [String] -&gt; TextT a -&gt; TextT a
+</span><a href="#local-6989586621680581230"><span class="hs-identifier hs-var hs-var hs-var hs-var">addText</span></a></span></span><span> </span><span id="local-6989586621680581229"><span class="annot"><span class="annottext">s :: [String]
+</span><a href="#local-6989586621680581229"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680581228"><span class="annot"><span class="annottext">t :: [String]
+</span><a href="#local-6989586621680581228"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680581227"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680581227"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Couple [String] a -&gt; TextT a
+forall a. Couple [String] a -&gt; TextT a
+</span><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-var">TextT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">([String], a) -&gt; Couple [String] a
+forall b a. (b, a) -&gt; Couple b a
+</span><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-var">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621680581228"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">[String] -&gt; [String] -&gt; [String]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621680581229"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680581227"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span id="local-6989586621680581212"><span id="local-6989586621680581214"><span id="local-6989586621680581216"><span id="local-6989586621680581218"><span id="local-6989586621680581220"><span id="local-6989586621680581222"><span id="local-6989586621680581224"><span id="local-6989586621680581226"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581226"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581226"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span id="local-6989586621680581203"><span id="local-6989586621680581205"><span id="local-6989586621680581207"><span id="local-6989586621680581210"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581210"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581210"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span id="local-6989586621680581156"><span id="local-6989586621680581158"><span id="local-6989586621680581160"><span id="local-6989586621680581162"><span id="local-6989586621680581164"><span id="local-6989586621680581166"><span id="local-6989586621680581168"><span id="local-6989586621680581170"><span id="local-6989586621680581172"><span id="local-6989586621680581174"><span id="local-6989586621680581176"><span id="local-6989586621680581178"><span id="local-6989586621680581180"><span id="local-6989586621680581182"><span id="local-6989586621680581184"><span id="local-6989586621680581186"><span id="local-6989586621680581188"><span id="local-6989586621680581190"><span id="local-6989586621680581192"><span id="local-6989586621680581194"><span id="local-6989586621680581196"><span id="local-6989586621680581198"><span id="local-6989586621680581201"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581201"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581201"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span id="local-6989586621680581138"><span id="local-6989586621680581140"><span id="local-6989586621680581142"><span id="local-6989586621680581144"><span id="local-6989586621680581146"><span id="local-6989586621680581148"><span id="local-6989586621680581150"><span id="local-6989586621680581152"><span id="local-6989586621680581154"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581154"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581154"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span id="local-6989586621680581132"><span id="local-6989586621680581134"><span id="local-6989586621680581136"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581136"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581136"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span id="local-6989586621680581126"><span id="local-6989586621680581130"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581130"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581130"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581130"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581130"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span id="local-6989586621680581108"><span id="local-6989586621680581110"><span id="local-6989586621680581112"><span id="local-6989586621680581114"><span id="local-6989586621680581116"><span id="local-6989586621680581118"><span id="local-6989586621680581120"><span id="local-6989586621680581124"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581124"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581124"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581124"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Text.html#TextT"><span class="hs-identifier hs-type">TextT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581124"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-116"></span><span>
+</span><span id="line-117"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- Attach the given text to the first note.</span><span>
+</span><span id="line-119"></span><span id="local-6989586621680581105"><span id="local-6989586621680581106"><span class="annot"><a href="Music.Score.Text.html#text"><span class="hs-identifier hs-type">text</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Phrases.html#HasPhrases%27"><span class="hs-identifier hs-type">HasPhrases'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581106"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581105"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581105"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680581106"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680581106"><span class="hs-identifier hs-type">s</span></a></span></span></span><span>
+</span><span id="line-120"></span><span id="text"><span class="annot"><span class="annottext">text :: String -&gt; s -&gt; s
+</span><a href="Music.Score.Text.html#text"><span class="hs-identifier hs-var hs-var">text</span></a></span></span><span> </span><span id="local-6989586621680581104"><span class="annot"><span class="annottext">s :: String
+</span><a href="#local-6989586621680581104"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter s s (Note a) (Note a) -&gt; (Note a -&gt; Note a) -&gt; s -&gt; s
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Phrase a -&gt; Identity (Phrase a)) -&gt; s -&gt; Identity s
+forall s a. HasPhrases' s a =&gt; Traversal' s (Phrase a)
+</span><a href="Music.Score.Phrases.html#phrases%27"><span class="hs-identifier hs-var">phrases'</span></a></span><span> </span><span class="annot"><span class="annottext">((Phrase a -&gt; Identity (Phrase a)) -&gt; s -&gt; Identity s)
+-&gt; ((Note a -&gt; Identity (Note a))
+    -&gt; Phrase a -&gt; Identity (Phrase a))
+-&gt; ASetter s s (Note a) (Note a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Note a -&gt; Identity (Note a)) -&gt; Phrase a -&gt; Identity (Phrase a)
+forall s a. Cons s s a a =&gt; Traversal' s a
+</span><span class="hs-identifier hs-var">_head</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String] -&gt; Note a -&gt; Note a
+forall a. HasText a =&gt; [String] -&gt; a -&gt; a
+</span><a href="Music.Score.Text.html#addText"><span class="hs-identifier hs-var">addText</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680581104"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-123"></span><span class="hs-comment">-- Attach the given text to the last note.</span><span>
+</span><span id="line-124"></span><span id="local-6989586621680581098"><span id="local-6989586621680581099"><span class="annot"><a href="Music.Score.Text.html#textLast"><span class="hs-identifier hs-type">textLast</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Phrases.html#HasPhrases%27"><span class="hs-identifier hs-type">HasPhrases'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581099"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581098"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680581098"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680581099"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680581099"><span class="hs-identifier hs-type">s</span></a></span></span></span><span>
+</span><span id="line-125"></span><span id="textLast"><span class="annot"><span class="annottext">textLast :: String -&gt; s -&gt; s
+</span><a href="Music.Score.Text.html#textLast"><span class="hs-identifier hs-var hs-var">textLast</span></a></span></span><span> </span><span id="local-6989586621680581097"><span class="annot"><span class="annottext">s :: String
+</span><a href="#local-6989586621680581097"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter s s (Note a) (Note a) -&gt; (Note a -&gt; Note a) -&gt; s -&gt; s
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Phrase a -&gt; Identity (Phrase a)) -&gt; s -&gt; Identity s
+forall s a. HasPhrases' s a =&gt; Traversal' s (Phrase a)
+</span><a href="Music.Score.Phrases.html#phrases%27"><span class="hs-identifier hs-var">phrases'</span></a></span><span> </span><span class="annot"><span class="annottext">((Phrase a -&gt; Identity (Phrase a)) -&gt; s -&gt; Identity s)
+-&gt; ((Note a -&gt; Identity (Note a))
+    -&gt; Phrase a -&gt; Identity (Phrase a))
+-&gt; ASetter s s (Note a) (Note a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Note a -&gt; Identity (Note a)) -&gt; Phrase a -&gt; Identity (Phrase a)
+forall s a. Snoc s s a a =&gt; Traversal' s a
+</span><span class="hs-identifier hs-var">_last</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String] -&gt; Note a -&gt; Note a
+forall a. HasText a =&gt; [String] -&gt; a -&gt; a
+</span><a href="Music.Score.Text.html#addText"><span class="hs-identifier hs-var">addText</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680581097"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-126"></span></pre></body></html>

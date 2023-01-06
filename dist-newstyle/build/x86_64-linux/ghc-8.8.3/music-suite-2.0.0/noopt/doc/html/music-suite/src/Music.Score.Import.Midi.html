@@ -1,0 +1,472 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE NoMonomorphismRestriction #-}</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012-2014</span><span>
+</span><span id="line-13"></span><span class="hs-comment">--</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- Portability : non-portable (TF,GNTD)</span><span>
+</span><span id="line-19"></span><span class="hs-comment">--</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- Provides MIDI import.</span><span>
+</span><span id="line-21"></span><span class="hs-comment">--</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- /Warning/ Experimental module.</span><span>
+</span><span id="line-23"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Import.Midi</span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Music.Score.Import.Midi.html#IsMidi"><span class="hs-identifier">IsMidi</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Music.Score.Import.Midi.html#fromMidi"><span class="hs-identifier">fromMidi</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Music.Score.Import.Midi.html#readMidi"><span class="hs-identifier">readMidi</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Music.Score.Import.Midi.html#readMidiMaybe"><span class="hs-identifier">readMidiMaybe</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="Music.Score.Import.Midi.html#readMidiEither"><span class="hs-identifier">readMidiEither</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Codec.Midi</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Midi</span></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Codec.Midi</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Midi</span></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Plus</span></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">List</span></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Map</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Monoid</span></a></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier">IsPitch</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Pitch</span></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html"><span class="hs-identifier">Music.Score.Articulation</span></a></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html"><span class="hs-identifier">Music.Score.Dynamics</span></a></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html"><span class="hs-identifier">Music.Score.Harmonics</span></a></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Internal.Export.html"><span class="hs-identifier">Music.Score.Internal.Export</span></a></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html"><span class="hs-identifier">Music.Score.Pitch</span></a></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Slide.html"><span class="hs-identifier">Music.Score.Slide</span></a></span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Text.html"><span class="hs-identifier">Music.Score.Text</span></a></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Ties.html"><span class="hs-identifier">Music.Score.Ties</span></a></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html"><span class="hs-identifier">Music.Score.Tremolo</span></a></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Text.Pretty</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Pretty</span></span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- import qualified Data.ByteString.Lazy as ByteString</span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- This constraint includes all note types that can be constructed from a Midi representation.</span><span>
+</span><span id="line-64"></span><span class="hs-keyword">type</span><span> </span><span id="IsMidi"><span class="annot"><a href="Music.Score.Import.Midi.html#IsMidi"><span class="hs-identifier hs-var">IsMidi</span></a></span></span><span> </span><span id="local-6989586621680601448"><span class="annot"><a href="#local-6989586621680601448"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- TODO</span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601448"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><a href="Music.Score.Part.html#HasPart%27"><span class="hs-identifier hs-type">HasPart'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601448"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Part.html#Part"><span class="hs-identifier hs-type">Part</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601448"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Part.html#Part"><span class="hs-identifier hs-type">Part</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601448"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-70"></span><span>    </span><span class="hs-comment">-- HasPitch a,</span><span>
+</span><span id="line-71"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Pitch.html#Pitch"><span class="hs-identifier hs-type">Pitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601448"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-72"></span><span>    </span><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601448"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><a href="Music.Score.Articulation.html#HasArticulation"><span class="hs-identifier hs-type">HasArticulation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601448"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601448"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-74"></span><span>    </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601448"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-75"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span class="hs-comment">-- -- type SimpleMidi = [[(Time, Bool, Int, Int)]]  -- outer: track, inner: channel, time, on/off, pitch, vel</span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- -- -- Ignore offset velocities (can't represent them)</span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- -- type SimpleMidi2 = [[(Span, Int, Int)]] -- outer: track, inner: channel, time, pitch, vel</span><span>
+</span><span id="line-80"></span><span class="hs-comment">-- --</span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- -- foo :: SimpleMidi2</span><span>
+</span><span id="line-82"></span><span class="hs-comment">--</span><span>
+</span><span id="line-83"></span><span class="hs-comment">-- mapWithIndex :: (Int -&gt; a -&gt; b) -&gt; [a] -&gt; [b]</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- mapWithIndex f = zipWith f [0..]</span><span>
+</span><span id="line-85"></span><span class="hs-comment">--</span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- mapWithIndex2 :: (Int -&gt; Int -&gt; a -&gt; b) -&gt; [[a]] -&gt; [b]</span><span>
+</span><span id="line-87"></span><span class="hs-comment">-- mapWithIndex2 f xss = concat $&#160;zipWith (\m -&gt; zipWith (f m) [0..]) [0..] xss</span><span>
+</span><span id="line-88"></span><span class="hs-comment">--</span><span>
+</span><span id="line-89"></span><span class="hs-comment">-- -- Last time the given key was pressed but not released (non-existant means it is not pressed)</span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- type ChanMap = Map Int Time</span><span>
+</span><span id="line-91"></span><span class="hs-comment">--</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- -- |</span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- -- Convert a score from a Midi representation.</span><span>
+</span><span id="line-94"></span><span class="hs-comment">-- --</span><span>
+</span><span id="line-95"></span><span id="local-6989586621680601454"><span class="annot"><a href="Music.Score.Import.Midi.html#fromMidi"><span class="hs-identifier hs-type">fromMidi</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Import.Midi.html#IsMidi"><span class="hs-identifier hs-type">IsMidi</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601454"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Midi</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601454"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-96"></span><span id="fromMidi"><span class="annot"><span class="annottext">fromMidi :: Midi -&gt; Score a
+</span><a href="Music.Score.Import.Midi.html#fromMidi"><span class="hs-identifier hs-var hs-var">fromMidi</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [[Event (Channel, Channel, Channel)]] -&gt; Score a
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;TODO midi import&quot;</span></span><span> </span><span class="annot"><span class="annottext">([[Event (Channel, Channel, Channel)]] -&gt; Score a)
+-&gt; (Midi -&gt; [[Event (Channel, Channel, Channel)]])
+-&gt; Midi
+-&gt; Score a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Midi -&gt; [[Event (Channel, Channel, Channel)]]
+</span><a href="Music.Score.Import.Midi.html#getMidi"><span class="hs-identifier hs-var">getMidi</span></a></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="annot"><a href="Music.Score.Import.Midi.html#getMidi"><span class="hs-identifier hs-type">getMidi</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Midi.Midi</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><a href="Music.Time.Event.html#Event"><span class="hs-identifier hs-type">Event</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Midi.Channel</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Midi.Key</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Midi.Velocity</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-99"></span><span id="getMidi"><span class="annot"><span class="annottext">getMidi :: Midi -&gt; [[Event (Channel, Channel, Channel)]]
+</span><a href="Music.Score.Import.Midi.html#getMidi"><span class="hs-identifier hs-var hs-var">getMidi</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Midi.Midi</span></span><span> </span><span id="local-6989586621680601435"><span class="annot"><span class="annottext">fileType :: FileType
+</span><a href="#local-6989586621680601435"><span class="hs-identifier hs-var">fileType</span></a></span></span><span> </span><span id="local-6989586621680601434"><span class="annot"><span class="annottext">timeDiv :: TimeDiv
+</span><a href="#local-6989586621680601434"><span class="hs-identifier hs-var">timeDiv</span></a></span></span><span> </span><span id="local-6989586621680601433"><span class="annot"><span class="annottext">tracks :: [Track Channel]
+</span><a href="#local-6989586621680601433"><span class="hs-identifier hs-var">tracks</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-100"></span><span>  </span><span class="annot"><span class="annottext">[[Event (Channel, Channel, Channel)]]
+-&gt; [[Event (Channel, Channel, Channel)]]
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-101"></span><span>    </span><span class="annot"><span class="annottext">([[Event (Channel, Channel, Channel)]]
+ -&gt; [[Event (Channel, Channel, Channel)]])
+-&gt; [[Event (Channel, Channel, Channel)]]
+-&gt; [[Event (Channel, Channel, Channel)]]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+-&gt; [[Event (Channel, Channel, Channel)]]
+-&gt; [[Event (Channel, Channel, Channel)]]
+forall a. Transformable a =&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#compress"><span class="hs-identifier hs-var">compress</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TimeDiv -&gt; Duration
+forall p. Fractional p =&gt; TimeDiv -&gt; p
+</span><a href="#local-6989586621680601430"><span class="hs-identifier hs-var">ticksp</span></a></span><span> </span><span class="annot"><span class="annottext">TimeDiv
+</span><a href="#local-6989586621680601434"><span class="hs-identifier hs-var">timeDiv</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-102"></span><span>    </span><span class="annot"><span class="annottext">([[Event (Channel, Channel, Channel)]]
+ -&gt; [[Event (Channel, Channel, Channel)]])
+-&gt; [[Event (Channel, Channel, Channel)]]
+-&gt; [[Event (Channel, Channel, Channel)]]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">([Maybe (Event (Channel, Channel, Channel))]
+ -&gt; [Event (Channel, Channel, Channel)])
+-&gt; [[Maybe (Event (Channel, Channel, Channel))]]
+-&gt; [[Event (Channel, Channel, Channel)]]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">[Maybe (Event (Channel, Channel, Channel))]
+-&gt; [Event (Channel, Channel, Channel)]
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; m (Maybe a) -&gt; m a
+</span><span class="hs-identifier hs-var">mcatMaybes</span></span><span>
+</span><span id="line-103"></span><span>    </span><span class="annot"><span class="annottext">([[Maybe (Event (Channel, Channel, Channel))]]
+ -&gt; [[Event (Channel, Channel, Channel)]])
+-&gt; [[Maybe (Event (Channel, Channel, Channel))]]
+-&gt; [[Event (Channel, Channel, Channel)]]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Map Channel Time, [Maybe (Event (Channel, Channel, Channel))])
+ -&gt; [Maybe (Event (Channel, Channel, Channel))])
+-&gt; [(Map Channel Time,
+     [Maybe (Event (Channel, Channel, Channel))])]
+-&gt; [[Maybe (Event (Channel, Channel, Channel))]]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Map Channel Time, [Maybe (Event (Channel, Channel, Channel))])
+-&gt; [Maybe (Event (Channel, Channel, Channel))]
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span>
+</span><span id="line-104"></span><span>    </span><span class="annot"><span class="annottext">([(Map Channel Time, [Maybe (Event (Channel, Channel, Channel))])]
+ -&gt; [[Maybe (Event (Channel, Channel, Channel))]])
+-&gt; [(Map Channel Time,
+     [Maybe (Event (Channel, Channel, Channel))])]
+-&gt; [[Maybe (Event (Channel, Channel, Channel))]]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">([(Channel, Bool, Channel, Channel, Channel)]
+ -&gt; (Map Channel Time, [Maybe (Event (Channel, Channel, Channel))]))
+-&gt; [[(Channel, Bool, Channel, Channel, Channel)]]
+-&gt; [(Map Channel Time,
+     [Maybe (Event (Channel, Channel, Channel))])]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Map Channel Time
+ -&gt; (Channel, Bool, Channel, Channel, Channel)
+ -&gt; (Map Channel Time, Maybe (Event (Channel, Channel, Channel))))
+-&gt; Map Channel Time
+-&gt; [(Channel, Bool, Channel, Channel, Channel)]
+-&gt; (Map Channel Time, [Maybe (Event (Channel, Channel, Channel))])
+forall (t :: * -&gt; *) a b c.
+Traversable t =&gt;
+(a -&gt; b -&gt; (a, c)) -&gt; a -&gt; t b -&gt; (a, t c)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">List.mapAccumL</span></a></span><span> </span><span class="annot"><span class="annottext">Map Channel Time
+-&gt; (Channel, Bool, Channel, Channel, Channel)
+-&gt; (Map Channel Time, Maybe (Event (Channel, Channel, Channel)))
+forall a b c a e.
+(Integral a, Num b, Num c, Ord b) =&gt;
+Map b Time
+-&gt; (a, Bool, a, b, e) -&gt; (Map b Time, Maybe (Event (a, b, c)))
+</span><a href="#local-6989586621680601427"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">Map Channel Time
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-105"></span><span>    </span><span class="annot"><span class="annottext">([[(Channel, Bool, Channel, Channel, Channel)]]
+ -&gt; [(Map Channel Time,
+      [Maybe (Event (Channel, Channel, Channel))])])
+-&gt; [[(Channel, Bool, Channel, Channel, Channel)]]
+-&gt; [(Map Channel Time,
+     [Maybe (Event (Channel, Channel, Channel))])]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">([Maybe (Channel, Bool, Channel, Channel, Channel)]
+ -&gt; [(Channel, Bool, Channel, Channel, Channel)])
+-&gt; [[Maybe (Channel, Bool, Channel, Channel, Channel)]]
+-&gt; [[(Channel, Bool, Channel, Channel, Channel)]]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">[Maybe (Channel, Bool, Channel, Channel, Channel)]
+-&gt; [(Channel, Bool, Channel, Channel, Channel)]
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; m (Maybe a) -&gt; m a
+</span><span class="hs-identifier hs-var">mcatMaybes</span></span><span>
+</span><span id="line-106"></span><span>    </span><span class="annot"><span class="annottext">([[Maybe (Channel, Bool, Channel, Channel, Channel)]]
+ -&gt; [[(Channel, Bool, Channel, Channel, Channel)]])
+-&gt; [[Maybe (Channel, Bool, Channel, Channel, Channel)]]
+-&gt; [[(Channel, Bool, Channel, Channel, Channel)]]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">ASetter
+  [Track Channel]
+  [[Maybe (Channel, Bool, Channel, Channel, Channel)]]
+  (Channel, Message)
+  (Maybe (Channel, Bool, Channel, Channel, Channel))
+-&gt; ((Channel, Message)
+    -&gt; Maybe (Channel, Bool, Channel, Channel, Channel))
+-&gt; [Track Channel]
+-&gt; [[Maybe (Channel, Bool, Channel, Channel, Channel)]]
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Track Channel
+ -&gt; Identity [Maybe (Channel, Bool, Channel, Channel, Channel)])
+-&gt; [Track Channel]
+-&gt; Identity [[Maybe (Channel, Bool, Channel, Channel, Channel)]]
+forall (f :: * -&gt; *) a b. Functor f =&gt; Setter (f a) (f b) a b
+</span><span class="hs-identifier hs-var">mapped</span></span><span> </span><span class="annot"><span class="annottext">((Track Channel
+  -&gt; Identity [Maybe (Channel, Bool, Channel, Channel, Channel)])
+ -&gt; [Track Channel]
+ -&gt; Identity [[Maybe (Channel, Bool, Channel, Channel, Channel)]])
+-&gt; (((Channel, Message)
+     -&gt; Identity (Maybe (Channel, Bool, Channel, Channel, Channel)))
+    -&gt; Track Channel
+    -&gt; Identity [Maybe (Channel, Bool, Channel, Channel, Channel)])
+-&gt; ASetter
+     [Track Channel]
+     [[Maybe (Channel, Bool, Channel, Channel, Channel)]]
+     (Channel, Message)
+     (Maybe (Channel, Bool, Channel, Channel, Channel))
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">((Channel, Message)
+ -&gt; Identity (Maybe (Channel, Bool, Channel, Channel, Channel)))
+-&gt; Track Channel
+-&gt; Identity [Maybe (Channel, Bool, Channel, Channel, Channel)]
+forall (f :: * -&gt; *) a b. Functor f =&gt; Setter (f a) (f b) a b
+</span><span class="hs-identifier hs-var">mapped</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Channel, Message)
+-&gt; Maybe (Channel, Bool, Channel, Channel, Channel)
+forall a.
+(a, Message) -&gt; Maybe (a, Bool, Channel, Channel, Channel)
+</span><a href="Music.Score.Import.Midi.html#getMsg"><span class="hs-identifier hs-var">getMsg</span></a></span><span> </span><span class="annot"><span class="annottext">[Track Channel]
+</span><a href="#local-6989586621680601433"><span class="hs-identifier hs-var">tracks</span></a></span><span>
+</span><span id="line-107"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-108"></span><span>    </span><span id="local-6989586621680601427"><span class="annot"><span class="annottext">g :: Map b Time
+-&gt; (a, Bool, a, b, e) -&gt; (Map b Time, Maybe (Event (a, b, c)))
+</span><a href="#local-6989586621680601427"><span class="hs-identifier hs-var hs-var">g</span></a></span></span><span> </span><span id="local-6989586621680601423"><span class="annot"><span class="annottext">keyStatus :: Map b Time
+</span><a href="#local-6989586621680601423"><span class="hs-identifier hs-var">keyStatus</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680601422"><span class="annot"><span class="annottext">t :: a
+</span><a href="#local-6989586621680601422"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601421"><span class="annot"><span class="annottext">onOff :: Bool
+</span><a href="#local-6989586621680601421"><span class="hs-identifier hs-var">onOff</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601420"><span class="annot"><span class="annottext">c :: a
+</span><a href="#local-6989586621680601420"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601419"><span class="annot"><span class="annottext">p :: b
+</span><a href="#local-6989586621680601419"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601418"><span class="annot"><span class="annottext">v :: e
+</span><a href="#local-6989586621680601418"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-109"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; b -&gt; Time -&gt; Map b Time -&gt; Map b Time
+forall k a. Ord k =&gt; Bool -&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><a href="#local-6989586621680601417"><span class="hs-identifier hs-var">updateKeys</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680601421"><span class="hs-identifier hs-var">onOff</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680601419"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Time
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601422"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map b Time
+</span><a href="#local-6989586621680601423"><span class="hs-identifier hs-var">keyStatus</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-110"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680601421"><span class="hs-identifier hs-var">onOff</span></a></span><span>
+</span><span id="line-111"></span><span>            </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Maybe (Event (a, b, c))
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-112"></span><span>            </span><span class="hs-keyword">else</span><span>
+</span><span id="line-113"></span><span>              </span><span class="annot"><span class="annottext">Event (a, b, c) -&gt; Maybe (Event (a, b, c))
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span>
+</span><span id="line-114"></span><span>                </span><span class="hs-special">(</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time -&gt; Maybe Time -&gt; Time
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Data.Maybe.fromMaybe</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Map b Time -&gt; Maybe Time
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier hs-var">Map.lookup</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; b
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601422"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map b Time
+</span><a href="#local-6989586621680601423"><span class="hs-identifier hs-var">keyStatus</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Span
+</span><a href="Music.Time.Types.html#%3C-%3E"><span class="hs-operator hs-var">&lt;-&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Time
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601422"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601420"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680601419"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-number">60</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Span, (a, b, c))
+-&gt; Getting (Event (a, b, c)) (Span, (a, b, c)) (Event (a, b, c))
+-&gt; Event (a, b, c)
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Event (a, b, c)) (Span, (a, b, c)) (Event (a, b, c))
+forall a b. Iso (Span, a) (Span, b) (Event a) (Event b)
+</span><a href="Music.Time.Event.html#event"><span class="hs-identifier hs-var">event</span></a></span><span>
+</span><span id="line-115"></span><span>                </span><span class="hs-special">)</span><span>
+</span><span id="line-116"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-117"></span><span>      </span><span class="hs-special">)</span><span>
+</span><span id="line-118"></span><span>    </span><span class="hs-comment">-- TODO also store dynamics in pitch map (to use onset value rather than offset value)</span><span>
+</span><span id="line-119"></span><span>    </span><span class="hs-comment">-- For now just assume 60</span><span>
+</span><span id="line-120"></span><span>    </span><span id="local-6989586621680601417"><span class="annot"><span class="annottext">updateKeys :: Bool -&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><a href="#local-6989586621680601417"><span class="hs-identifier hs-var hs-var">updateKeys</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">True</span></a></span><span> </span><span id="local-6989586621680601411"><span class="annot"><span class="annottext">p :: k
+</span><a href="#local-6989586621680601411"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680601410"><span class="annot"><span class="annottext">t :: a
+</span><a href="#local-6989586621680601410"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">k -&gt; a -&gt; Map k a -&gt; Map k a
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier hs-var">Map.insert</span></a></span><span> </span><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621680601411"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601410"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-121"></span><span>    </span><span class="annot"><a href="#local-6989586621680601417"><span class="hs-identifier hs-var">updateKeys</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">False</span></a></span><span> </span><span id="local-6989586621680601408"><span class="annot"><span class="annottext">p :: k
+</span><a href="#local-6989586621680601408"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">k -&gt; Map k a -&gt; Map k a
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Map k a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier hs-var">Map.delete</span></a></span><span> </span><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621680601408"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-122"></span><span>    </span><span class="hs-comment">-- Amount to compress time (after initially treating each tick as duration 1)</span><span>
+</span><span id="line-123"></span><span>    </span><span id="local-6989586621680601430"><span class="annot"><span class="annottext">ticksp :: TimeDiv -&gt; p
+</span><a href="#local-6989586621680601430"><span class="hs-identifier hs-var hs-var">ticksp</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Midi.TicksPerBeat</span></span><span> </span><span id="local-6989586621680601405"><span class="annot"><span class="annottext">n :: Channel
+</span><a href="#local-6989586621680601405"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">p -&gt; p -&gt; p
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Channel -&gt; p
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">Channel
+</span><a href="#local-6989586621680601405"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-124"></span><span>    </span><span class="annot"><a href="#local-6989586621680601430"><span class="hs-identifier hs-var">ticksp</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Midi.TicksPerSecond</span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; p
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;fromMidi: Can not parse TickePerSecond-based files&quot;</span></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span id="getMsg"><span class="annot"><span class="annottext">getMsg :: (a, Message) -&gt; Maybe (a, Bool, Channel, Channel, Channel)
+</span><a href="Music.Score.Import.Midi.html#getMsg"><span class="hs-identifier hs-var hs-var">getMsg</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680601402"><span class="annot"><span class="annottext">t :: a
+</span><a href="#local-6989586621680601402"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Midi.NoteOff</span></span><span> </span><span id="local-6989586621680601400"><span class="annot"><span class="annottext">c :: Channel
+</span><a href="#local-6989586621680601400"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621680601399"><span class="annot"><span class="annottext">p :: Channel
+</span><a href="#local-6989586621680601399"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680601398"><span class="annot"><span class="annottext">v :: Channel
+</span><a href="#local-6989586621680601398"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a, Bool, Channel, Channel, Channel)
+-&gt; Maybe (a, Bool, Channel, Channel, Channel)
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601402"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Channel
+</span><a href="#local-6989586621680601400"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Channel
+</span><a href="#local-6989586621680601399"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Channel
+</span><a href="#local-6989586621680601398"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span class="annot"><a href="Music.Score.Import.Midi.html#getMsg"><span class="hs-identifier hs-var">getMsg</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680601397"><span class="annot"><span class="annottext">t :: a
+</span><a href="#local-6989586621680601397"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Midi.NoteOn</span></span><span> </span><span id="local-6989586621680601395"><span class="annot"><span class="annottext">c :: Channel
+</span><a href="#local-6989586621680601395"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621680601394"><span class="annot"><span class="annottext">p :: Channel
+</span><a href="#local-6989586621680601394"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a, Bool, Channel, Channel, Channel)
+-&gt; Maybe (a, Bool, Channel, Channel, Channel)
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601397"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Channel
+</span><a href="#local-6989586621680601395"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Channel
+</span><a href="#local-6989586621680601394"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span class="hs-special">)</span><span>
+</span><span id="line-128"></span><span class="annot"><a href="Music.Score.Import.Midi.html#getMsg"><span class="hs-identifier hs-var">getMsg</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680601393"><span class="annot"><span class="annottext">t :: a
+</span><a href="#local-6989586621680601393"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Midi.NoteOn</span></span><span> </span><span id="local-6989586621680601392"><span class="annot"><span class="annottext">c :: Channel
+</span><a href="#local-6989586621680601392"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621680601391"><span class="annot"><span class="annottext">p :: Channel
+</span><a href="#local-6989586621680601391"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680601390"><span class="annot"><span class="annottext">v :: Channel
+</span><a href="#local-6989586621680601390"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a, Bool, Channel, Channel, Channel)
+-&gt; Maybe (a, Bool, Channel, Channel, Channel)
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601393"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Channel
+</span><a href="#local-6989586621680601392"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Channel
+</span><a href="#local-6989586621680601391"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Channel
+</span><a href="#local-6989586621680601390"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-129"></span><span class="hs-comment">-- TODO key pressure</span><span>
+</span><span id="line-130"></span><span class="hs-comment">-- control change</span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- program change</span><span>
+</span><span id="line-132"></span><span class="hs-comment">-- channel pressure</span><span>
+</span><span id="line-133"></span><span class="hs-comment">-- pitch wheel</span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- etc.</span><span>
+</span><span id="line-135"></span><span class="annot"><a href="Music.Score.Import.Midi.html#getMsg"><span class="hs-identifier hs-var">getMsg</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (a, Bool, Channel, Channel, Channel)
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-136"></span><span>
+</span><span id="line-137"></span><span class="hs-comment">--</span><span>
+</span><span id="line-138"></span><span>
+</span><span id="line-139"></span><span class="hs-comment">-- Map each track to a part (scanning for ProgramChange, name etc)</span><span>
+</span><span id="line-140"></span><span class="hs-comment">-- Subdivide parts based on channels</span><span>
+</span><span id="line-141"></span><span class="hs-comment">-- Set channel 10 tracks to &quot;percussion&quot;</span><span>
+</span><span id="line-142"></span><span>
+</span><span id="line-143"></span><span class="hs-comment">-- Remove all non-used messages (KeyPressure, ChannelPressure, ProgramChange)</span><span>
+</span><span id="line-144"></span><span class="hs-comment">-- Create reactives from variable values</span><span>
+</span><span id="line-145"></span><span class="hs-comment">-- Create notes</span><span>
+</span><span id="line-146"></span><span class="hs-comment">-- Superimpose variable values</span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span class="hs-comment">-- Compose</span><span>
+</span><span id="line-149"></span><span class="hs-comment">-- Add meta-information</span><span>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span class="hs-comment">-- TODO</span><span>
+</span><span id="line-152"></span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-154"></span><span class="hs-comment">-- Read a Midi score from a file. Fails if the file could not be read or if a parsing</span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- error occurs.</span><span>
+</span><span id="line-156"></span><span id="local-6989586621680601389"><span class="annot"><a href="Music.Score.Import.Midi.html#readMidi"><span class="hs-identifier hs-type">readMidi</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Import.Midi.html#IsMidi"><span class="hs-identifier hs-type">IsMidi</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601389"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">FilePath</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601389"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-157"></span><span id="readMidi"><span class="annot"><span class="annottext">readMidi :: [Char] -&gt; IO (Score a)
+</span><a href="Music.Score.Import.Midi.html#readMidi"><span class="hs-identifier hs-var hs-var">readMidi</span></a></span></span><span> </span><span id="local-6989586621680601387"><span class="annot"><span class="annottext">path :: [Char]
+</span><a href="#local-6989586621680601387"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Either [Char] (Score a) -&gt; Score a)
+-&gt; IO (Either [Char] (Score a)) -&gt; IO (Score a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">([Char] -&gt; Score a)
+-&gt; (Score a -&gt; Score a) -&gt; Either [Char] (Score a) -&gt; Score a
+forall a c b. (a -&gt; c) -&gt; (b -&gt; c) -&gt; Either a b -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">either</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680601385"><span class="annot"><span class="annottext">x :: [Char]
+</span><a href="#local-6989586621680601385"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Score a
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="annottext">([Char] -&gt; Score a) -&gt; [Char] -&gt; Score a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Could not read MIDI file&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621680601385"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Score a -&gt; Score a
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(IO (Either [Char] (Score a)) -&gt; IO (Score a))
+-&gt; IO (Either [Char] (Score a)) -&gt; IO (Score a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO (Either [Char] (Score a))
+forall a. IsMidi a =&gt; [Char] -&gt; IO (Either [Char] (Score a))
+</span><a href="Music.Score.Import.Midi.html#readMidiEither"><span class="hs-identifier hs-var">readMidiEither</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621680601387"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-158"></span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- Read a Midi score from a file. Fails if the file could not be read, and returns</span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- @Nothing@ if a parsing error occurs.</span><span>
+</span><span id="line-162"></span><span id="local-6989586621680601384"><span class="annot"><a href="Music.Score.Import.Midi.html#readMidiMaybe"><span class="hs-identifier hs-type">readMidiMaybe</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Import.Midi.html#IsMidi"><span class="hs-identifier hs-type">IsMidi</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601384"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">FilePath</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601384"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-163"></span><span id="readMidiMaybe"><span class="annot"><span class="annottext">readMidiMaybe :: [Char] -&gt; IO (Maybe (Score a))
+</span><a href="Music.Score.Import.Midi.html#readMidiMaybe"><span class="hs-identifier hs-var hs-var">readMidiMaybe</span></a></span></span><span> </span><span id="local-6989586621680601383"><span class="annot"><span class="annottext">path :: [Char]
+</span><a href="#local-6989586621680601383"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Either [Char] (Score a) -&gt; Maybe (Score a))
+-&gt; IO (Either [Char] (Score a)) -&gt; IO (Maybe (Score a))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">([Char] -&gt; Maybe (Score a))
+-&gt; (Score a -&gt; Maybe (Score a))
+-&gt; Either [Char] (Score a)
+-&gt; Maybe (Score a)
+forall a c b. (a -&gt; c) -&gt; (b -&gt; c) -&gt; Either a b -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">either</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe (Score a) -&gt; [Char] -&gt; Maybe (Score a)
+forall a b. a -&gt; b -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">const</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe (Score a)
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Score a -&gt; Maybe (Score a)
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(IO (Either [Char] (Score a)) -&gt; IO (Maybe (Score a)))
+-&gt; IO (Either [Char] (Score a)) -&gt; IO (Maybe (Score a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO (Either [Char] (Score a))
+forall a. IsMidi a =&gt; [Char] -&gt; IO (Either [Char] (Score a))
+</span><a href="Music.Score.Import.Midi.html#readMidiEither"><span class="hs-identifier hs-var">readMidiEither</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621680601383"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-164"></span><span>
+</span><span id="line-165"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-166"></span><span class="hs-comment">-- Read a Midi score from a file. Fails if the file could not be read, and returns</span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- @Left m@ if a parsing error occurs.</span><span>
+</span><span id="line-168"></span><span id="local-6989586621680601460"><span class="annot"><a href="Music.Score.Import.Midi.html#readMidiEither"><span class="hs-identifier hs-type">readMidiEither</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Import.Midi.html#IsMidi"><span class="hs-identifier hs-type">IsMidi</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601460"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">FilePath</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Either</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601460"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-169"></span><span id="readMidiEither"><span class="annot"><span class="annottext">readMidiEither :: [Char] -&gt; IO (Either [Char] (Score a))
+</span><a href="Music.Score.Import.Midi.html#readMidiEither"><span class="hs-identifier hs-var hs-var">readMidiEither</span></a></span></span><span> </span><span id="local-6989586621680601380"><span class="annot"><span class="annottext">path :: [Char]
+</span><a href="#local-6989586621680601380"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Either [Char] Midi -&gt; Either [Char] (Score a))
+-&gt; IO (Either [Char] Midi) -&gt; IO (Either [Char] (Score a))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Midi -&gt; Score a) -&gt; Either [Char] Midi -&gt; Either [Char] (Score a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Midi -&gt; Score a
+forall a. IsMidi a =&gt; Midi -&gt; Score a
+</span><a href="Music.Score.Import.Midi.html#fromMidi"><span class="hs-identifier hs-var">fromMidi</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(IO (Either [Char] Midi) -&gt; IO (Either [Char] (Score a)))
+-&gt; IO (Either [Char] Midi) -&gt; IO (Either [Char] (Score a))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO (Either [Char] Midi)
+</span><span class="hs-identifier hs-var">Midi.importFile</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621680601380"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-170"></span></pre></body></html>

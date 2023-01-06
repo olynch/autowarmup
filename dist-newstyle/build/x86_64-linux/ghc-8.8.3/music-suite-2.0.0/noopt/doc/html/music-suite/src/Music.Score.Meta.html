@@ -1,0 +1,439 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE ViewPatterns #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-matches #-}</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Meta</span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Music.Time.Meta.html"><span class="hs-identifier">Music.Time.Meta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Meta-events</span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.html#addMetaNote"><span class="hs-identifier">addMetaNote</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.html#fromMetaReactive"><span class="hs-identifier">fromMetaReactive</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-comment">-- metaAt,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.html#metaAtStart"><span class="hs-identifier">metaAtStart</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.html#withMeta"><span class="hs-identifier">withMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">parts</span></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Plus</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Internal.Util.html"><span class="hs-identifier">Music.Score.Internal.Util</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Internal.Util.html#composed"><span class="hs-identifier">composed</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Meta.html"><span class="hs-identifier">Music.Time.Meta</span></a></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="annot"><a href="Music.Score.Meta.html#addMetaNote"><span class="hs-identifier hs-type">addMetaNote</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680594181"><span class="annot"><a href="#local-6989586621680594181"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621680594180"><span class="annot"><a href="#local-6989586621680594180"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594181"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594180"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Event.html#Event"><span class="hs-identifier hs-type">Event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594181"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594180"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594180"><span class="hs-identifier hs-type">b</span></a></span><span>
+</span><span id="line-30"></span><span id="addMetaNote"><span class="annot"><span class="annottext">addMetaNote :: Event a -&gt; b -&gt; b
+</span><a href="Music.Score.Meta.html#addMetaNote"><span class="hs-identifier hs-var hs-var">addMetaNote</span></a></span></span><span> </span><span id="local-6989586621680594179"><span class="annot"><span class="annottext">x :: Event a
+</span><a href="#local-6989586621680594179"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Meta -&gt; b -&gt; b
+forall a. HasMeta a =&gt; Meta -&gt; a -&gt; a
+</span><a href="Music.Time.Meta.html#applyMeta"><span class="hs-identifier hs-var">applyMeta</span></a></span><span> </span><span class="annot"><span class="annottext">(Meta -&gt; b -&gt; b) -&gt; Meta -&gt; b -&gt; b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Reactive a -&gt; Meta
+forall a. TAttributeClass a =&gt; a -&gt; Meta
+</span><a href="Music.Time.Meta.html#wrapTMeta"><span class="hs-identifier hs-var">wrapTMeta</span></a></span><span> </span><span class="annot"><span class="annottext">(Reactive a -&gt; Meta) -&gt; Reactive a -&gt; Meta
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Event a -&gt; Reactive a
+forall a. Monoid a =&gt; Event a -&gt; Reactive a
+</span><a href="Music.Score.Meta.html#noteToReactive"><span class="hs-identifier hs-var">noteToReactive</span></a></span><span> </span><span class="annot"><span class="annottext">Event a
+</span><a href="#local-6989586621680594179"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="annot"><a href="Music.Score.Meta.html#fromMetaReactive"><span class="hs-identifier hs-type">fromMetaReactive</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680594241"><span class="annot"><a href="#local-6989586621680594241"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594241"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html#Reactive"><span class="hs-identifier hs-type">Reactive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594241"><span class="hs-identifier hs-type">b</span></a></span><span>
+</span><span id="line-33"></span><span id="fromMetaReactive"><span class="annot"><span class="annottext">fromMetaReactive :: Meta -&gt; Reactive b
+</span><a href="Music.Score.Meta.html#fromMetaReactive"><span class="hs-identifier hs-var hs-var">fromMetaReactive</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Reactive b -&gt; Maybe (Reactive b) -&gt; Reactive b
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="annot"><span class="annottext">Reactive b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Reactive b) -&gt; Reactive b)
+-&gt; (Meta -&gt; Maybe (Reactive b)) -&gt; Meta -&gt; Reactive b
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Meta -&gt; Maybe (Reactive b)
+forall a. AttributeClass a =&gt; Meta -&gt; Maybe a
+</span><a href="Music.Time.Meta.html#unwrapMeta"><span class="hs-identifier hs-var">unwrapMeta</span></a></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span id="local-6989586621680594250"><span id="local-6989586621680594251"><span class="annot"><a href="Music.Score.Meta.html#metaAt"><span class="hs-identifier hs-type">metaAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594251"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594250"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594251"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594250"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-36"></span><span id="metaAt"><span class="annot"><span class="annottext">metaAt :: Time -&gt; a -&gt; b
+</span><a href="Music.Score.Meta.html#metaAt"><span class="hs-identifier hs-var hs-var">metaAt</span></a></span></span><span> </span><span id="local-6989586621680594171"><span class="annot"><span class="annottext">x :: Time
+</span><a href="#local-6989586621680594171"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Reactive b -&gt; Time -&gt; b
+forall a. Reactive a -&gt; Time -&gt; a
+</span><a href="Music.Time.Reactive.html#atTime"><span class="hs-operator hs-var">`atTime`</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594171"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Reactive b -&gt; b) -&gt; (a -&gt; Reactive b) -&gt; a -&gt; b
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Reactive b
+forall a b. (HasMeta a, AttributeClass b) =&gt; a -&gt; Reactive b
+</span><a href="Music.Score.Meta.html#runScoreMeta"><span class="hs-identifier hs-var">runScoreMeta</span></a></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span id="local-6989586621680594167"><span id="local-6989586621680594168"><span class="annot"><a href="Music.Score.Meta.html#metaAtStart"><span class="hs-identifier hs-type">metaAtStart</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594168"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594168"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594167"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594168"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594167"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-39"></span><span id="metaAtStart"><span class="annot"><span class="annottext">metaAtStart :: a -&gt; b
+</span><a href="Music.Score.Meta.html#metaAtStart"><span class="hs-identifier hs-var hs-var">metaAtStart</span></a></span></span><span> </span><span id="local-6989586621680594166"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680594166"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594166"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-40"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">b
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span>
+</span><span id="line-41"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680594164"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680594164"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680594164"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Getting Time Span Time -&gt; Time
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Time Span Time
+forall a. (HasPosition1 a, Transformable a) =&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#onset"><span class="hs-identifier hs-var">onset</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Time -&gt; a -&gt; b
+forall a b. (HasMeta a, AttributeClass b) =&gt; Time -&gt; a -&gt; b
+</span><a href="Music.Score.Meta.html#metaAt"><span class="hs-operator hs-var">`metaAt`</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594166"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span id="local-6989586621680594160"><span id="local-6989586621680594161"><span class="annot"><a href="Music.Score.Meta.html#withMeta"><span class="hs-identifier hs-type">withMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594161"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680594161"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594160"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594160"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594160"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594160"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-44"></span><span id="withMeta"><span class="annot"><span class="annottext">withMeta :: (a -&gt; Score b -&gt; Score b) -&gt; Score b -&gt; Score b
+</span><a href="Music.Score.Meta.html#withMeta"><span class="hs-identifier hs-var hs-var">withMeta</span></a></span></span><span> </span><span id="local-6989586621680594159"><span class="annot"><span class="annottext">f :: a -&gt; Score b -&gt; Score b
+</span><a href="#local-6989586621680594159"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680594158"><span class="annot"><span class="annottext">x :: Score b
+</span><a href="#local-6989586621680594158"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680594157"><span class="annot"><span class="annottext">m :: Meta
+</span><a href="#local-6989586621680594157"><span class="hs-identifier hs-var hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting Meta (Score b) Meta -&gt; Score b -&gt; Meta
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting Meta (Score b) Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Score b
+</span><a href="#local-6989586621680594158"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-46"></span><span>      </span><span id="local-6989586621680594154"><span class="annot"><span class="annottext">r :: Reactive a
+</span><a href="#local-6989586621680594154"><span class="hs-identifier hs-var hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Meta -&gt; Reactive a
+forall b. AttributeClass b =&gt; Meta -&gt; Reactive b
+</span><a href="Music.Score.Meta.html#fromMetaReactive"><span class="hs-identifier hs-var">fromMetaReactive</span></a></span><span> </span><span class="annot"><span class="annottext">Meta
+</span><a href="#local-6989586621680594157"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-47"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Reactive a -&gt; Either a ((a, Time), [Event a], (Time, a))
+forall a. Reactive a -&gt; Either a ((a, Time), [Event a], (Time, a))
+</span><a href="Music.Time.Reactive.html#splitReactive"><span class="hs-identifier hs-var">splitReactive</span></a></span><span> </span><span class="annot"><span class="annottext">Reactive a
+</span><a href="#local-6989586621680594154"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-48"></span><span>        </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Left</span></a></span><span> </span><span id="local-6989586621680594152"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680594152"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Score b -&gt; Score b
+</span><a href="#local-6989586621680594159"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594152"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Score b
+</span><a href="#local-6989586621680594158"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-49"></span><span>        </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Right</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680594151"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680594151"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594150"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680594150"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594149"><span class="annot"><span class="annottext">bs :: [Event a]
+</span><a href="#local-6989586621680594149"><span class="hs-identifier hs-var">bs</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594148"><span class="annot"><span class="annottext">u :: Time
+</span><a href="#local-6989586621680594148"><span class="hs-identifier hs-var">u</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594147"><span class="annot"><span class="annottext">c :: a
+</span><a href="#local-6989586621680594147"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-50"></span><span>          </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Meta -&gt; Identity Meta) -&gt; Score b -&gt; Identity (Score b)
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">((Meta -&gt; Identity Meta) -&gt; Score b -&gt; Identity (Score b))
+-&gt; Meta -&gt; Score b -&gt; Score b
+forall s t a b. ASetter s t a b -&gt; b -&gt; s -&gt; t
+</span><span class="hs-operator hs-var">.~</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Meta
+</span><a href="#local-6989586621680594157"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-51"></span><span>            </span><span class="annot"><span class="annottext">(Score b -&gt; Score b) -&gt; Score b -&gt; Score b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; (Score b -&gt; Score b) -&gt; Score b -&gt; Score b
+forall a. Time -&gt; (Score a -&gt; Score a) -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.html#mapBefore"><span class="hs-identifier hs-var">mapBefore</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594150"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Score b -&gt; Score b
+</span><a href="#local-6989586621680594159"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594151"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>            </span><span class="annot"><span class="annottext">(Score b -&gt; Score b) -&gt; Score b -&gt; Score b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Score b -&gt; Score b] -&gt; Score b -&gt; Score b
+forall b. [b -&gt; b] -&gt; b -&gt; b
+</span><a href="Music.Score.Internal.Util.html#composed"><span class="hs-identifier hs-var">composed</span></a></span><span> </span><span class="annot"><span class="annottext">([Score b -&gt; Score b] -&gt; Score b -&gt; Score b)
+-&gt; [Score b -&gt; Score b] -&gt; Score b -&gt; Score b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Event a -&gt; Score b -&gt; Score b)
+-&gt; [Event a] -&gt; [Score b -&gt; Score b]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting (Span, a) (Event a) (Span, a) -&gt; Event a -&gt; (Span, a)
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AnIso (Span, a) (Span, a) (Event a) (Event a)
+-&gt; Iso (Event a) (Event a) (Span, a) (Span, a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Span, a) (Span, a) (Event a) (Event a)
+forall a b. Iso (Span, a) (Span, b) (Event a) (Event b)
+</span><a href="Music.Time.Event.html#event"><span class="hs-identifier hs-var">event</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594142"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680594142"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594141"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680594141"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Span -&gt; (Score b -&gt; Score b) -&gt; Score b -&gt; Score b
+forall a. Span -&gt; (Score a -&gt; Score a) -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.html#mapDuring"><span class="hs-identifier hs-var">mapDuring</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680594142"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">((Score b -&gt; Score b) -&gt; Score b -&gt; Score b)
+-&gt; (Score b -&gt; Score b) -&gt; Score b -&gt; Score b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Score b -&gt; Score b
+</span><a href="#local-6989586621680594159"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594141"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Event a] -&gt; [Score b -&gt; Score b])
+-&gt; [Event a] -&gt; [Score b -&gt; Score b]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[Event a]
+</span><a href="#local-6989586621680594149"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>            </span><span class="annot"><span class="annottext">(Score b -&gt; Score b) -&gt; Score b -&gt; Score b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; (Score b -&gt; Score b) -&gt; Score b -&gt; Score b
+forall a. Time -&gt; (Score a -&gt; Score a) -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.html#mapAfter"><span class="hs-identifier hs-var">mapAfter</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594148"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Score b -&gt; Score b
+</span><a href="#local-6989586621680594159"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594147"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>            </span><span class="annot"><span class="annottext">(Score b -&gt; Score b) -&gt; Score b -&gt; Score b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Score b
+</span><a href="#local-6989586621680594158"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- TODO move</span><span>
+</span><span id="line-57"></span><span id="local-6989586621680594202"><span class="annot"><a href="Music.Score.Meta.html#withTime"><span class="hs-identifier hs-type">withTime</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594202"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680594202"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-58"></span><span id="withTime"><span class="annot"><span class="annottext">withTime :: Score a -&gt; Score (Time, a)
+</span><a href="Music.Score.Meta.html#withTime"><span class="hs-identifier hs-var hs-var">withTime</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Span -&gt; a -&gt; (Time, a)) -&gt; Score a -&gt; Score (Time, a)
+forall a b. (Span -&gt; a -&gt; b) -&gt; Score a -&gt; Score b
+</span><a href="Music.Time.Score.html#mapWithSpan"><span class="hs-identifier hs-var">mapWithSpan</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680594136"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680594136"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680594135"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680594135"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680594136"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Getting Time Span Time -&gt; Time
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Time Span Time
+forall a. (HasPosition1 a, Transformable a) =&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#onset"><span class="hs-identifier hs-var">onset</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594135"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- TODO move</span><span>
+</span><span id="line-61"></span><span class="annot"><a href="Music.Score.Meta.html#inSpan"><span class="hs-identifier hs-type">inSpan</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-62"></span><span id="inSpan"><span class="annot"><span class="annottext">inSpan :: Time -&gt; Span -&gt; Bool
+</span><a href="Music.Score.Meta.html#inSpan"><span class="hs-identifier hs-var hs-var">inSpan</span></a></span></span><span> </span><span id="local-6989586621680594133"><span class="annot"><span class="annottext">t' :: Time
+</span><a href="#local-6989586621680594133"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting (Time, Time) Span (Time, Time) -&gt; Span -&gt; (Time, Time)
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting (Time, Time) Span (Time, Time)
+Iso' Span (Time, Time)
+</span><a href="Music.Time.Types.html#onsetAndOffset"><span class="hs-identifier hs-var">onsetAndOffset</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594131"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680594131"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594130"><span class="annot"><span class="annottext">u :: Time
+</span><a href="#local-6989586621680594130"><span class="hs-identifier hs-var">u</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594131"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594133"><span class="hs-identifier hs-var">t'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594133"><span class="hs-identifier hs-var">t'</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594130"><span class="hs-identifier hs-var">u</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- TODO move</span><span>
+</span><span id="line-65"></span><span id="local-6989586621680594233"><span class="annot"><a href="Music.Score.Meta.html#mapBefore"><span class="hs-identifier hs-type">mapBefore</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594233"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594233"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594233"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594233"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-66"></span><span id="mapBefore"><span class="annot"><span class="annottext">mapBefore :: Time -&gt; (Score a -&gt; Score a) -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.html#mapBefore"><span class="hs-identifier hs-var hs-var">mapBefore</span></a></span></span><span> </span><span id="local-6989586621680594126"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680594126"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680594125"><span class="annot"><span class="annottext">f :: Score a -&gt; Score a
+</span><a href="#local-6989586621680594125"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680594124"><span class="annot"><span class="annottext">x :: Score a
+</span><a href="#local-6989586621680594124"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594123"><span class="annot"><span class="annottext">y :: Score a
+</span><a href="#local-6989586621680594123"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594122"><span class="annot"><span class="annottext">n :: Score a
+</span><a href="#local-6989586621680594122"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Time, a) -&gt; a) -&gt; Score (Time, a) -&gt; Score a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Time, a) -&gt; a
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span> </span><span class="annot"><span class="annottext">(Score (Time, a) -&gt; Score a)
+-&gt; (Score (Time, a) -&gt; Score a)
+-&gt; (Score (Time, a), Score (Time, a))
+-&gt; (Score a, Score a)
+forall (p :: * -&gt; * -&gt; *) a b c d.
+Bifunctor p =&gt;
+(a -&gt; b) -&gt; (c -&gt; d) -&gt; p a c -&gt; p b d
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">`bimap`</span></a></span><span> </span><span class="annot"><span class="annottext">((Time, a) -&gt; a) -&gt; Score (Time, a) -&gt; Score a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Time, a) -&gt; a
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Score (Time, a), Score (Time, a)) -&gt; (Score a, Score a))
+-&gt; (Score (Time, a), Score (Time, a)) -&gt; (Score a, Score a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Time, a) -&gt; Bool)
+-&gt; Score (Time, a) -&gt; (Score (Time, a), Score (Time, a))
+forall (m :: * -&gt; *) a.
+MonadPlus m =&gt;
+(a -&gt; Bool) -&gt; m a -&gt; (m a, m a)
+</span><span class="hs-identifier hs-var">mpartition</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680594119"><span class="annot"><span class="annottext">t2 :: Time
+</span><a href="#local-6989586621680594119"><span class="hs-identifier hs-var">t2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594118"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680594118"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594119"><span class="hs-identifier hs-var">t2</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594126"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Score a -&gt; Score (Time, a)
+forall a. Score a -&gt; Score (Time, a)
+</span><a href="Music.Score.Meta.html#withTime"><span class="hs-identifier hs-var">withTime</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680594124"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Score a -&gt; Score a
+</span><a href="#local-6989586621680594125"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680594123"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Score a -&gt; Score a -&gt; Score a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680594122"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-comment">-- TODO move</span><span>
+</span><span id="line-69"></span><span id="local-6989586621680594220"><span class="annot"><a href="Music.Score.Meta.html#mapDuring"><span class="hs-identifier hs-type">mapDuring</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594220"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594220"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594220"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594220"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-70"></span><span id="mapDuring"><span class="annot"><span class="annottext">mapDuring :: Span -&gt; (Score a -&gt; Score a) -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.html#mapDuring"><span class="hs-identifier hs-var hs-var">mapDuring</span></a></span></span><span> </span><span id="local-6989586621680594117"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680594117"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680594116"><span class="annot"><span class="annottext">f :: Score a -&gt; Score a
+</span><a href="#local-6989586621680594116"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680594115"><span class="annot"><span class="annottext">x :: Score a
+</span><a href="#local-6989586621680594115"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594114"><span class="annot"><span class="annottext">y :: Score a
+</span><a href="#local-6989586621680594114"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594113"><span class="annot"><span class="annottext">n :: Score a
+</span><a href="#local-6989586621680594113"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Time, a) -&gt; a) -&gt; Score (Time, a) -&gt; Score a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Time, a) -&gt; a
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span> </span><span class="annot"><span class="annottext">(Score (Time, a) -&gt; Score a)
+-&gt; (Score (Time, a) -&gt; Score a)
+-&gt; (Score (Time, a), Score (Time, a))
+-&gt; (Score a, Score a)
+forall (p :: * -&gt; * -&gt; *) a b c d.
+Bifunctor p =&gt;
+(a -&gt; b) -&gt; (c -&gt; d) -&gt; p a c -&gt; p b d
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">`bimap`</span></a></span><span> </span><span class="annot"><span class="annottext">((Time, a) -&gt; a) -&gt; Score (Time, a) -&gt; Score a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Time, a) -&gt; a
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Score (Time, a), Score (Time, a)) -&gt; (Score a, Score a))
+-&gt; (Score (Time, a), Score (Time, a)) -&gt; (Score a, Score a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Time, a) -&gt; Bool)
+-&gt; Score (Time, a) -&gt; (Score (Time, a), Score (Time, a))
+forall (m :: * -&gt; *) a.
+MonadPlus m =&gt;
+(a -&gt; Bool) -&gt; m a -&gt; (m a, m a)
+</span><span class="hs-identifier hs-var">mpartition</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680594112"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680594112"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594111"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680594111"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594112"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Span -&gt; Bool
+</span><a href="Music.Score.Meta.html#inSpan"><span class="hs-operator hs-var">`inSpan`</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680594117"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Score a -&gt; Score (Time, a)
+forall a. Score a -&gt; Score (Time, a)
+</span><a href="Music.Score.Meta.html#withTime"><span class="hs-identifier hs-var">withTime</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680594115"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Score a -&gt; Score a
+</span><a href="#local-6989586621680594116"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680594114"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Score a -&gt; Score a -&gt; Score a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680594113"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="hs-comment">-- TODO move</span><span>
+</span><span id="line-73"></span><span id="local-6989586621680594110"><span class="annot"><a href="Music.Score.Meta.html#mapAfter"><span class="hs-identifier hs-type">mapAfter</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594110"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594110"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594110"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594110"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-74"></span><span id="mapAfter"><span class="annot"><span class="annottext">mapAfter :: Time -&gt; (Score a -&gt; Score a) -&gt; Score a -&gt; Score a
+</span><a href="Music.Score.Meta.html#mapAfter"><span class="hs-identifier hs-var hs-var">mapAfter</span></a></span></span><span> </span><span id="local-6989586621680594109"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680594109"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680594108"><span class="annot"><span class="annottext">f :: Score a -&gt; Score a
+</span><a href="#local-6989586621680594108"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680594107"><span class="annot"><span class="annottext">x :: Score a
+</span><a href="#local-6989586621680594107"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594106"><span class="annot"><span class="annottext">y :: Score a
+</span><a href="#local-6989586621680594106"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594105"><span class="annot"><span class="annottext">n :: Score a
+</span><a href="#local-6989586621680594105"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Time, a) -&gt; a) -&gt; Score (Time, a) -&gt; Score a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Time, a) -&gt; a
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span> </span><span class="annot"><span class="annottext">(Score (Time, a) -&gt; Score a)
+-&gt; (Score (Time, a) -&gt; Score a)
+-&gt; (Score (Time, a), Score (Time, a))
+-&gt; (Score a, Score a)
+forall (p :: * -&gt; * -&gt; *) a b c d.
+Bifunctor p =&gt;
+(a -&gt; b) -&gt; (c -&gt; d) -&gt; p a c -&gt; p b d
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">`bimap`</span></a></span><span> </span><span class="annot"><span class="annottext">((Time, a) -&gt; a) -&gt; Score (Time, a) -&gt; Score a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Time, a) -&gt; a
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Score (Time, a), Score (Time, a)) -&gt; (Score a, Score a))
+-&gt; (Score (Time, a), Score (Time, a)) -&gt; (Score a, Score a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Time, a) -&gt; Bool)
+-&gt; Score (Time, a) -&gt; (Score (Time, a), Score (Time, a))
+forall (m :: * -&gt; *) a.
+MonadPlus m =&gt;
+(a -&gt; Bool) -&gt; m a -&gt; (m a, m a)
+</span><span class="hs-identifier hs-var">mpartition</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680594104"><span class="annot"><span class="annottext">t2 :: Time
+</span><a href="#local-6989586621680594104"><span class="hs-identifier hs-var">t2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594103"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680594103"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594104"><span class="hs-identifier hs-var">t2</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&gt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594109"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Score a -&gt; Score (Time, a)
+forall a. Score a -&gt; Score (Time, a)
+</span><a href="Music.Score.Meta.html#withTime"><span class="hs-identifier hs-var">withTime</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680594107"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Score a -&gt; Score a
+</span><a href="#local-6989586621680594108"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680594106"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Score a -&gt; Score a -&gt; Score a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Score a
+</span><a href="#local-6989586621680594105"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="hs-comment">-- Transform the score with the current value of some meta-information</span><span>
+</span><span id="line-77"></span><span class="hs-comment">-- Each &quot;update chunk&quot; of the meta-info is processed separately</span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="annot"><a href="Music.Score.Meta.html#runScoreMeta"><span class="hs-identifier hs-type">runScoreMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680594265"><span class="annot"><a href="#local-6989586621680594265"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621680594264"><span class="annot"><a href="#local-6989586621680594264"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594265"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594264"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594265"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html#Reactive"><span class="hs-identifier hs-type">Reactive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594264"><span class="hs-identifier hs-type">b</span></a></span><span>
+</span><span id="line-80"></span><span id="runScoreMeta"><span class="annot"><span class="annottext">runScoreMeta :: a -&gt; Reactive b
+</span><a href="Music.Score.Meta.html#runScoreMeta"><span class="hs-identifier hs-var hs-var">runScoreMeta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Meta -&gt; Reactive b
+forall b. AttributeClass b =&gt; Meta -&gt; Reactive b
+</span><a href="Music.Score.Meta.html#fromMetaReactive"><span class="hs-identifier hs-var">fromMetaReactive</span></a></span><span> </span><span class="annot"><span class="annottext">(Meta -&gt; Reactive b) -&gt; (a -&gt; Meta) -&gt; a -&gt; Reactive b
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting Meta a Meta -&gt; a -&gt; Meta
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- TODO move</span><span>
+</span><span id="line-83"></span><span id="local-6989586621680594278"><span class="annot"><a href="Music.Score.Meta.html#noteToReactive"><span class="hs-identifier hs-type">noteToReactive</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594278"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Event.html#Event"><span class="hs-identifier hs-type">Event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594278"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html#Reactive"><span class="hs-identifier hs-type">Reactive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594278"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-84"></span><span id="noteToReactive"><span class="annot"><span class="annottext">noteToReactive :: Event a -&gt; Reactive a
+</span><a href="Music.Score.Meta.html#noteToReactive"><span class="hs-identifier hs-var hs-var">noteToReactive</span></a></span></span><span> </span><span id="local-6989586621680594102"><span class="annot"><span class="annottext">n :: Event a
+</span><a href="#local-6989586621680594102"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Reactive a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Reactive a) -&gt; Event a -&gt; Event (Reactive a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Event a
+</span><a href="#local-6989586621680594102"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Event (Reactive a) -&gt; Reactive a -&gt; Reactive a
+forall a. Event (Reactive a) -&gt; Reactive a -&gt; Reactive a
+</span><a href="Music.Score.Meta.html#activate"><span class="hs-operator hs-var">`activate`</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Reactive a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- TODO move</span><span>
+</span><span id="line-87"></span><span id="local-6989586621680594190"><span class="annot"><a href="Music.Score.Meta.html#activate"><span class="hs-identifier hs-type">activate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Event.html#Event"><span class="hs-identifier hs-type">Event</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Reactive.html#Reactive"><span class="hs-identifier hs-type">Reactive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594190"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html#Reactive"><span class="hs-identifier hs-type">Reactive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594190"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html#Reactive"><span class="hs-identifier hs-type">Reactive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594190"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-88"></span><span id="activate"><span class="annot"><span class="annottext">activate :: Event (Reactive a) -&gt; Reactive a -&gt; Reactive a
+</span><a href="Music.Score.Meta.html#activate"><span class="hs-identifier hs-var hs-var">activate</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting (Span, Reactive a) (Event (Reactive a)) (Span, Reactive a)
+-&gt; Event (Reactive a) -&gt; (Span, Reactive a)
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AnIso
+  (Span, Reactive a)
+  (Span, Reactive a)
+  (Event (Reactive a))
+  (Event (Reactive a))
+-&gt; Iso
+     (Event (Reactive a))
+     (Event (Reactive a))
+     (Span, Reactive a)
+     (Span, Reactive a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso
+  (Span, Reactive a)
+  (Span, Reactive a)
+  (Event (Reactive a))
+  (Event (Reactive a))
+forall a b. Iso (Span, a) (Span, b) (Event a) (Event b)
+</span><a href="Music.Time.Event.html#event"><span class="hs-identifier hs-var">event</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting (Time, Time) Span (Time, Time) -&gt; Span -&gt; (Time, Time)
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting (Time, Time) Span (Time, Time)
+Iso' Span (Time, Time)
+</span><a href="Music.Time.Types.html#onsetAndOffset"><span class="hs-identifier hs-var">onsetAndOffset</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594099"><span class="annot"><span class="annottext">start :: Time
+</span><a href="#local-6989586621680594099"><span class="hs-identifier hs-var">start</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594098"><span class="annot"><span class="annottext">stop :: Time
+</span><a href="#local-6989586621680594098"><span class="hs-identifier hs-var">stop</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594097"><span class="annot"><span class="annottext">x :: Reactive a
+</span><a href="#local-6989586621680594097"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621680594096"><span class="annot"><span class="annottext">y :: Reactive a
+</span><a href="#local-6989586621680594096"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Reactive a
+</span><a href="#local-6989586621680594096"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Reactive a -&gt; Reactive a -&gt; Reactive a
+</span><a href="#local-6989586621680594095"><span class="hs-operator hs-var">`turnOn`</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Reactive a
+</span><a href="#local-6989586621680594097"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Reactive a -&gt; Reactive a -&gt; Reactive a
+</span><a href="#local-6989586621680594094"><span class="hs-operator hs-var">`turnOff`</span></a></span><span> </span><span class="annot"><span class="annottext">Reactive a
+</span><a href="#local-6989586621680594096"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-90"></span><span>    </span><span id="local-6989586621680594095"><span class="annot"><span class="annottext">turnOn :: Reactive a -&gt; Reactive a -&gt; Reactive a
+</span><a href="#local-6989586621680594095"><span class="hs-identifier hs-var hs-var">turnOn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Reactive a -&gt; Reactive a -&gt; Reactive a
+forall a. Time -&gt; Reactive a -&gt; Reactive a -&gt; Reactive a
+</span><a href="Music.Time.Reactive.html#switchR"><span class="hs-identifier hs-var">switchR</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594099"><span class="hs-identifier hs-var">start</span></a></span><span>
+</span><span id="line-91"></span><span>    </span><span id="local-6989586621680594094"><span class="annot"><span class="annottext">turnOff :: Reactive a -&gt; Reactive a -&gt; Reactive a
+</span><a href="#local-6989586621680594094"><span class="hs-identifier hs-var hs-var">turnOff</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Reactive a -&gt; Reactive a -&gt; Reactive a
+forall a. Time -&gt; Reactive a -&gt; Reactive a -&gt; Reactive a
+</span><a href="Music.Time.Reactive.html#switchR"><span class="hs-identifier hs-var">switchR</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680594098"><span class="hs-identifier hs-var">stop</span></a></span><span>
+</span><span id="line-92"></span></pre></body></html>

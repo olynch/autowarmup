@@ -1,0 +1,773 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Time.Behavior</span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Behavior type</span></span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier">Behavior</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Construction</span></span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#behavior"><span class="hs-identifier">behavior</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#sampled"><span class="hs-identifier">sampled</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Lookup</span></span><span>
+</span><span id="line-19"></span><span>    </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Combinators</span></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#switch"><span class="hs-identifier">switch</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#switch%27"><span class="hs-identifier">switch'</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="hs-comment">-- splice,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#trim"><span class="hs-identifier">trim</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#trimBefore"><span class="hs-identifier">trimBefore</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#trimAfter"><span class="hs-identifier">trimAfter</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#concatB"><span class="hs-identifier">concatB</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Common behaviors</span></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Oscillators</span></span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#line"><span class="hs-identifier">line</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#sawtooth"><span class="hs-identifier">sawtooth</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#sine"><span class="hs-identifier">sine</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#cosine"><span class="hs-identifier">cosine</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Impulse functions</span></span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#unit"><span class="hs-keyword">unit</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#impulse"><span class="hs-identifier">impulse</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#turnOn"><span class="hs-identifier">turnOn</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Music.Time.Behavior.html#turnOff"><span class="hs-identifier">turnOff</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Map</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Set</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html"><span class="hs-identifier">Music.Pitch.Alterable</span></a></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html"><span class="hs-identifier">Music.Pitch.Augmentable</span></a></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Event.html"><span class="hs-identifier">Music.Time.Event</span></a></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Internal.Preliminaries.html"><span class="hs-identifier">Music.Time.Internal.Preliminaries</span></a></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html"><span class="hs-identifier">Music.Time.Internal.Transform</span></a></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Juxtapose.html"><span class="hs-identifier">Music.Time.Juxtapose</span></a></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Score.html"><span class="hs-identifier">Music.Time.Score</span></a></span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- Behavior is 'Representable':</span><span>
+</span><span id="line-61"></span><span class="hs-comment">--</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- &gt; ask = realToFrac &lt;$&gt; time</span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- &gt; localRep (- t) = delay t</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- &gt; localRep (/ t) = stretch t</span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-67"></span><span class="hs-comment">-- A time-dependent value.</span><span>
+</span><span id="line-68"></span><span class="hs-keyword">newtype</span><span> </span><span id="Behavior"><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-var">Behavior</span></a></span></span><span> </span><span id="local-6989586621680578225"><span class="annot"><a href="#local-6989586621680578225"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Behavior"><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-var">Behavior</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getBehavior"><span class="annot"><span class="annottext">Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#getBehavior"><span class="hs-identifier hs-var hs-var">getBehavior</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578225"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-69"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680578071"><span id="local-6989586621680578073"><span class="annot"><span class="annottext">a -&gt; Behavior b -&gt; Behavior a
+(a -&gt; b) -&gt; Behavior a -&gt; Behavior b
+(forall a b. (a -&gt; b) -&gt; Behavior a -&gt; Behavior b)
+-&gt; (forall a b. a -&gt; Behavior b -&gt; Behavior a) -&gt; Functor Behavior
+forall a b. a -&gt; Behavior b -&gt; Behavior a
+forall a b. (a -&gt; b) -&gt; Behavior a -&gt; Behavior b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; Behavior b -&gt; Behavior a
+$c&lt;$ :: forall a b. a -&gt; Behavior b -&gt; Behavior a
+fmap :: (a -&gt; b) -&gt; Behavior a -&gt; Behavior b
+$cfmap :: forall a b. (a -&gt; b) -&gt; Behavior a -&gt; Behavior b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578059"><span id="local-6989586621680578061"><span id="local-6989586621680578063"><span id="local-6989586621680578065"><span id="local-6989586621680578067"><span class="annot"><span class="annottext">Functor Behavior
+a -&gt; Behavior a
+Functor Behavior =&gt;
+(forall a. a -&gt; Behavior a)
+-&gt; (forall a b. Behavior (a -&gt; b) -&gt; Behavior a -&gt; Behavior b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; Behavior a -&gt; Behavior b -&gt; Behavior c)
+-&gt; (forall a b. Behavior a -&gt; Behavior b -&gt; Behavior b)
+-&gt; (forall a b. Behavior a -&gt; Behavior b -&gt; Behavior a)
+-&gt; Applicative Behavior
+Behavior a -&gt; Behavior b -&gt; Behavior b
+Behavior a -&gt; Behavior b -&gt; Behavior a
+Behavior (a -&gt; b) -&gt; Behavior a -&gt; Behavior b
+(a -&gt; b -&gt; c) -&gt; Behavior a -&gt; Behavior b -&gt; Behavior c
+forall a. a -&gt; Behavior a
+forall a b. Behavior a -&gt; Behavior b -&gt; Behavior a
+forall a b. Behavior a -&gt; Behavior b -&gt; Behavior b
+forall a b. Behavior (a -&gt; b) -&gt; Behavior a -&gt; Behavior b
+forall a b c.
+(a -&gt; b -&gt; c) -&gt; Behavior a -&gt; Behavior b -&gt; Behavior c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: Behavior a -&gt; Behavior b -&gt; Behavior a
+$c&lt;* :: forall a b. Behavior a -&gt; Behavior b -&gt; Behavior a
+*&gt; :: Behavior a -&gt; Behavior b -&gt; Behavior b
+$c*&gt; :: forall a b. Behavior a -&gt; Behavior b -&gt; Behavior b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; Behavior a -&gt; Behavior b -&gt; Behavior c
+$cliftA2 :: forall a b c.
+(a -&gt; b -&gt; c) -&gt; Behavior a -&gt; Behavior b -&gt; Behavior c
+&lt;*&gt; :: Behavior (a -&gt; b) -&gt; Behavior a -&gt; Behavior b
+$c&lt;*&gt; :: forall a b. Behavior (a -&gt; b) -&gt; Behavior a -&gt; Behavior b
+pure :: a -&gt; Behavior a
+$cpure :: forall a. a -&gt; Behavior a
+$cp1Applicative :: Functor Behavior
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578051"><span id="local-6989586621680578053"><span id="local-6989586621680578055"><span class="annot"><span class="annottext">Applicative Behavior
+a -&gt; Behavior a
+Applicative Behavior =&gt;
+(forall a b. Behavior a -&gt; (a -&gt; Behavior b) -&gt; Behavior b)
+-&gt; (forall a b. Behavior a -&gt; Behavior b -&gt; Behavior b)
+-&gt; (forall a. a -&gt; Behavior a)
+-&gt; Monad Behavior
+Behavior a -&gt; (a -&gt; Behavior b) -&gt; Behavior b
+Behavior a -&gt; Behavior b -&gt; Behavior b
+forall a. a -&gt; Behavior a
+forall a b. Behavior a -&gt; Behavior b -&gt; Behavior b
+forall a b. Behavior a -&gt; (a -&gt; Behavior b) -&gt; Behavior b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; Behavior a
+$creturn :: forall a. a -&gt; Behavior a
+&gt;&gt; :: Behavior a -&gt; Behavior b -&gt; Behavior b
+$c&gt;&gt; :: forall a b. Behavior a -&gt; Behavior b -&gt; Behavior b
+&gt;&gt;= :: Behavior a -&gt; (a -&gt; Behavior b) -&gt; Behavior b
+$c&gt;&gt;= :: forall a b. Behavior a -&gt; (a -&gt; Behavior b) -&gt; Behavior b
+$cp1Monad :: Applicative Behavior
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- $semantics Behavior</span><span>
+</span><span id="line-72"></span><span class="hs-comment">--</span><span>
+</span><span id="line-73"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- type Behavior a = 'Time' -&gt; a</span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span class="hs-comment">--</span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- $musicTimeBehaviorExamples</span><span>
+</span><span id="line-80"></span><span class="hs-comment">--</span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- 'behavior' let us convert any function to a behavior using '^.' or 'view'.</span><span>
+</span><span id="line-82"></span><span class="hs-comment">--</span><span>
+</span><span id="line-83"></span><span class="hs-comment">-- We can unwrap a behavior using @'from' 'behavior'@ or '!^'.</span><span>
+</span><span id="line-84"></span><span class="hs-comment">--</span><span>
+</span><span id="line-85"></span><span class="hs-comment">-- A sine function</span><span>
+</span><span id="line-86"></span><span class="hs-comment">--</span><span>
+</span><span id="line-87"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-88"></span><span class="hs-comment">-- ('sin' . (* 'tau') . 'realToFrac')^.'behavior'</span><span>
+</span><span id="line-89"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-90"></span><span class="hs-comment">--</span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- A behavior that switches from (-1) to 1 at time 0</span><span>
+</span><span id="line-92"></span><span class="hs-comment">--</span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-94"></span><span class="hs-comment">-- (\\t -&gt; if t &lt; 0 then (-1) else 1)^.'behavior'</span><span>
+</span><span id="line-95"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-96"></span><span class="hs-comment">--</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- A time-varying function applied to a value</span><span>
+</span><span id="line-98"></span><span class="hs-comment">--</span><span>
+</span><span id="line-99"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- ('+')^.'behavior' '&lt;*&gt;' 10</span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span id="local-6989586621680578049"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680578044"><span id="local-6989586621680578047"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578049"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621680578042"><span class="annot"><span class="annottext">show :: Behavior a -&gt; String
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;&lt;&lt;Behavior&gt;&gt;&quot;</span></span></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="hs-comment">-- instance Distributive Behavior where</span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- distribute = Behavior . distribute . fmap getBehavior</span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span class="hs-comment">-- instance Representable Behavior where</span><span>
+</span><span id="line-110"></span><span class="hs-comment">--   type Rep Behavior = Time</span><span>
+</span><span id="line-111"></span><span class="hs-comment">--   tabulate = Behavior</span><span>
+</span><span id="line-112"></span><span class="hs-comment">--   index (Behavior x) = x</span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span id="local-6989586621680578040"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578040"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-115"></span><span>  </span><span id="local-6989586621680578037"><span class="annot"><span class="annottext">transform :: Span -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span id="local-6989586621680578035"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680578035"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span id="local-6989586621680578034"><span class="annot"><span class="annottext">a :: Time -&gt; a
+</span><a href="#local-6989586621680578034"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Time -&gt; a) -&gt; Behavior a
+forall a. (Time -&gt; a) -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-var">Behavior</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time -&gt; a
+</span><a href="#local-6989586621680578034"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">(Time -&gt; a) -&gt; Span -&gt; Time -&gt; a
+forall b c. Transformable b =&gt; (b -&gt; c) -&gt; Span -&gt; b -&gt; c
+</span><a href="#local-6989586621680578033"><span class="hs-operator hs-var">`whilst`</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680578035"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-116"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-117"></span><span>      </span><span id="local-6989586621680578032"><span class="annot"><span class="annottext">f :: b -&gt; c
+</span><a href="#local-6989586621680578032"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680578033"><span class="annot"><span class="annottext">whilst :: (b -&gt; c) -&gt; Span -&gt; b -&gt; c
+</span><a href="#local-6989586621680578033"><span class="hs-operator hs-var hs-var">`whilst`</span></a></span></span><span> </span><span id="local-6989586621680578031"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680578031"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b -&gt; c
+</span><a href="#local-6989586621680578032"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; c) -&gt; (b -&gt; b) -&gt; b -&gt; c
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; b -&gt; b
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; Span
+forall v. AdditiveGroup v =&gt; v -&gt; v
+</span><span class="hs-identifier hs-var">negateV</span></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680578031"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span id="local-6989586621680578022"><span id="local-6989586621680578024"><span id="local-6989586621680578026"><span id="local-6989586621680578028"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578028"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578028"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span id="local-6989586621680578013"><span id="local-6989586621680578015"><span id="local-6989586621680578017"><span id="local-6989586621680578020"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578020"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578020"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span id="local-6989586621680577997"><span id="local-6989586621680577999"><span id="local-6989586621680578001"><span id="local-6989586621680578003"><span id="local-6989586621680578005"><span id="local-6989586621680578007"><span id="local-6989586621680578009"><span id="local-6989586621680578011"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578011"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578011"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span id="local-6989586621680577988"><span id="local-6989586621680577990"><span id="local-6989586621680577992"><span id="local-6989586621680577995"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577995"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577995"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-126"></span><span>
+</span><span id="line-127"></span><span id="local-6989586621680577941"><span id="local-6989586621680577943"><span id="local-6989586621680577945"><span id="local-6989586621680577947"><span id="local-6989586621680577949"><span id="local-6989586621680577951"><span id="local-6989586621680577953"><span id="local-6989586621680577955"><span id="local-6989586621680577957"><span id="local-6989586621680577959"><span id="local-6989586621680577961"><span id="local-6989586621680577963"><span id="local-6989586621680577965"><span id="local-6989586621680577967"><span id="local-6989586621680577969"><span id="local-6989586621680577971"><span id="local-6989586621680577973"><span id="local-6989586621680577975"><span id="local-6989586621680577977"><span id="local-6989586621680577979"><span id="local-6989586621680577981"><span id="local-6989586621680577983"><span id="local-6989586621680577986"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577986"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577986"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span id="local-6989586621680577931"><span id="local-6989586621680577933"><span id="local-6989586621680577935"><span id="local-6989586621680577937"><span id="local-6989586621680577939"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AdditiveGroup</span></span><span> </span><span class="annot"><a href="#local-6989586621680577939"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AdditiveGroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577939"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- TODO bad</span><span>
+</span><span id="line-132"></span><span id="local-6989586621680577929"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577929"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577929"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-133"></span><span>  </span><span id="local-6989586621680577924"><span class="annot"><span class="annottext">toRational :: Behavior a -&gt; Rational
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toRational</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Rational
+forall a. Real a =&gt; a -&gt; Rational
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toRational</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Rational) -&gt; (Behavior a -&gt; a) -&gt; Behavior a -&gt; Rational
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Behavior a -&gt; Time -&gt; a
+forall a. Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#%21"><span class="hs-glyph hs-var">!</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-134"></span><span>
+</span><span id="line-135"></span><span id="local-6989586621680577923"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">IsString</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577923"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">IsString</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577923"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-136"></span><span>  </span><span id="local-6989586621680577920"><span class="annot"><span class="annottext">fromString :: String -&gt; Behavior a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromString</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Behavior a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Behavior a) -&gt; (String -&gt; a) -&gt; String -&gt; Behavior a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; a
+forall a. IsString a =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromString</span></a></span></span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span id="local-6989586621680577919"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577919"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577919"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-139"></span><span>  </span><span id="local-6989586621680577916"><span class="annot"><span class="annottext">fromPitch :: Pitch -&gt; Behavior a
+</span><a href="Music.Pitch.Common.Internal.html#fromPitch"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromPitch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Behavior a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Behavior a) -&gt; (Pitch -&gt; a) -&gt; Pitch -&gt; Behavior a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; a
+forall a. IsPitch a =&gt; Pitch -&gt; a
+</span><a href="Music.Pitch.Common.Internal.html#fromPitch"><span class="hs-identifier hs-var">fromPitch</span></a></span></span><span>
+</span><span id="line-140"></span><span>
+</span><span id="line-141"></span><span id="local-6989586621680577914"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsInterval"><span class="hs-identifier hs-type">IsInterval</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577914"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsInterval"><span class="hs-identifier hs-type">IsInterval</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577914"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-142"></span><span>  </span><span id="local-6989586621680577911"><span class="annot"><span class="annottext">fromInterval :: Interval -&gt; Behavior a
+</span><a href="Music.Pitch.Common.Internal.html#fromInterval"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromInterval</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Behavior a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Behavior a) -&gt; (Interval -&gt; a) -&gt; Interval -&gt; Behavior a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Interval -&gt; a
+forall a. IsInterval a =&gt; Interval -&gt; a
+</span><a href="Music.Pitch.Common.Internal.html#fromInterval"><span class="hs-identifier hs-var">fromInterval</span></a></span></span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span id="local-6989586621680577909"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577909"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577909"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-145"></span><span>  </span><span id="local-6989586621680577906"><span class="annot"><span class="annottext">fromDynamics :: DynamicsL -&gt; Behavior a
+</span><a href="Music.Dynamics.Literal.html#fromDynamics"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromDynamics</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Behavior a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Behavior a) -&gt; (DynamicsL -&gt; a) -&gt; DynamicsL -&gt; Behavior a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">DynamicsL -&gt; a
+forall a. IsDynamics a =&gt; DynamicsL -&gt; a
+</span><a href="Music.Dynamics.Literal.html#fromDynamics"><span class="hs-identifier hs-var">fromDynamics</span></a></span></span><span>
+</span><span id="line-146"></span><span>
+</span><span id="line-147"></span><span id="local-6989586621680577904"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html#Alterable"><span class="hs-identifier hs-type">Alterable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577904"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html#Alterable"><span class="hs-identifier hs-type">Alterable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577904"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-148"></span><span>
+</span><span id="line-149"></span><span>  </span><span id="local-6989586621680577900"><span class="annot"><span class="annottext">sharpen :: Behavior a -&gt; Behavior a
+</span><a href="Music.Pitch.Alterable.html#sharpen"><span class="hs-identifier hs-var hs-var hs-var hs-var">sharpen</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Behavior a -&gt; Behavior a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Alterable a =&gt; a -&gt; a
+</span><a href="Music.Pitch.Alterable.html#sharpen"><span class="hs-identifier hs-var">sharpen</span></a></span><span>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span>  </span><span id="local-6989586621680577898"><span class="annot"><span class="annottext">flatten :: Behavior a -&gt; Behavior a
+</span><a href="Music.Pitch.Alterable.html#flatten"><span class="hs-identifier hs-var hs-var hs-var hs-var">flatten</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Behavior a -&gt; Behavior a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Alterable a =&gt; a -&gt; a
+</span><a href="Music.Pitch.Alterable.html#flatten"><span class="hs-identifier hs-var">flatten</span></a></span></span><span>
+</span><span id="line-152"></span><span>
+</span><span id="line-153"></span><span id="local-6989586621680577896"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html#Augmentable"><span class="hs-identifier hs-type">Augmentable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577896"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html#Augmentable"><span class="hs-identifier hs-type">Augmentable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577896"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-154"></span><span>
+</span><span id="line-155"></span><span>  </span><span id="local-6989586621680577892"><span class="annot"><span class="annottext">augment :: Behavior a -&gt; Behavior a
+</span><a href="Music.Pitch.Augmentable.html#augment"><span class="hs-identifier hs-var hs-var hs-var hs-var">augment</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Behavior a -&gt; Behavior a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Augmentable a =&gt; a -&gt; a
+</span><a href="Music.Pitch.Augmentable.html#augment"><span class="hs-identifier hs-var">augment</span></a></span><span>
+</span><span id="line-156"></span><span>
+</span><span id="line-157"></span><span>  </span><span id="local-6989586621680577890"><span class="annot"><span class="annottext">diminish :: Behavior a -&gt; Behavior a
+</span><a href="Music.Pitch.Augmentable.html#diminish"><span class="hs-identifier hs-var hs-var hs-var hs-var">diminish</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Behavior a -&gt; Behavior a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. Augmentable a =&gt; a -&gt; a
+</span><a href="Music.Pitch.Augmentable.html#diminish"><span class="hs-identifier hs-var">diminish</span></a></span></span><span>
+</span><span id="line-158"></span><span>
+</span><span id="line-159"></span><span id="local-6989586621680577888"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680577885"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577888"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577888"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-160"></span><span>  </span><span id="local-6989586621680577883"><span class="annot"><span class="annottext">== :: Behavior a -&gt; Behavior a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(==)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Behavior a -&gt; Behavior a -&gt; Bool
+forall a. HasCallStack =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;No overloading for behavior: (&lt;=)&quot;</span></span></span><span>
+</span><span id="line-161"></span><span>
+</span><span id="line-162"></span><span id="local-6989586621680577881"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680577878"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577881"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577881"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-163"></span><span>
+</span><span id="line-164"></span><span>  </span><span id="local-6989586621680577870"><span class="annot"><span class="annottext">&lt;= :: Behavior a -&gt; Behavior a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;=)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Behavior a -&gt; Behavior a -&gt; Bool
+forall a. HasCallStack =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;No overloading for behavior: (&lt;=)&quot;</span></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span>  </span><span id="local-6989586621680577868"><span class="annot"><span class="annottext">&gt;= :: Behavior a -&gt; Behavior a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&gt;=)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Behavior a -&gt; Behavior a -&gt; Bool
+forall a. HasCallStack =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;No overloading for behavior: (&lt;=)&quot;</span></span><span>
+</span><span id="line-167"></span><span>
+</span><span id="line-168"></span><span>  </span><span id="local-6989586621680577867"><span class="annot"><span class="annottext">&lt; :: Behavior a -&gt; Behavior a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Behavior a -&gt; Behavior a -&gt; Bool
+forall a. HasCallStack =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;No overloading for behavior: (&lt;=)&quot;</span></span><span>
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span>  </span><span id="local-6989586621680577865"><span class="annot"><span class="annottext">&gt; :: Behavior a -&gt; Behavior a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Behavior a -&gt; Behavior a -&gt; Bool
+forall a. HasCallStack =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;No overloading for behavior: (&lt;=)&quot;</span></span><span>
+</span><span id="line-171"></span><span>
+</span><span id="line-172"></span><span>  </span><span id="local-6989586621680577863"><span class="annot"><span class="annottext">max :: Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">max</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">max</span></a></span><span>
+</span><span id="line-173"></span><span>
+</span><span id="line-174"></span><span>  </span><span id="local-6989586621680577860"><span class="annot"><span class="annottext">min :: Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">min</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">min</span></a></span></span><span>
+</span><span id="line-175"></span><span>
+</span><span id="line-176"></span><span id="local-6989586621680577858"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680577844"><span id="local-6989586621680577846"><span id="local-6989586621680577848"><span id="local-6989586621680577850"><span id="local-6989586621680577854"><span id="local-6989586621680577856"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577858"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577858"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-177"></span><span>
+</span><span id="line-178"></span><span>  </span><span id="local-6989586621680577842"><span class="annot"><span class="annottext">toEnum :: Int -&gt; Behavior a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toEnum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Behavior a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Behavior a) -&gt; (Int -&gt; a) -&gt; Int -&gt; Behavior a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; a
+forall a. Enum a =&gt; Int -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toEnum</span></a></span><span>
+</span><span id="line-179"></span><span>
+</span><span id="line-180"></span><span>  </span><span id="local-6989586621680577840"><span class="annot"><span class="annottext">fromEnum :: Behavior a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromEnum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromEnum</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Int) -&gt; (Behavior a -&gt; a) -&gt; Behavior a -&gt; Int
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Behavior a -&gt; Time -&gt; a
+forall a. Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#%21"><span class="hs-glyph hs-var">!</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-181"></span><span>
+</span><span id="line-182"></span><span id="local-6989586621680577838"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VectorSpace</span></span><span> </span><span class="annot"><a href="#local-6989586621680577838"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">VectorSpace</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577838"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-183"></span><span>
+</span><span id="line-184"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Scalar"><span class="annot"><span class="hs-identifier hs-var">Scalar</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577838"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Scalar</span></span><span> </span><span class="annot"><a href="#local-6989586621680577838"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-185"></span><span>
+</span><span id="line-186"></span><span>  </span><span id="local-6989586621680577834"><span class="annot"><span class="annottext">*^ :: Scalar (Behavior a) -&gt; Behavior a -&gt; Behavior a
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">(*^)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Scalar a -&gt; a -&gt; a)
+-&gt; Behavior (Scalar a) -&gt; Behavior a -&gt; Behavior a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">Scalar a -&gt; a -&gt; a
+forall v. VectorSpace v =&gt; Scalar v -&gt; v -&gt; v
+</span><span class="hs-operator hs-var">(*^)</span></span></span><span>
+</span><span id="line-187"></span><span>
+</span><span id="line-188"></span><span id="local-6989586621680577832"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AffineSpace</span></span><span> </span><span class="annot"><a href="#local-6989586621680577832"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">AffineSpace</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577832"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-189"></span><span>
+</span><span id="line-190"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Diff"><span class="annot"><span class="hs-identifier hs-var">Diff</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577832"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Diff</span></span><span> </span><span class="annot"><a href="#local-6989586621680577832"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-191"></span><span>
+</span><span id="line-192"></span><span>  </span><span id="local-6989586621680577827"><span class="annot"><span class="annottext">.-. :: Behavior a -&gt; Behavior a -&gt; Diff (Behavior a)
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">(.-.)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; Diff a) -&gt; Behavior a -&gt; Behavior a -&gt; Behavior (Diff a)
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Diff a
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">(.-.)</span></span><span>
+</span><span id="line-193"></span><span>
+</span><span id="line-194"></span><span>  </span><span id="local-6989586621680577825"><span class="annot"><span class="annottext">.+^ :: Behavior a -&gt; Diff (Behavior a) -&gt; Behavior a
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">(.+^)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; Diff a -&gt; a) -&gt; Behavior a -&gt; Behavior (Diff a) -&gt; Behavior a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Diff a -&gt; a
+forall p. AffineSpace p =&gt; p -&gt; Diff p -&gt; p
+</span><span class="hs-operator hs-var">(.+^)</span></span></span><span>
+</span><span id="line-195"></span><span>
+</span><span id="line-196"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-197"></span><span class="hs-comment">-- View a behavior as a time function and vice versa.</span><span>
+</span><span id="line-198"></span><span class="hs-comment">--</span><span>
+</span><span id="line-199"></span><span class="hs-comment">-- Note that this is just an alias defined to make the documentation nicer:</span><span>
+</span><span id="line-200"></span><span class="hs-comment">--</span><span>
+</span><span id="line-201"></span><span class="hs-comment">--</span><span>
+</span><span id="line-202"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-203"></span><span class="hs-comment">-- 'behavior' = 'tabulated'</span><span>
+</span><span id="line-204"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-205"></span><span id="local-6989586621680578144"><span id="local-6989586621680578145"><span class="annot"><a href="Music.Time.Behavior.html#behavior"><span class="hs-identifier hs-type">behavior</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578145"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578144"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578145"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578144"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-206"></span><span id="behavior"><span class="annot"><span class="annottext">behavior :: p (Behavior a) (f (Behavior b)) -&gt; p (Time -&gt; a) (f (Time -&gt; b))
+</span><a href="Music.Time.Behavior.html#behavior"><span class="hs-identifier hs-var hs-var">behavior</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Time -&gt; a) -&gt; Behavior a)
+-&gt; (Behavior b -&gt; Time -&gt; b)
+-&gt; Iso (Time -&gt; a) (Time -&gt; b) (Behavior a) (Behavior b)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">(Time -&gt; a) -&gt; Behavior a
+forall a. (Time -&gt; a) -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-var">Behavior</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior b -&gt; Time -&gt; b
+forall a. Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#getBehavior"><span class="hs-identifier hs-var hs-var">getBehavior</span></a></span><span>
+</span><span id="line-207"></span><span>
+</span><span id="line-208"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-209"></span><span class="hs-comment">-- View a time function as a behavior.</span><span>
+</span><span id="line-210"></span><span class="hs-comment">--</span><span>
+</span><span id="line-211"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-212"></span><span class="hs-comment">-- sampled    = from behavior</span><span>
+</span><span id="line-213"></span><span class="hs-comment">-- x^.sampled = (x !)</span><span>
+</span><span id="line-214"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-215"></span><span id="local-6989586621680577821"><span id="local-6989586621680577822"><span class="annot"><a href="Music.Time.Behavior.html#sampled"><span class="hs-identifier hs-type">sampled</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577822"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577821"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680577822"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680577821"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-216"></span><span id="sampled"><span class="annot"><span class="annottext">sampled :: p (Time -&gt; a) (f (Time -&gt; b)) -&gt; p (Behavior a) (f (Behavior b))
+</span><a href="Music.Time.Behavior.html#sampled"><span class="hs-identifier hs-var hs-var">sampled</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnIso (Time -&gt; b) (Time -&gt; a) (Behavior b) (Behavior a)
+-&gt; Iso (Behavior a) (Behavior b) (Time -&gt; a) (Time -&gt; b)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Time -&gt; b) (Time -&gt; a) (Behavior b) (Behavior a)
+forall a b. Iso (Time -&gt; a) (Time -&gt; b) (Behavior a) (Behavior b)
+</span><a href="Music.Time.Behavior.html#behavior"><span class="hs-identifier hs-var">behavior</span></a></span><span>
+</span><span id="line-217"></span><span>
+</span><span id="line-218"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-219"></span><span class="hs-comment">-- A behavior that gives the current time.</span><span>
+</span><span id="line-220"></span><span class="hs-comment">--</span><span>
+</span><span id="line-221"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-222"></span><span class="hs-comment">-- (line !) = id</span><span>
+</span><span id="line-223"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-224"></span><span id="local-6989586621680578135"><span class="annot"><a href="Music.Time.Behavior.html#line"><span class="hs-identifier hs-type">line</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578135"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578135"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-225"></span><span id="line"><span class="annot"><span class="annottext">line :: Behavior a
+</span><a href="Music.Time.Behavior.html#line"><span class="hs-identifier hs-var hs-var">line</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; a
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span> </span><span class="annot"><span class="annottext">(Time -&gt; a)
+-&gt; Getting (Behavior a) (Time -&gt; a) (Behavior a) -&gt; Behavior a
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Behavior a) (Time -&gt; a) (Behavior a)
+forall a b. Iso (Time -&gt; a) (Time -&gt; b) (Behavior a) (Behavior b)
+</span><a href="Music.Time.Behavior.html#behavior"><span class="hs-identifier hs-var">behavior</span></a></span><span>
+</span><span id="line-226"></span><span>
+</span><span id="line-227"></span><span class="hs-comment">--</span><span>
+</span><span id="line-228"></span><span class="hs-comment">-- &gt; f t = t</span><span>
+</span><span id="line-229"></span><span class="hs-comment">--</span><span>
+</span><span id="line-230"></span><span>
+</span><span id="line-231"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-232"></span><span class="hs-comment">-- A behavior that varies from 0 to 1 during the same time interval and is 0 before and 1 after</span><span>
+</span><span id="line-233"></span><span class="hs-comment">-- that interval.</span><span>
+</span><span id="line-234"></span><span id="local-6989586621680577818"><span class="annot"><a href="Music.Time.Behavior.html#unit"><span class="hs-keyword hs-type">unit</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577818"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577818"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-235"></span><span id="unit"><span class="annot"><span class="annottext">unit :: Behavior a
+</span><a href="Music.Time.Behavior.html#unit"><span class="hs-keyword hs-var hs-var">unit</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a. Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#switch"><span class="hs-identifier hs-var">switch</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a. Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#switch"><span class="hs-identifier hs-var">switch</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Behavior a
+forall a. Fractional a =&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#line"><span class="hs-identifier hs-var">line</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-236"></span><span>
+</span><span id="line-237"></span><span class="hs-comment">-- &gt; f t | t &lt; 0     = 0</span><span>
+</span><span id="line-238"></span><span class="hs-comment">-- &gt;     | t &gt; 1     = 1</span><span>
+</span><span id="line-239"></span><span class="hs-comment">-- &gt;     | otherwise = t</span><span>
+</span><span id="line-240"></span><span>
+</span><span id="line-241"></span><span class="hs-comment">{-
+-- |
+-- A behavior that
+interval :: (Fractional a, Transformable a) =&gt; Time -&gt; Time -&gt; Event (Behavior a)
+interval t u = (t &lt;-&gt; u, line) ^. event
+-}</span><span>
+</span><span id="line-247"></span><span>
+</span><span id="line-248"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-249"></span><span class="hs-comment">-- A behavior that</span><span>
+</span><span id="line-250"></span><span id="local-6989586621680577817"><span class="annot"><a href="Music.Time.Behavior.html#sine"><span class="hs-identifier hs-type">sine</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577817"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577817"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-251"></span><span id="sine"><span class="annot"><span class="annottext">sine :: Behavior a
+</span><a href="Music.Time.Behavior.html#sine"><span class="hs-identifier hs-var hs-var">sine</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Behavior a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">sin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Behavior a
+forall a. Fractional a =&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#line"><span class="hs-identifier hs-var">line</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a
+forall a. Floating a =&gt; a
+</span><a href="Music.Time.Behavior.html#tau"><span class="hs-identifier hs-var">tau</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-252"></span><span>
+</span><span id="line-253"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-254"></span><span class="hs-comment">-- A behavior that</span><span>
+</span><span id="line-255"></span><span id="local-6989586621680577813"><span class="annot"><a href="Music.Time.Behavior.html#cosine"><span class="hs-identifier hs-type">cosine</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577813"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577813"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-256"></span><span id="cosine"><span class="annot"><span class="annottext">cosine :: Behavior a
+</span><a href="Music.Time.Behavior.html#cosine"><span class="hs-identifier hs-var hs-var">cosine</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Behavior a
+forall a. Floating a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">cos</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Behavior a
+forall a. Fractional a =&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#line"><span class="hs-identifier hs-var">line</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a
+forall a. Floating a =&gt; a
+</span><a href="Music.Time.Behavior.html#tau"><span class="hs-identifier hs-var">tau</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-257"></span><span>
+</span><span id="line-258"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-259"></span><span class="hs-comment">-- A behavior that goes from 0 to 1 repeatedly with a period of 1.</span><span>
+</span><span id="line-260"></span><span id="local-6989586621680577811"><span class="annot"><a href="Music.Time.Behavior.html#sawtooth"><span class="hs-identifier hs-type">sawtooth</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">RealFrac</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577811"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577811"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-261"></span><span id="sawtooth"><span class="annot"><span class="annottext">sawtooth :: Behavior a
+</span><a href="Music.Time.Behavior.html#sawtooth"><span class="hs-identifier hs-var hs-var">sawtooth</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Behavior a
+forall a. Fractional a =&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#line"><span class="hs-identifier hs-var">line</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; Behavior a -&gt; Behavior a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. RealFrac a =&gt; a -&gt; a
+</span><a href="Music.Time.Behavior.html#floor%27"><span class="hs-identifier hs-var">floor'</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a
+forall a. Fractional a =&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#line"><span class="hs-identifier hs-var">line</span></a></span><span>
+</span><span id="line-262"></span><span>
+</span><span id="line-263"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-264"></span><span class="hs-comment">-- A behavior that is 1 at time 0, and 0 at all other times.</span><span>
+</span><span id="line-265"></span><span id="local-6989586621680577809"><span class="annot"><a href="Music.Time.Behavior.html#impulse"><span class="hs-identifier hs-type">impulse</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577809"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577809"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-266"></span><span id="impulse"><span class="annot"><span class="annottext">impulse :: Behavior a
+</span><a href="Music.Time.Behavior.html#impulse"><span class="hs-identifier hs-var hs-var">impulse</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a.
+Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#switch%27"><span class="hs-identifier hs-var">switch'</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-267"></span><span>
+</span><span id="line-268"></span><span class="hs-comment">-- &gt; f t | t == 0    = 1</span><span>
+</span><span id="line-269"></span><span class="hs-comment">-- &gt;     | otherwise = 0</span><span>
+</span><span id="line-270"></span><span>
+</span><span id="line-271"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-272"></span><span class="hs-comment">-- A behavior that goes from 0 to 1 at time 0.</span><span>
+</span><span id="line-273"></span><span id="turnOn"><span class="annot"><span class="annottext">turnOn :: Behavior a
+</span><a href="Music.Time.Behavior.html#turnOn"><span class="hs-identifier hs-var hs-var">turnOn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a. Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#switch"><span class="hs-identifier hs-var">switch</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-274"></span><span>
+</span><span id="line-275"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-276"></span><span class="hs-comment">-- A behavior that goes from 1 to 0 at time 0.</span><span>
+</span><span id="line-277"></span><span id="turnOff"><span class="annot"><span class="annottext">turnOff :: Behavior a
+</span><a href="Music.Time.Behavior.html#turnOff"><span class="hs-identifier hs-var hs-var">turnOff</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a. Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#switch"><span class="hs-identifier hs-var">switch</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-278"></span><span>
+</span><span id="line-279"></span><span class="hs-comment">--</span><span>
+</span><span id="line-280"></span><span class="hs-comment">-- Because the 'Time' type is fixed and unbounded in the current version, we can not</span><span>
+</span><span id="line-281"></span><span class="hs-comment">-- define a generix isomorphism from behaviors to segments. If we change the library to</span><span>
+</span><span id="line-282"></span><span class="hs-comment">-- provide multiple time representations (using TFs or similar), we should provide</span><span>
+</span><span id="line-283"></span><span class="hs-comment">-- these combinators:</span><span>
+</span><span id="line-284"></span><span class="hs-comment">--</span><span>
+</span><span id="line-285"></span><span class="hs-comment">-- &gt; focusOnFullRange :: Bounded Time =&gt; Behavior a -&gt; Segment a</span><span>
+</span><span id="line-286"></span><span class="hs-comment">-- &gt; focusingOnFullRange :: Bounded Time =&gt; Iso' (Behavior a) (Segment a)</span><span>
+</span><span id="line-287"></span><span class="hs-comment">--</span><span>
+</span><span id="line-288"></span><span>
+</span><span id="line-289"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-290"></span><span class="hs-comment">-- Instantly switch from one behavior to another.</span><span>
+</span><span id="line-291"></span><span id="local-6989586621680578136"><span class="annot"><a href="Music.Time.Behavior.html#switch"><span class="hs-identifier hs-type">switch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578136"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578136"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578136"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-292"></span><span id="switch"><span class="annot"><span class="annottext">switch :: Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#switch"><span class="hs-identifier hs-var hs-var">switch</span></a></span></span><span> </span><span id="local-6989586621680577808"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680577808"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680577807"><span class="annot"><span class="annottext">rx :: Behavior a
+</span><a href="#local-6989586621680577807"><span class="hs-identifier hs-var">rx</span></a></span></span><span> </span><span id="local-6989586621680577806"><span class="annot"><span class="annottext">ry :: Behavior a
+</span><a href="#local-6989586621680577806"><span class="hs-identifier hs-var">ry</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a.
+Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#switch%27"><span class="hs-identifier hs-var">switch'</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577808"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a
+</span><a href="#local-6989586621680577807"><span class="hs-identifier hs-var">rx</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a
+</span><a href="#local-6989586621680577806"><span class="hs-identifier hs-var">ry</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a
+</span><a href="#local-6989586621680577806"><span class="hs-identifier hs-var">ry</span></a></span><span>
+</span><span id="line-293"></span><span>
+</span><span id="line-294"></span><span class="hs-comment">-- | Replace everthing before the given time by `mempty`.</span><span>
+</span><span id="line-295"></span><span id="local-6989586621680577805"><span class="annot"><a href="Music.Time.Behavior.html#trimBefore"><span class="hs-identifier hs-type">trimBefore</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577805"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577805"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577805"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-296"></span><span id="trimBefore"><span class="annot"><span class="annottext">trimBefore :: Time -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#trimBefore"><span class="hs-identifier hs-var hs-var">trimBefore</span></a></span></span><span> </span><span id="local-6989586621680577804"><span class="annot"><span class="annottext">start :: Time
+</span><a href="#local-6989586621680577804"><span class="hs-identifier hs-var">start</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a. Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#switch"><span class="hs-identifier hs-var">switch</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577804"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span>
+</span><span id="line-297"></span><span>
+</span><span id="line-298"></span><span class="hs-comment">-- | Replace everthing after the given time by `mempty`.</span><span>
+</span><span id="line-299"></span><span id="local-6989586621680577803"><span class="annot"><a href="Music.Time.Behavior.html#trimAfter"><span class="hs-identifier hs-type">trimAfter</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577803"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577803"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577803"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-300"></span><span id="trimAfter"><span class="annot"><span class="annottext">trimAfter :: Time -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#trimAfter"><span class="hs-identifier hs-var hs-var">trimAfter</span></a></span></span><span> </span><span id="local-6989586621680577802"><span class="annot"><span class="annottext">stop :: Time
+</span><a href="#local-6989586621680577802"><span class="hs-identifier hs-var">stop</span></a></span></span><span> </span><span id="local-6989586621680577801"><span class="annot"><span class="annottext">x :: Behavior a
+</span><a href="#local-6989586621680577801"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+forall a. Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#switch"><span class="hs-identifier hs-var">switch</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577802"><span class="hs-identifier hs-var">stop</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a
+</span><a href="#local-6989586621680577801"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span>
+</span><span id="line-301"></span><span>
+</span><span id="line-302"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-303"></span><span class="hs-comment">-- Instantly switch from one behavior to another with an optinal intermediate value.</span><span>
+</span><span id="line-304"></span><span id="local-6989586621680578128"><span class="annot"><a href="Music.Time.Behavior.html#switch%27"><span class="hs-identifier hs-type">switch'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578128"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578128"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578128"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578128"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-305"></span><span id="switch%27"><span class="annot"><span class="annottext">switch' :: Time -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#switch%27"><span class="hs-identifier hs-var hs-var">switch'</span></a></span></span><span> </span><span id="local-6989586621680577800"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680577800"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680577799"><span class="annot"><span class="annottext">rx :: Behavior a
+</span><a href="#local-6989586621680577799"><span class="hs-identifier hs-var">rx</span></a></span></span><span> </span><span id="local-6989586621680577798"><span class="annot"><span class="annottext">ry :: Behavior a
+</span><a href="#local-6989586621680577798"><span class="hs-identifier hs-var">ry</span></a></span></span><span> </span><span id="local-6989586621680577797"><span class="annot"><span class="annottext">rz :: Behavior a
+</span><a href="#local-6989586621680577797"><span class="hs-identifier hs-var">rz</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Getting (Behavior a) (Time -&gt; a) (Behavior a)
+-&gt; (Time -&gt; a) -&gt; Behavior a
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting (Behavior a) (Time -&gt; a) (Behavior a)
+forall a b. Iso (Time -&gt; a) (Time -&gt; b) (Behavior a) (Behavior b)
+</span><a href="Music.Time.Behavior.html#behavior"><span class="hs-identifier hs-var">behavior</span></a></span><span> </span><span class="annot"><span class="annottext">((Time -&gt; a) -&gt; Behavior a) -&gt; (Time -&gt; a) -&gt; Behavior a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621680577795"><span class="annot"><span class="annottext">u :: Time
+</span><a href="#local-6989586621680577795"><span class="hs-identifier hs-var">u</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577795"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">`compare`</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577800"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-306"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">LT</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Behavior a
+</span><a href="#local-6989586621680577799"><span class="hs-identifier hs-var">rx</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Time -&gt; a
+forall a. Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#%21"><span class="hs-glyph hs-var">!</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577795"><span class="hs-identifier hs-var">u</span></a></span><span>
+</span><span id="line-307"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">EQ</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Behavior a
+</span><a href="#local-6989586621680577798"><span class="hs-identifier hs-var">ry</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Time -&gt; a
+forall a. Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#%21"><span class="hs-glyph hs-var">!</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577795"><span class="hs-identifier hs-var">u</span></a></span><span>
+</span><span id="line-308"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">GT</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Behavior a
+</span><a href="#local-6989586621680577797"><span class="hs-identifier hs-var">rz</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Time -&gt; a
+forall a. Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#%21"><span class="hs-glyph hs-var">!</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577795"><span class="hs-identifier hs-var">u</span></a></span><span>
+</span><span id="line-309"></span><span>
+</span><span id="line-310"></span><span class="hs-comment">-- | Sample the given behavior at the given time.</span><span>
+</span><span id="line-311"></span><span id="local-6989586621680578201"><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578201"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578201"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-312"></span><span id="local-6989586621680577793"><span class="annot"><span class="annottext">b :: Behavior a
+</span><a href="#local-6989586621680577793"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="%21"><span class="annot"><span class="annottext">! :: Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#%21"><span class="hs-glyph hs-var hs-var">!</span></a></span></span><span> </span><span id="local-6989586621680577792"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680577792"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Time -&gt; a
+forall a. Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#getBehavior"><span class="hs-identifier hs-var hs-var">getBehavior</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a
+</span><a href="#local-6989586621680577793"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577792"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-313"></span><span>
+</span><span id="line-314"></span><span class="hs-comment">-- | Replace everything outside the given span by 'mempty'.</span><span>
+</span><span id="line-315"></span><span id="local-6989586621680578100"><span class="annot"><a href="Music.Time.Behavior.html#trim"><span class="hs-identifier hs-type">trim</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578100"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578100"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578100"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-316"></span><span id="trim"><span class="annot"><span class="annottext">trim :: Span -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#trim"><span class="hs-identifier hs-var hs-var">trim</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting (Time, Time) Span (Time, Time) -&gt; Span -&gt; (Time, Time)
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting (Time, Time) Span (Time, Time)
+Iso' Span (Time, Time)
+</span><a href="Music.Time.Types.html#onsetAndOffset"><span class="hs-identifier hs-var">onsetAndOffset</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680577790"><span class="annot"><span class="annottext">on :: Time
+</span><a href="#local-6989586621680577790"><span class="hs-identifier hs-var">on</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680577789"><span class="annot"><span class="annottext">off :: Time
+</span><a href="#local-6989586621680577789"><span class="hs-identifier hs-var">off</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621680577788"><span class="annot"><span class="annottext">x :: Behavior a
+</span><a href="#local-6989586621680577788"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680577787"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680577787"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577790"><span class="hs-identifier hs-var">on</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577787"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577787"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577789"><span class="hs-identifier hs-var">off</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Behavior a
+</span><a href="#local-6989586621680577788"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Time -&gt; a
+forall a. Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#%21"><span class="hs-glyph hs-var">!</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680577787"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">a
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Time -&gt; a)
+-&gt; Getting (Behavior a) (Time -&gt; a) (Behavior a) -&gt; Behavior a
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Behavior a) (Time -&gt; a) (Behavior a)
+forall a b. Iso (Time -&gt; a) (Time -&gt; b) (Behavior a) (Behavior b)
+</span><a href="Music.Time.Behavior.html#behavior"><span class="hs-identifier hs-var">behavior</span></a></span><span>
+</span><span id="line-317"></span><span>
+</span><span id="line-318"></span><span class="hs-comment">-- Treat each event as a segment in the range (0&lt;-&gt;1) and compose.</span><span>
+</span><span id="line-319"></span><span>
+</span><span id="line-320"></span><span class="hs-comment">-- | Flatten a score of behaviors. The behavior for each note is sampled in the units span @0 &lt;-&gt; 1@. Overlapping notes are merged using the monoid instance.</span><span>
+</span><span id="line-321"></span><span class="hs-comment">--</span><span>
+</span><span id="line-322"></span><span class="hs-comment">-- 'concatB' is a monoid homomorphism, that is:</span><span>
+</span><span id="line-323"></span><span class="hs-comment">--</span><span>
+</span><span id="line-324"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-325"></span><span class="hs-comment">-- concatB mempty   = mempty</span><span>
+</span><span id="line-326"></span><span class="hs-comment">-- concatB (a &lt;&gt; b) = concatB a &lt;&gt; concatB b</span><span>
+</span><span id="line-327"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-328"></span><span id="local-6989586621680577785"><span class="annot"><a href="Music.Time.Behavior.html#concatB"><span class="hs-identifier hs-type">concatB</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577785"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577785"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577785"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-329"></span><span id="concatB"><span class="annot"><span class="annottext">concatB :: Score (Behavior a) -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#concatB"><span class="hs-identifier hs-var hs-var">concatB</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Behavior a] -&gt; Behavior a
+forall a. Monoid a =&gt; [a] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mconcat</span></a></span><span> </span><span class="annot"><span class="annottext">([Behavior a] -&gt; Behavior a)
+-&gt; (Score (Behavior a) -&gt; [Behavior a])
+-&gt; Score (Behavior a)
+-&gt; Behavior a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting (Endo [Behavior a]) (Score (Behavior a)) (Behavior a)
+-&gt; Score (Behavior a) -&gt; [Behavior a]
+forall a s. Getting (Endo [a]) s a -&gt; s -&gt; [a]
+</span><span class="hs-identifier hs-var">toListOf</span></span><span> </span><span class="annot"><span class="annottext">Getting (Endo [Behavior a]) (Score (Behavior a)) (Behavior a)
+forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f (t b)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">traverse</span></a></span><span> </span><span class="annot"><span class="annottext">(Score (Behavior a) -&gt; [Behavior a])
+-&gt; (Score (Behavior a) -&gt; Score (Behavior a))
+-&gt; Score (Behavior a)
+-&gt; [Behavior a]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Span -&gt; Behavior a -&gt; Behavior a)
+-&gt; Score (Behavior a) -&gt; Score (Behavior a)
+forall a b. (Span -&gt; a -&gt; b) -&gt; Score a -&gt; Score b
+</span><a href="Music.Time.Score.html#mapWithSpan"><span class="hs-identifier hs-var">mapWithSpan</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Behavior a -&gt; Behavior a
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">(Score (Behavior a) -&gt; Score (Behavior a))
+-&gt; (Score (Behavior a) -&gt; Score (Behavior a))
+-&gt; Score (Behavior a)
+-&gt; Score (Behavior a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Behavior a -&gt; Behavior a)
+-&gt; Score (Behavior a) -&gt; Score (Behavior a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; Behavior a -&gt; Behavior a
+forall a. Monoid a =&gt; Span -&gt; Behavior a -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#trim"><span class="hs-identifier hs-var">trim</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-330"></span><span>
+</span><span id="line-331"></span><span class="hs-comment">-- Internal</span><span>
+</span><span id="line-332"></span><span>
+</span><span id="line-333"></span><span id="local-6989586621680578133"><span class="annot"><a href="Music.Time.Behavior.html#tau"><span class="hs-identifier hs-type">tau</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578133"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578133"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-334"></span><span id="tau"><span class="annot"><span class="annottext">tau :: a
+</span><a href="Music.Time.Behavior.html#tau"><span class="hs-identifier hs-var hs-var">tau</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="annottext">a
+forall a. Floating a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pi</span></a></span><span>
+</span><span id="line-335"></span><span>
+</span><span id="line-336"></span><span class="hs-comment">-- TODO use Internal.Util version</span><span>
+</span><span id="line-337"></span><span id="local-6989586621680578130"><span class="annot"><a href="Music.Time.Behavior.html#floor%27"><span class="hs-identifier hs-type">floor'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">RealFrac</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578130"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578130"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578130"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-338"></span><span id="floor%27"><span class="annot"><span class="annottext">floor' :: a -&gt; a
+</span><a href="Music.Time.Behavior.html#floor%27"><span class="hs-identifier hs-var hs-var">floor'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; a
+forall a. Num a =&gt; Integer -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromInteger</span></a></span><span> </span><span class="annot"><span class="annottext">(Integer -&gt; a) -&gt; (a -&gt; Integer) -&gt; a -&gt; a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Integer
+forall a b. (RealFrac a, Integral b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">floor</span></a></span><span>
+</span><span id="line-339"></span><span>
+</span><span id="line-340"></span><span id="local-6989586621680577779"><span class="annot"><a href="Music.Time.Behavior.html#turnOn"><span class="hs-identifier hs-type">turnOn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577779"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577779"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-341"></span><span>
+</span><span id="line-342"></span><span id="local-6989586621680577778"><span class="annot"><a href="Music.Time.Behavior.html#turnOff"><span class="hs-identifier hs-type">turnOff</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577778"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680577778"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-343"></span></pre></body></html>

@@ -1,0 +1,535 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Time.Placed</span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Placed type</span></span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier">Placed</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Construction</span></span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Music.Time.Placed.html#placed"><span class="hs-identifier">placed</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Time.Placed.html#placee"><span class="hs-identifier">placee</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Comonad</span></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-operator">(&lt;|)</span></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><span class="hs-identifier">Indexable</span></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-identifier">Level</span></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><span class="hs-identifier">below</span></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="hs-identifier">index</span></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><span class="hs-identifier">inside</span></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><span class="hs-identifier">parts</span></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="hs-identifier">reversed</span></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="hs-operator">(|&gt;)</span></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html"><span class="hs-identifier">Data.AffineSpace.Point</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Bifunctor</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Foldable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Foldable</span></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html"><span class="hs-identifier">Data.Functor.Couple</span></a></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.String</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.VectorSpace</span></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Internal.Util.html"><span class="hs-identifier">Music.Time.Internal.Util</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Util.html#dependingOn"><span class="hs-identifier">dependingOn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Juxtapose.html"><span class="hs-identifier">Music.Time.Juxtapose</span></a></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- 'Placed' represents a value with an offset in time.</span><span>
+</span><span id="line-50"></span><span class="hs-keyword">newtype</span><span> </span><span id="Placed"><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-var">Placed</span></a></span></span><span> </span><span id="local-6989586621680572092"><span class="annot"><a href="#local-6989586621680572092"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Placed"><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-var">Placed</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getPlaced"><span class="annot"><span class="annottext">Placed a -&gt; Couple Time a
+</span><a href="Music.Time.Placed.html#getPlaced"><span class="hs-identifier hs-var hs-var">getPlaced</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-operator hs-type">`Couple`</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572092"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-keyword">deriving</span><span>
+</span><span id="line-52"></span><span>    </span><span class="hs-special">(</span><span> </span><span id="local-6989586621680572008"><span id="local-6989586621680572010"><span class="annot"><span class="annottext">Placed a -&gt; Placed a -&gt; Bool
+(Placed a -&gt; Placed a -&gt; Bool)
+-&gt; (Placed a -&gt; Placed a -&gt; Bool) -&gt; Eq (Placed a)
+forall a. Eq a =&gt; Placed a -&gt; Placed a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Placed a -&gt; Placed a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; Placed a -&gt; Placed a -&gt; Bool
+== :: Placed a -&gt; Placed a -&gt; Bool
+$c== :: forall a. Eq a =&gt; Placed a -&gt; Placed a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-53"></span><span>      </span><span id="local-6989586621680571992"><span id="local-6989586621680571994"><span id="local-6989586621680571996"><span id="local-6989586621680571998"><span id="local-6989586621680572000"><span id="local-6989586621680572002"><span id="local-6989586621680572004"><span class="annot"><span class="annottext">Eq (Placed a)
+Eq (Placed a) =&gt;
+(Placed a -&gt; Placed a -&gt; Ordering)
+-&gt; (Placed a -&gt; Placed a -&gt; Bool)
+-&gt; (Placed a -&gt; Placed a -&gt; Bool)
+-&gt; (Placed a -&gt; Placed a -&gt; Bool)
+-&gt; (Placed a -&gt; Placed a -&gt; Bool)
+-&gt; (Placed a -&gt; Placed a -&gt; Placed a)
+-&gt; (Placed a -&gt; Placed a -&gt; Placed a)
+-&gt; Ord (Placed a)
+Placed a -&gt; Placed a -&gt; Bool
+Placed a -&gt; Placed a -&gt; Ordering
+Placed a -&gt; Placed a -&gt; Placed a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (Placed a)
+forall a. Ord a =&gt; Placed a -&gt; Placed a -&gt; Bool
+forall a. Ord a =&gt; Placed a -&gt; Placed a -&gt; Ordering
+forall a. Ord a =&gt; Placed a -&gt; Placed a -&gt; Placed a
+min :: Placed a -&gt; Placed a -&gt; Placed a
+$cmin :: forall a. Ord a =&gt; Placed a -&gt; Placed a -&gt; Placed a
+max :: Placed a -&gt; Placed a -&gt; Placed a
+$cmax :: forall a. Ord a =&gt; Placed a -&gt; Placed a -&gt; Placed a
+&gt;= :: Placed a -&gt; Placed a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; Placed a -&gt; Placed a -&gt; Bool
+&gt; :: Placed a -&gt; Placed a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; Placed a -&gt; Placed a -&gt; Bool
+&lt;= :: Placed a -&gt; Placed a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; Placed a -&gt; Placed a -&gt; Bool
+&lt; :: Placed a -&gt; Placed a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; Placed a -&gt; Placed a -&gt; Bool
+compare :: Placed a -&gt; Placed a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; Placed a -&gt; Placed a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (Placed a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-54"></span><span>      </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-55"></span><span>      </span><span id="local-6989586621680571957"><span id="local-6989586621680571959"><span id="local-6989586621680571961"><span id="local-6989586621680571963"><span id="local-6989586621680571965"><span id="local-6989586621680571967"><span id="local-6989586621680571969"><span id="local-6989586621680571971"><span id="local-6989586621680571973"><span id="local-6989586621680571975"><span id="local-6989586621680571977"><span id="local-6989586621680571979"><span id="local-6989586621680571981"><span id="local-6989586621680571983"><span id="local-6989586621680571985"><span id="local-6989586621680571987"><span id="local-6989586621680571989"><span class="annot"><span class="annottext">a -&gt; Placed a -&gt; Bool
+Placed m -&gt; m
+Placed a -&gt; [a]
+Placed a -&gt; Bool
+Placed a -&gt; Int
+Placed a -&gt; a
+Placed a -&gt; a
+Placed a -&gt; a
+Placed a -&gt; a
+(a -&gt; m) -&gt; Placed a -&gt; m
+(a -&gt; m) -&gt; Placed a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+(a -&gt; a -&gt; a) -&gt; Placed a -&gt; a
+(a -&gt; a -&gt; a) -&gt; Placed a -&gt; a
+(forall m. Monoid m =&gt; Placed m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Placed a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Placed a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Placed a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Placed a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Placed a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Placed a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Placed a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Placed a -&gt; a)
+-&gt; (forall a. Placed a -&gt; [a])
+-&gt; (forall a. Placed a -&gt; Bool)
+-&gt; (forall a. Placed a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; Placed a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; Placed a -&gt; a)
+-&gt; (forall a. Ord a =&gt; Placed a -&gt; a)
+-&gt; (forall a. Num a =&gt; Placed a -&gt; a)
+-&gt; (forall a. Num a =&gt; Placed a -&gt; a)
+-&gt; Foldable Placed
+forall a. Eq a =&gt; a -&gt; Placed a -&gt; Bool
+forall a. Num a =&gt; Placed a -&gt; a
+forall a. Ord a =&gt; Placed a -&gt; a
+forall m. Monoid m =&gt; Placed m -&gt; m
+forall a. Placed a -&gt; Bool
+forall a. Placed a -&gt; Int
+forall a. Placed a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; Placed a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Placed a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: Placed a -&gt; a
+$cproduct :: forall a. Num a =&gt; Placed a -&gt; a
+sum :: Placed a -&gt; a
+$csum :: forall a. Num a =&gt; Placed a -&gt; a
+minimum :: Placed a -&gt; a
+$cminimum :: forall a. Ord a =&gt; Placed a -&gt; a
+maximum :: Placed a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; Placed a -&gt; a
+elem :: a -&gt; Placed a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; Placed a -&gt; Bool
+length :: Placed a -&gt; Int
+$clength :: forall a. Placed a -&gt; Int
+null :: Placed a -&gt; Bool
+$cnull :: forall a. Placed a -&gt; Bool
+toList :: Placed a -&gt; [a]
+$ctoList :: forall a. Placed a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; Placed a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; Placed a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; Placed a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; Placed a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Placed a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; Placed a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Placed a -&gt; m
+foldMap :: (a -&gt; m) -&gt; Placed a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Placed a -&gt; m
+fold :: Placed m -&gt; m
+$cfold :: forall m. Monoid m =&gt; Placed m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-56"></span><span>      </span><span id="local-6989586621680571946"><span id="local-6989586621680571948"><span id="local-6989586621680571950"><span id="local-6989586621680571952"><span class="annot"><span class="annottext">Functor Placed
+Foldable Placed
+(Functor Placed, Foldable Placed) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; Placed a -&gt; f (Placed b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    Placed (f a) -&gt; f (Placed a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; Placed a -&gt; m (Placed b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    Placed (m a) -&gt; m (Placed a))
+-&gt; Traversable Placed
+(a -&gt; f b) -&gt; Placed a -&gt; f (Placed b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; Placed (m a) -&gt; m (Placed a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+Placed (f a) -&gt; f (Placed a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Placed a -&gt; m (Placed b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Placed a -&gt; f (Placed b)
+sequence :: Placed (m a) -&gt; m (Placed a)
+$csequence :: forall (m :: * -&gt; *) a. Monad m =&gt; Placed (m a) -&gt; m (Placed a)
+mapM :: (a -&gt; m b) -&gt; Placed a -&gt; m (Placed b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Placed a -&gt; m (Placed b)
+sequenceA :: Placed (f a) -&gt; f (Placed a)
+$csequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+Placed (f a) -&gt; f (Placed a)
+traverse :: (a -&gt; f b) -&gt; Placed a -&gt; f (Placed b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Placed a -&gt; f (Placed b)
+$cp2Traversable :: Foldable Placed
+$cp1Traversable :: Functor Placed
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-57"></span><span>      </span><span id="local-6989586621680571941"><span id="local-6989586621680571943"><span class="annot"><span class="annottext">a -&gt; Placed b -&gt; Placed a
+(a -&gt; b) -&gt; Placed a -&gt; Placed b
+(forall a b. (a -&gt; b) -&gt; Placed a -&gt; Placed b)
+-&gt; (forall a b. a -&gt; Placed b -&gt; Placed a) -&gt; Functor Placed
+forall a b. a -&gt; Placed b -&gt; Placed a
+forall a b. (a -&gt; b) -&gt; Placed a -&gt; Placed b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; Placed b -&gt; Placed a
+$c&lt;$ :: forall a b. a -&gt; Placed b -&gt; Placed a
+fmap :: (a -&gt; b) -&gt; Placed a -&gt; Placed b
+$cfmap :: forall a b. (a -&gt; b) -&gt; Placed a -&gt; Placed b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-58"></span><span>      </span><span id="local-6989586621680571929"><span id="local-6989586621680571931"><span id="local-6989586621680571933"><span id="local-6989586621680571935"><span id="local-6989586621680571937"><span class="annot"><span class="annottext">Functor Placed
+a -&gt; Placed a
+Functor Placed =&gt;
+(forall a. a -&gt; Placed a)
+-&gt; (forall a b. Placed (a -&gt; b) -&gt; Placed a -&gt; Placed b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; Placed a -&gt; Placed b -&gt; Placed c)
+-&gt; (forall a b. Placed a -&gt; Placed b -&gt; Placed b)
+-&gt; (forall a b. Placed a -&gt; Placed b -&gt; Placed a)
+-&gt; Applicative Placed
+Placed a -&gt; Placed b -&gt; Placed b
+Placed a -&gt; Placed b -&gt; Placed a
+Placed (a -&gt; b) -&gt; Placed a -&gt; Placed b
+(a -&gt; b -&gt; c) -&gt; Placed a -&gt; Placed b -&gt; Placed c
+forall a. a -&gt; Placed a
+forall a b. Placed a -&gt; Placed b -&gt; Placed a
+forall a b. Placed a -&gt; Placed b -&gt; Placed b
+forall a b. Placed (a -&gt; b) -&gt; Placed a -&gt; Placed b
+forall a b c. (a -&gt; b -&gt; c) -&gt; Placed a -&gt; Placed b -&gt; Placed c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: Placed a -&gt; Placed b -&gt; Placed a
+$c&lt;* :: forall a b. Placed a -&gt; Placed b -&gt; Placed a
+*&gt; :: Placed a -&gt; Placed b -&gt; Placed b
+$c*&gt; :: forall a b. Placed a -&gt; Placed b -&gt; Placed b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; Placed a -&gt; Placed b -&gt; Placed c
+$cliftA2 :: forall a b c. (a -&gt; b -&gt; c) -&gt; Placed a -&gt; Placed b -&gt; Placed c
+&lt;*&gt; :: Placed (a -&gt; b) -&gt; Placed a -&gt; Placed b
+$c&lt;*&gt; :: forall a b. Placed (a -&gt; b) -&gt; Placed a -&gt; Placed b
+pure :: a -&gt; Placed a
+$cpure :: forall a. a -&gt; Placed a
+$cp1Applicative :: Functor Placed
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-59"></span><span>      </span><span id="local-6989586621680571921"><span id="local-6989586621680571923"><span id="local-6989586621680571925"><span class="annot"><span class="annottext">Applicative Placed
+a -&gt; Placed a
+Applicative Placed =&gt;
+(forall a b. Placed a -&gt; (a -&gt; Placed b) -&gt; Placed b)
+-&gt; (forall a b. Placed a -&gt; Placed b -&gt; Placed b)
+-&gt; (forall a. a -&gt; Placed a)
+-&gt; Monad Placed
+Placed a -&gt; (a -&gt; Placed b) -&gt; Placed b
+Placed a -&gt; Placed b -&gt; Placed b
+forall a. a -&gt; Placed a
+forall a b. Placed a -&gt; Placed b -&gt; Placed b
+forall a b. Placed a -&gt; (a -&gt; Placed b) -&gt; Placed b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; Placed a
+$creturn :: forall a. a -&gt; Placed a
+&gt;&gt; :: Placed a -&gt; Placed b -&gt; Placed b
+$c&gt;&gt; :: forall a b. Placed a -&gt; Placed b -&gt; Placed b
+&gt;&gt;= :: Placed a -&gt; (a -&gt; Placed b) -&gt; Placed b
+$c&gt;&gt;= :: forall a b. Placed a -&gt; (a -&gt; Placed b) -&gt; Placed b
+$cp1Monad :: Applicative Placed
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-60"></span><span>      </span><span id="local-6989586621680571913"><span id="local-6989586621680571915"><span id="local-6989586621680571917"><span class="annot"><span class="annottext">Functor Placed
+Functor Placed =&gt;
+(forall a. Placed a -&gt; a)
+-&gt; (forall a. Placed a -&gt; Placed (Placed a))
+-&gt; (forall a b. (Placed a -&gt; b) -&gt; Placed a -&gt; Placed b)
+-&gt; Comonad Placed
+Placed a -&gt; a
+Placed a -&gt; Placed (Placed a)
+(Placed a -&gt; b) -&gt; Placed a -&gt; Placed b
+forall a. Placed a -&gt; a
+forall a. Placed a -&gt; Placed (Placed a)
+forall a b. (Placed a -&gt; b) -&gt; Placed a -&gt; Placed b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (Placed a -&gt; b) -&gt; Placed a -&gt; Placed b
+$cextend :: forall a b. (Placed a -&gt; b) -&gt; Placed a -&gt; Placed b
+duplicate :: Placed a -&gt; Placed (Placed a)
+$cduplicate :: forall a. Placed a -&gt; Placed (Placed a)
+extract :: Placed a -&gt; a
+$cextract :: forall a. Placed a -&gt; a
+$cp1Comonad :: Functor Placed
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></span></span></span></span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span id="local-6989586621680571911"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680571906"><span id="local-6989586621680571909"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571911"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571911"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571911"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-64"></span><span>  </span><span id="local-6989586621680571904"><span class="annot"><span class="annottext">show :: Placed a -&gt; String
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span id="local-6989586621680571902"><span class="annot"><span class="annottext">x :: Placed a
+</span><a href="#local-6989586621680571902"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Time, a) -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Placed a
+</span><a href="#local-6989586621680571902"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Placed a -&gt; Getting (Time, a) (Placed a) (Time, a) -&gt; (Time, a)
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Time, a) (Time, a) (Placed a) (Placed a)
+-&gt; Iso (Placed a) (Placed a) (Time, a) (Time, a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Time, a) (Time, a) (Placed a) (Placed a)
+forall a b. Iso (Time, a) (Time, b) (Placed a) (Placed b)
+</span><a href="Music.Time.Placed.html#placed"><span class="hs-identifier hs-var">placed</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;^.placed&quot;</span></span></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span id="local-6989586621680571899"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571899"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571899"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680571899"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span>  </span><span id="local-6989586621680571896"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (Placed a)) (f (Unwrapped (Placed a)))
+-&gt; p (Placed a) (f (Placed a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Placed a -&gt; (Time, a))
+-&gt; ((Time, a) -&gt; Placed a)
+-&gt; Iso (Placed a) (Placed a) (Time, a) (Time, a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Couple Time a -&gt; (Time, a)
+forall b a. Couple b a -&gt; (b, a)
+</span><a href="Data.Functor.Couple.html#getCouple"><span class="hs-identifier hs-var hs-var">getCouple</span></a></span><span> </span><span class="annot"><span class="annottext">(Couple Time a -&gt; (Time, a))
+-&gt; (Placed a -&gt; Couple Time a) -&gt; Placed a -&gt; (Time, a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Placed a -&gt; Couple Time a
+forall a. Placed a -&gt; Couple Time a
+</span><a href="Music.Time.Placed.html#getPlaced"><span class="hs-identifier hs-var hs-var">getPlaced</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Couple Time a -&gt; Placed a
+forall a. Couple Time a -&gt; Placed a
+</span><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-var">Placed</span></a></span><span> </span><span class="annot"><span class="annottext">(Couple Time a -&gt; Placed a)
+-&gt; ((Time, a) -&gt; Couple Time a) -&gt; (Time, a) -&gt; Placed a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Time, a) -&gt; Couple Time a
+forall b a. (b, a) -&gt; Couple b a
+</span><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-var">Couple</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span id="local-6989586621680571889"><span id="local-6989586621680571890"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571890"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571889"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span id="local-6989586621680571886"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571886"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571886"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-75"></span><span>  </span><span id="local-6989586621680571883"><span class="annot"><span class="annottext">transform :: Span -&gt; Placed a -&gt; Placed a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span id="local-6989586621680571881"><span class="annot"><span class="annottext">t :: Span
+</span><a href="#local-6989586621680571881"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-76"></span><span>    </span><span class="annot"><span class="annottext">ASetter (Placed a) (Placed a) Time Time
+-&gt; (Time -&gt; Time) -&gt; Placed a -&gt; Placed a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AnIso (Time, a) (Time, a) (Placed a) (Placed a)
+-&gt; Iso (Placed a) (Placed a) (Time, a) (Time, a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Time, a) (Time, a) (Placed a) (Placed a)
+forall a b. Iso (Time, a) (Time, b) (Placed a) (Placed b)
+</span><a href="Music.Time.Placed.html#placed"><span class="hs-identifier hs-var">placed</span></a></span><span> </span><span class="annot"><span class="annottext">(((Time, a) -&gt; Identity (Time, a))
+ -&gt; Placed a -&gt; Identity (Placed a))
+-&gt; ((Time -&gt; Identity Time) -&gt; (Time, a) -&gt; Identity (Time, a))
+-&gt; ASetter (Placed a) (Placed a) Time Time
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Time -&gt; Identity Time) -&gt; (Time, a) -&gt; Identity (Time, a)
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; Time -&gt; Time
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680571881"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>      </span><span class="annot"><span class="annottext">(Placed a -&gt; Placed a)
+-&gt; (Placed a -&gt; Placed a) -&gt; Placed a -&gt; Placed a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">ASetter (Placed a) (Placed a) a a
+-&gt; (a -&gt; a) -&gt; Placed a -&gt; Placed a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AnIso (Time, a) (Time, a) (Placed a) (Placed a)
+-&gt; Iso (Placed a) (Placed a) (Time, a) (Time, a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Time, a) (Time, a) (Placed a) (Placed a)
+forall a b. Iso (Time, a) (Time, b) (Placed a) (Placed b)
+</span><a href="Music.Time.Placed.html#placed"><span class="hs-identifier hs-var">placed</span></a></span><span> </span><span class="annot"><span class="annottext">(((Time, a) -&gt; Identity (Time, a))
+ -&gt; Placed a -&gt; Identity (Placed a))
+-&gt; ((a -&gt; Identity a) -&gt; (Time, a) -&gt; Identity (Time, a))
+-&gt; ASetter (Placed a) (Placed a) a a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Identity a) -&gt; (Time, a) -&gt; Identity (Time, a)
+forall s t a b. Field2 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_2</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration -&gt; a -&gt; a
+forall a. Transformable a =&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#stretch"><span class="hs-identifier hs-var">stretch</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration -&gt; a -&gt; a) -&gt; Duration -&gt; a -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Duration
+</span><a href="Music.Time.Types.html#stretchComponent"><span class="hs-identifier hs-var">stretchComponent</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680571881"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span id="local-6989586621680571875"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">IsString</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571875"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">IsString</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571875"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-80"></span><span>  </span><span id="local-6989586621680571872"><span class="annot"><span class="annottext">fromString :: String -&gt; Placed a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromString</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Placed a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Placed a) -&gt; (String -&gt; a) -&gt; String -&gt; Placed a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; a
+forall a. IsString a =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromString</span></a></span></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span id="local-6989586621680571871"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571871"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571871"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-83"></span><span>  </span><span id="local-6989586621680571868"><span class="annot"><span class="annottext">fromPitch :: Pitch -&gt; Placed a
+</span><a href="Music.Pitch.Common.Internal.html#fromPitch"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromPitch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Placed a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Placed a) -&gt; (Pitch -&gt; a) -&gt; Pitch -&gt; Placed a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; a
+forall a. IsPitch a =&gt; Pitch -&gt; a
+</span><a href="Music.Pitch.Common.Internal.html#fromPitch"><span class="hs-identifier hs-var">fromPitch</span></a></span></span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span id="local-6989586621680571866"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsInterval"><span class="hs-identifier hs-type">IsInterval</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571866"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsInterval"><span class="hs-identifier hs-type">IsInterval</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571866"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-86"></span><span>  </span><span id="local-6989586621680571863"><span class="annot"><span class="annottext">fromInterval :: Interval -&gt; Placed a
+</span><a href="Music.Pitch.Common.Internal.html#fromInterval"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromInterval</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Placed a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Placed a) -&gt; (Interval -&gt; a) -&gt; Interval -&gt; Placed a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Interval -&gt; a
+forall a. IsInterval a =&gt; Interval -&gt; a
+</span><a href="Music.Pitch.Common.Internal.html#fromInterval"><span class="hs-identifier hs-var">fromInterval</span></a></span></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span id="local-6989586621680571861"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571861"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571861"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621680571858"><span class="annot"><span class="annottext">fromDynamics :: DynamicsL -&gt; Placed a
+</span><a href="Music.Dynamics.Literal.html#fromDynamics"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromDynamics</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Placed a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Placed a) -&gt; (DynamicsL -&gt; a) -&gt; DynamicsL -&gt; Placed a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">DynamicsL -&gt; a
+forall a. IsDynamics a =&gt; DynamicsL -&gt; a
+</span><a href="Music.Dynamics.Literal.html#fromDynamics"><span class="hs-identifier hs-var">fromDynamics</span></a></span></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span id="local-6989586621680572110"><span id="local-6989586621680572111"><span class="annot"><a href="Music.Time.Placed.html#placed"><span class="hs-identifier hs-type">placed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680572111"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680572110"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572111"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572110"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-92"></span><span id="placed"><span class="annot"><span class="annottext">placed :: p (Placed a) (f (Placed b)) -&gt; p (Time, a) (f (Time, b))
+</span><a href="Music.Time.Placed.html#placed"><span class="hs-identifier hs-var hs-var">placed</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p (Placed a) (f (Placed b)) -&gt; p (Time, a) (f (Time, b))
+forall s t. Rewrapping s t =&gt; Iso (Unwrapped t) (Unwrapped s) t s
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span id="local-6989586621680571854"><span id="local-6989586621680571855"><span class="annot"><a href="Music.Time.Placed.html#placee"><span class="hs-identifier hs-type">placee</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571855"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571854"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571855"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571854"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680571855"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680571854"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-95"></span><span id="placee"><span class="annot"><span class="annottext">placee :: Lens (Placed a) (Placed b) a b
+</span><a href="Music.Time.Placed.html#placee"><span class="hs-identifier hs-var hs-var">placee</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnIso (Time, b) (Time, a) (Placed b) (Placed a)
+-&gt; Iso (Placed a) (Placed b) (Time, a) (Time, b)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Time, b) (Time, a) (Placed b) (Placed a)
+forall a b. Iso (Time, a) (Time, b) (Placed a) (Placed b)
+</span><a href="Music.Time.Placed.html#placed"><span class="hs-identifier hs-var">placed</span></a></span><span> </span><span class="annot"><span class="annottext">(forall (f :: * -&gt; *).
+ Functor f =&gt;
+ ((Time, a) -&gt; f (Time, b)) -&gt; Placed a -&gt; f (Placed b))
+-&gt; (Time -&gt; Lens a b a b) -&gt; Lens (Placed a) (Placed b) a b
+forall s t x a b c d.
+Lens s t (x, a) (x, b) -&gt; (x -&gt; Lens a b c d) -&gt; Lens s t c d
+</span><a href="Music.Time.Internal.Util.html#dependingOn"><span class="hs-operator hs-var">`dependingOn`</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; (a -&gt; f b) -&gt; a -&gt; f b
+forall a b.
+(Transformable a, Transformable b) =&gt;
+Span -&gt; Iso a b a b
+</span><a href="Music.Time.Internal.Transform.html#transformed"><span class="hs-identifier hs-var">transformed</span></a></span><span> </span><span class="annot"><span class="annottext">(Span -&gt; (a -&gt; f b) -&gt; a -&gt; f b)
+-&gt; (Time -&gt; Span) -&gt; Time -&gt; (a -&gt; f b) -&gt; a -&gt; f b
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Span
+</span><a href="#local-6989586621680571852"><span class="hs-identifier hs-var">delayingTime</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-97"></span><span>    </span><span id="local-6989586621680571852"><span class="annot"><span class="annottext">delayingTime :: Time -&gt; Span
+</span><a href="#local-6989586621680571852"><span class="hs-identifier hs-var hs-var">delayingTime</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time -&gt; Duration -&gt; Span
+</span><a href="Music.Time.Types.html#%3E-%3E"><span class="hs-operator hs-var">&gt;-&gt;</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-98"></span></pre></body></html>

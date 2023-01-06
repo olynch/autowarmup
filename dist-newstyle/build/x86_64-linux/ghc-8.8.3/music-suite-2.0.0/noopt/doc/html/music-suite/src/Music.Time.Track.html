@@ -1,0 +1,427 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Time.Track</span><span>
+</span><span id="line-2"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Track type</span></span><span>
+</span><span id="line-3"></span><span>    </span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier">Track</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Construction</span></span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><a href="Music.Time.Track.html#track"><span class="hs-identifier">track</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Music.Time.Track.html#placeds"><span class="hs-identifier">placeds</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-operator">(&lt;|)</span></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><span class="hs-identifier">Indexable</span></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><span class="hs-identifier">Level</span></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="hs-identifier">above</span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><span class="hs-identifier">below</span></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-identifier">index</span></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="hs-identifier">inside</span></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><span class="hs-identifier">parts</span></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="hs-identifier">reversed</span></span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><span class="hs-operator">(|&gt;)</span></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Monad.Compose.html"><span class="hs-identifier">Control.Monad.Compose</span></a></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Plus</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html"><span class="hs-identifier">Data.AffineSpace.Point</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Foldable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Foldable</span></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Map</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Ratio</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Set</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Traversable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.VectorSpace</span></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Internal.Util.html"><span class="hs-identifier">Music.Time.Internal.Util</span></a></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Juxtapose.html"><span class="hs-identifier">Music.Time.Juxtapose</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Placed.html"><span class="hs-identifier">Music.Time.Placed</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- A 'Track' is a parallel composition of values.</span><span>
+</span><span id="line-48"></span><span class="hs-keyword">newtype</span><span> </span><span id="Track"><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-var">Track</span></a></span></span><span> </span><span id="local-6989586621680572436"><span class="annot"><a href="#local-6989586621680572436"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Track"><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-var">Track</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getTrack"><span class="annot"><span class="annottext">Track a -&gt; TrackList (TrackEv a)
+</span><a href="Music.Time.Track.html#getTrack"><span class="hs-identifier hs-var hs-var">getTrack</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Track.html#TrackList"><span class="hs-identifier hs-type">TrackList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#TrackEv"><span class="hs-identifier hs-type">TrackEv</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572436"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">}</span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680572387"><span id="local-6989586621680572389"><span class="annot"><span class="annottext">a -&gt; Track b -&gt; Track a
+(a -&gt; b) -&gt; Track a -&gt; Track b
+(forall a b. (a -&gt; b) -&gt; Track a -&gt; Track b)
+-&gt; (forall a b. a -&gt; Track b -&gt; Track a) -&gt; Functor Track
+forall a b. a -&gt; Track b -&gt; Track a
+forall a b. (a -&gt; b) -&gt; Track a -&gt; Track b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; Track b -&gt; Track a
+$c&lt;$ :: forall a b. a -&gt; Track b -&gt; Track a
+fmap :: (a -&gt; b) -&gt; Track a -&gt; Track b
+$cfmap :: forall a b. (a -&gt; b) -&gt; Track a -&gt; Track b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572352"><span id="local-6989586621680572354"><span id="local-6989586621680572356"><span id="local-6989586621680572358"><span id="local-6989586621680572360"><span id="local-6989586621680572362"><span id="local-6989586621680572364"><span id="local-6989586621680572366"><span id="local-6989586621680572368"><span id="local-6989586621680572370"><span id="local-6989586621680572372"><span id="local-6989586621680572374"><span id="local-6989586621680572376"><span id="local-6989586621680572378"><span id="local-6989586621680572380"><span id="local-6989586621680572382"><span id="local-6989586621680572384"><span class="annot"><span class="annottext">Track a -&gt; Bool
+(a -&gt; m) -&gt; Track a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; Track a -&gt; b
+(forall m. Monoid m =&gt; Track m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Track a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Track a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Track a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Track a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Track a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Track a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Track a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Track a -&gt; a)
+-&gt; (forall a. Track a -&gt; [a])
+-&gt; (forall a. Track a -&gt; Bool)
+-&gt; (forall a. Track a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; Track a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; Track a -&gt; a)
+-&gt; (forall a. Ord a =&gt; Track a -&gt; a)
+-&gt; (forall a. Num a =&gt; Track a -&gt; a)
+-&gt; (forall a. Num a =&gt; Track a -&gt; a)
+-&gt; Foldable Track
+forall a. Eq a =&gt; a -&gt; Track a -&gt; Bool
+forall a. Num a =&gt; Track a -&gt; a
+forall a. Ord a =&gt; Track a -&gt; a
+forall m. Monoid m =&gt; Track m -&gt; m
+forall a. Track a -&gt; Bool
+forall a. Track a -&gt; Int
+forall a. Track a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; Track a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Track a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Track a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Track a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: Track a -&gt; a
+$cproduct :: forall a. Num a =&gt; Track a -&gt; a
+sum :: Track a -&gt; a
+$csum :: forall a. Num a =&gt; Track a -&gt; a
+minimum :: Track a -&gt; a
+$cminimum :: forall a. Ord a =&gt; Track a -&gt; a
+maximum :: Track a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; Track a -&gt; a
+elem :: a -&gt; Track a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; Track a -&gt; Bool
+length :: Track a -&gt; Int
+$clength :: forall a. Track a -&gt; Int
+null :: Track a -&gt; Bool
+$cnull :: forall a. Track a -&gt; Bool
+toList :: Track a -&gt; [a]
+$ctoList :: forall a. Track a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; Track a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; Track a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; Track a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; Track a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; Track a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Track a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; Track a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Track a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; Track a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Track a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; Track a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Track a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; Track a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Track a -&gt; m
+foldMap :: (a -&gt; m) -&gt; Track a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Track a -&gt; m
+fold :: Track m -&gt; m
+$cfold :: forall m. Monoid m =&gt; Track m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572341"><span id="local-6989586621680572343"><span id="local-6989586621680572345"><span id="local-6989586621680572347"><span class="annot"><span class="annottext">Functor Track
+Foldable Track
+(Functor Track, Foldable Track) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; Track a -&gt; f (Track b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    Track (f a) -&gt; f (Track a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; Track a -&gt; m (Track b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; Track (m a) -&gt; m (Track a))
+-&gt; Traversable Track
+(a -&gt; f b) -&gt; Track a -&gt; f (Track b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; Track (m a) -&gt; m (Track a)
+forall (f :: * -&gt; *) a. Applicative f =&gt; Track (f a) -&gt; f (Track a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Track a -&gt; m (Track b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Track a -&gt; f (Track b)
+sequence :: Track (m a) -&gt; m (Track a)
+$csequence :: forall (m :: * -&gt; *) a. Monad m =&gt; Track (m a) -&gt; m (Track a)
+mapM :: (a -&gt; m b) -&gt; Track a -&gt; m (Track b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Track a -&gt; m (Track b)
+sequenceA :: Track (f a) -&gt; f (Track a)
+$csequenceA :: forall (f :: * -&gt; *) a. Applicative f =&gt; Track (f a) -&gt; f (Track a)
+traverse :: (a -&gt; f b) -&gt; Track a -&gt; f (Track b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Track a -&gt; f (Track b)
+$cp2Traversable :: Foldable Track
+$cp1Traversable :: Functor Track
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572334"><span id="local-6989586621680572336"><span id="local-6989586621680572338"><span class="annot"><span class="annottext">b -&gt; Track a -&gt; Track a
+NonEmpty (Track a) -&gt; Track a
+Track a -&gt; Track a -&gt; Track a
+(Track a -&gt; Track a -&gt; Track a)
+-&gt; (NonEmpty (Track a) -&gt; Track a)
+-&gt; (forall b. Integral b =&gt; b -&gt; Track a -&gt; Track a)
+-&gt; Semigroup (Track a)
+forall b. Integral b =&gt; b -&gt; Track a -&gt; Track a
+forall a. NonEmpty (Track a) -&gt; Track a
+forall a. Track a -&gt; Track a -&gt; Track a
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+forall a b. Integral b =&gt; b -&gt; Track a -&gt; Track a
+stimes :: b -&gt; Track a -&gt; Track a
+$cstimes :: forall a b. Integral b =&gt; b -&gt; Track a -&gt; Track a
+sconcat :: NonEmpty (Track a) -&gt; Track a
+$csconcat :: forall a. NonEmpty (Track a) -&gt; Track a
+&lt;&gt; :: Track a -&gt; Track a -&gt; Track a
+$c&lt;&gt; :: forall a. Track a -&gt; Track a -&gt; Track a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572326"><span id="local-6989586621680572328"><span id="local-6989586621680572330"><span class="annot"><span class="annottext">Semigroup (Track a)
+Track a
+Semigroup (Track a) =&gt;
+Track a
+-&gt; (Track a -&gt; Track a -&gt; Track a)
+-&gt; ([Track a] -&gt; Track a)
+-&gt; Monoid (Track a)
+[Track a] -&gt; Track a
+Track a -&gt; Track a -&gt; Track a
+forall a. Semigroup (Track a)
+forall a. Track a
+forall a.
+Semigroup a =&gt;
+a -&gt; (a -&gt; a -&gt; a) -&gt; ([a] -&gt; a) -&gt; Monoid a
+forall a. [Track a] -&gt; Track a
+forall a. Track a -&gt; Track a -&gt; Track a
+mconcat :: [Track a] -&gt; Track a
+$cmconcat :: forall a. [Track a] -&gt; Track a
+mappend :: Track a -&gt; Track a -&gt; Track a
+$cmappend :: forall a. Track a -&gt; Track a -&gt; Track a
+mempty :: Track a
+$cmempty :: forall a. Track a
+$cp1Monoid :: forall a. Semigroup (Track a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572319"><span id="local-6989586621680572321"><span id="local-6989586621680572323"><span class="annot"><span class="annottext">Int -&gt; Track a -&gt; ShowS
+[Track a] -&gt; ShowS
+Track a -&gt; String
+(Int -&gt; Track a -&gt; ShowS)
+-&gt; (Track a -&gt; String) -&gt; ([Track a] -&gt; ShowS) -&gt; Show (Track a)
+forall a. (Show a, Transformable a) =&gt; Int -&gt; Track a -&gt; ShowS
+forall a. (Show a, Transformable a) =&gt; [Track a] -&gt; ShowS
+forall a. (Show a, Transformable a) =&gt; Track a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Track a] -&gt; ShowS
+$cshowList :: forall a. (Show a, Transformable a) =&gt; [Track a] -&gt; ShowS
+show :: Track a -&gt; String
+$cshow :: forall a. (Show a, Transformable a) =&gt; Track a -&gt; String
+showsPrec :: Int -&gt; Track a -&gt; ShowS
+$cshowsPrec :: forall a. (Show a, Transformable a) =&gt; Int -&gt; Track a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572314"><span id="local-6989586621680572316"><span class="annot"><span class="annottext">Track a -&gt; Track a -&gt; Bool
+(Track a -&gt; Track a -&gt; Bool)
+-&gt; (Track a -&gt; Track a -&gt; Bool) -&gt; Eq (Track a)
+forall a. Eq a =&gt; Track a -&gt; Track a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Track a -&gt; Track a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; Track a -&gt; Track a -&gt; Bool
+== :: Track a -&gt; Track a -&gt; Bool
+$c== :: forall a. Eq a =&gt; Track a -&gt; Track a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- {-# DEPRECATED Track &quot;Use 'Chord'&quot; #-}</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-comment">--</span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- type Track a = [Placed a]</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-57"></span><span class="hs-comment">--</span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- A track is a list of events with explicit onset.</span><span>
+</span><span id="line-60"></span><span class="hs-comment">--</span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- Track is a 'Monoid' under parallel composition. 'mempty' is the empty track</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- and 'mappend' interleaves values.</span><span>
+</span><span id="line-63"></span><span class="hs-comment">--</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- Track is a 'Monad'. 'return' creates a track containing a single value at time</span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- zero, and '&gt;&gt;=' transforms the values of a track, allowing the addition and</span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- removal of values relative to the time of the value. Perhaps more intuitively,</span><span>
+</span><span id="line-67"></span><span class="hs-comment">-- 'join' delays each inner track to start at the offset of an outer track, then</span><span>
+</span><span id="line-68"></span><span class="hs-comment">-- removes the intermediate structure.</span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-comment">-- Can use [] or Seq here</span><span>
+</span><span id="line-71"></span><span class="hs-keyword">type</span><span> </span><span id="TrackList"><span class="annot"><a href="Music.Time.Track.html#TrackList"><span class="hs-identifier hs-var">TrackList</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="hs-comment">-- Can use any type as long as trackEv provides an Iso</span><span>
+</span><span id="line-74"></span><span class="hs-keyword">type</span><span> </span><span id="TrackEv"><span class="annot"><a href="Music.Time.Track.html#TrackEv"><span class="hs-identifier hs-var">TrackEv</span></a></span></span><span> </span><span id="local-6989586621680572312"><span class="annot"><a href="#local-6989586621680572312"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572312"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span id="local-6989586621680572310"><span id="local-6989586621680572311"><span class="annot"><a href="Music.Time.Track.html#trackEv"><span class="hs-identifier hs-type">trackEv</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572311"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572310"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#TrackEv"><span class="hs-identifier hs-type">TrackEv</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572311"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#TrackEv"><span class="hs-identifier hs-type">TrackEv</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572310"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-77"></span><span id="trackEv"><span class="annot"><span class="annottext">trackEv :: p (TrackEv a) (f (TrackEv b)) -&gt; p (TrackEv a) (f (TrackEv b))
+</span><a href="Music.Time.Track.html#trackEv"><span class="hs-identifier hs-var hs-var">trackEv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p (TrackEv a) (f (TrackEv b)) -&gt; p (TrackEv a) (f (TrackEv b))
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680572299"><span id="local-6989586621680572301"><span id="local-6989586621680572303"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Applicative</span></a></span><span> </span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span>  </span><span id="local-6989586621680572297"><span class="annot"><span class="annottext">pure :: a -&gt; Track a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">pure</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Track a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span>  </span><span id="local-6989586621680572296"><span class="annot"><span class="annottext">&lt;*&gt; :: Track (a -&gt; b) -&gt; Track a -&gt; Track b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;*&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Track (a -&gt; b) -&gt; Track a -&gt; Track b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m (a -&gt; b) -&gt; m a -&gt; m b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">ap</span></a></span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680572288"><span id="local-6989586621680572290"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Alternative</span></a></span><span> </span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span>  </span><span id="local-6989586621680572286"><span class="annot"><span class="annottext">&lt;|&gt; :: Track a -&gt; Track a -&gt; Track a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;|&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Track a -&gt; Track a -&gt; Track a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(&lt;&gt;)</span></a></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621680572284"><span class="annot"><span class="annottext">empty :: Track a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">empty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Track a
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680572279"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monad</span></a></span><span> </span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span>  </span><span id="local-6989586621680572276"><span class="annot"><span class="annottext">return :: a -&gt; Track a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">return</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Getting (Track a) [Placed a] (Track a) -&gt; [Placed a] -&gt; Track a
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting (Track a) [Placed a] (Track a)
+forall s t. Rewrapping s t =&gt; Iso (Unwrapped t) (Unwrapped s) t s
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span> </span><span class="annot"><span class="annottext">([Placed a] -&gt; Track a) -&gt; (a -&gt; [Placed a]) -&gt; a -&gt; Track a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Placed a -&gt; [Placed a]
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="annot"><span class="annottext">(Placed a -&gt; [Placed a]) -&gt; (a -&gt; Placed a) -&gt; a -&gt; [Placed a]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Placed a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span>  </span><span id="local-6989586621680572272"><span class="annot"><span class="annottext">xs :: Track a
+</span><a href="#local-6989586621680572272"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span id="local-6989586621680572271"><span class="annot"><span class="annottext">&gt;&gt;= :: Track a -&gt; (a -&gt; Track b) -&gt; Track b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&gt;&gt;=</span></a></span></span><span> </span><span id="local-6989586621680572270"><span class="annot"><span class="annottext">f :: a -&gt; Track b
+</span><a href="#local-6989586621680572270"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Getting (Track b) [Placed b] (Track b) -&gt; [Placed b] -&gt; Track b
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting (Track b) [Placed b] (Track b)
+forall s t. Rewrapping s t =&gt; Iso (Unwrapped t) (Unwrapped s) t s
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span> </span><span class="annot"><span class="annottext">([Placed b] -&gt; Track b) -&gt; [Placed b] -&gt; Track b
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting [Placed b] (Track b) [Placed b] -&gt; Track b -&gt; [Placed b]
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting [Placed b] (Track b) [Placed b]
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">(Track b -&gt; [Placed b]) -&gt; (a -&gt; Track b) -&gt; a -&gt; [Placed b]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Track b
+</span><a href="#local-6989586621680572270"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(a -&gt; [Placed b]) -&gt; [Placed a] -&gt; [Placed b]
+forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+(Monad m, Monad n, Functor m, Traversable n) =&gt;
+(a -&gt; m (n b)) -&gt; m (n a) -&gt; m (n b)
+</span><a href="Control.Monad.Compose.html#mbind"><span class="hs-operator hs-var">`mbind`</span></a></span><span> </span><span class="annot"><span class="annottext">Getting [Placed a] (Track a) [Placed a] -&gt; Track a -&gt; [Placed a]
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting [Placed a] (Track a) [Placed a]
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">Track a
+</span><a href="#local-6989586621680572272"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span id="local-6989586621680572267"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572267"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572267"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#TrackList"><span class="hs-identifier hs-type">TrackList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#TrackEv"><span class="hs-identifier hs-type">TrackEv</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572267"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span>  </span><span id="local-6989586621680572264"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (Track a)) (f (Unwrapped (Track a)))
+-&gt; p (Track a) (f (Track a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Track a -&gt; TrackList (TrackEv a))
+-&gt; (TrackList (TrackEv a) -&gt; Track a)
+-&gt; Iso
+     (Track a) (Track a) (TrackList (TrackEv a)) (TrackList (TrackEv a))
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">Track a -&gt; TrackList (TrackEv a)
+forall a. Track a -&gt; TrackList (TrackEv a)
+</span><a href="Music.Time.Track.html#getTrack"><span class="hs-identifier hs-var hs-var">getTrack</span></a></span><span> </span><span class="annot"><span class="annottext">TrackList (TrackEv a) -&gt; Track a
+forall a. TrackList (TrackEv a) -&gt; Track a
+</span><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-var">Track</span></a></span></span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span id="local-6989586621680572260"><span id="local-6989586621680572261"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572261"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572260"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span id="local-6989586621680572257"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572257"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572257"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-106"></span><span>  </span><span id="local-6989586621680572254"><span class="annot"><span class="annottext">transform :: Span -&gt; Track a -&gt; Track a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span id="local-6989586621680572252"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680572252"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter
+  (Track a) (Track a) (TrackList (TrackEv a)) (TrackList (TrackEv a))
+-&gt; (TrackList (TrackEv a) -&gt; TrackList (TrackEv a))
+-&gt; Track a
+-&gt; Track a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="annot"><span class="annottext">ASetter
+  (Track a) (Track a) (TrackList (TrackEv a)) (TrackList (TrackEv a))
+forall s. Wrapped s =&gt; Iso' s (Unwrapped s)
+</span><span class="hs-identifier hs-var">_Wrapped'</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; TrackList (TrackEv a) -&gt; TrackList (TrackEv a)
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680572252"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span class="hs-comment">-- | Create a track from a list of notes.</span><span>
+</span><span id="line-109"></span><span id="local-6989586621680572250"><span class="annot"><a href="Music.Time.Track.html#track"><span class="hs-identifier hs-type">track</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Getter</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572250"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572250"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-110"></span><span id="track"><span class="annot"><span class="annottext">track :: (Track a -&gt; f (Track a)) -&gt; [Placed a] -&gt; f [Placed a]
+</span><a href="Music.Time.Track.html#track"><span class="hs-identifier hs-var hs-var">track</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnIso (Track a) (Track a) [Placed a] [Placed a]
+-&gt; Iso [Placed a] [Placed a] (Track a) (Track a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Track a) (Track a) [Placed a] [Placed a]
+forall a b. Iso (Track a) (Track b) [Placed a] [Placed b]
+</span><a href="Music.Time.Track.html#trackIgnoringMeta"><span class="hs-identifier hs-var">trackIgnoringMeta</span></a></span><span>
+</span><span id="line-111"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Music.Time.Track.html#track"><span class="hs-pragma hs-type">track</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span id="local-6989586621680572245"><span id="local-6989586621680572246"><span class="annot"><a href="Music.Time.Track.html#placeds"><span class="hs-identifier hs-type">placeds</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572246"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572245"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572246"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572245"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-114"></span><span id="placeds"><span class="annot"><span class="annottext">placeds :: ([Placed a] -&gt; f [Placed b]) -&gt; Track a -&gt; f (Track b)
+</span><a href="Music.Time.Track.html#placeds"><span class="hs-identifier hs-var hs-var">placeds</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Placed a] -&gt; f [Placed b]) -&gt; Track a -&gt; f (Track b)
+forall a b. Iso (Track a) (Track b) [Placed a] [Placed b]
+</span><a href="Music.Time.Track.html#trackIgnoringMeta"><span class="hs-identifier hs-var">trackIgnoringMeta</span></a></span><span>
+</span><span id="line-115"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Music.Time.Track.html#placeds"><span class="hs-pragma hs-type">placeds</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-116"></span><span>
+</span><span id="line-117"></span><span id="local-6989586621680572414"><span id="local-6989586621680572415"><span class="annot"><a href="Music.Time.Track.html#trackIgnoringMeta"><span class="hs-identifier hs-type">trackIgnoringMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572415"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Track.html#Track"><span class="hs-identifier hs-type">Track</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572414"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572415"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Time.Placed.html#Placed"><span class="hs-identifier hs-type">Placed</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572414"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-118"></span><span id="trackIgnoringMeta"><span class="annot"><span class="annottext">trackIgnoringMeta :: p [Placed a] (f [Placed b]) -&gt; p (Track a) (f (Track b))
+</span><a href="Music.Time.Track.html#trackIgnoringMeta"><span class="hs-identifier hs-var hs-var">trackIgnoringMeta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p [Placed a] (f [Placed b]) -&gt; p (Track a) (f (Track b))
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span>
+</span><span id="line-119"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Music.Time.Track.html#trackIgnoringMeta"><span class="hs-pragma hs-type">trackIgnoringMeta</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-120"></span></pre></body></html>

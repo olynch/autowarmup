@@ -1,0 +1,388 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24maxtag_7gaZpGAeN7r8wa0fm8hpEz"><span id="%24tag2con_7gaZpGAeN7r8wa0fm8hpEz"><span id="%24con2tag_7gaZpGAeN7r8wa0fm8hpEz"></span></span></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012</span><span>
+</span><span id="line-10"></span><span class="hs-comment">--</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-12"></span><span class="hs-comment">--</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- Portability : GHC</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Music.Lilypond.Pitch</span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Pitch"><span class="hs-identifier">Pitch</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#PitchName"><span class="hs-identifier">PitchName</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Accidental"><span class="hs-identifier">Accidental</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Octaves"><span class="hs-identifier">Octaves</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Mode"><span class="hs-identifier">Mode</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#OctaveCheck"><span class="hs-identifier">OctaveCheck</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-operator">(.-.)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.html"><span class="hs-identifier">Music.Pitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Common.Internal.html#accidental"><span class="hs-identifier">accidental</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#name"><span class="hs-identifier">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#octaves"><span class="hs-identifier">octaves</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Pretty</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Mode</span></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">data</span><span> </span><span id="PitchName"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#PitchName"><span class="hs-identifier hs-var">PitchName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="C"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#C"><span class="hs-identifier hs-var">C</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="D"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#D"><span class="hs-identifier hs-var">D</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="E"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#E"><span class="hs-identifier hs-var">E</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="F"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#F"><span class="hs-identifier hs-var">F</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="G"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#G"><span class="hs-identifier hs-var">G</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="A"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#A"><span class="hs-identifier hs-var">A</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="B"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#B"><span class="hs-identifier hs-var">B</span></a></span></span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680590324"><span id="local-6989586621680590326"><span class="annot"><span class="annottext">PitchName -&gt; PitchName -&gt; Bool
+(PitchName -&gt; PitchName -&gt; Bool)
+-&gt; (PitchName -&gt; PitchName -&gt; Bool) -&gt; Eq PitchName
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: PitchName -&gt; PitchName -&gt; Bool
+$c/= :: PitchName -&gt; PitchName -&gt; Bool
+== :: PitchName -&gt; PitchName -&gt; Bool
+$c== :: PitchName -&gt; PitchName -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680590308"><span id="local-6989586621680590310"><span id="local-6989586621680590312"><span id="local-6989586621680590314"><span id="local-6989586621680590316"><span id="local-6989586621680590318"><span id="local-6989586621680590320"><span class="annot"><span class="annottext">Eq PitchName
+Eq PitchName =&gt;
+(PitchName -&gt; PitchName -&gt; Ordering)
+-&gt; (PitchName -&gt; PitchName -&gt; Bool)
+-&gt; (PitchName -&gt; PitchName -&gt; Bool)
+-&gt; (PitchName -&gt; PitchName -&gt; Bool)
+-&gt; (PitchName -&gt; PitchName -&gt; Bool)
+-&gt; (PitchName -&gt; PitchName -&gt; PitchName)
+-&gt; (PitchName -&gt; PitchName -&gt; PitchName)
+-&gt; Ord PitchName
+PitchName -&gt; PitchName -&gt; Bool
+PitchName -&gt; PitchName -&gt; Ordering
+PitchName -&gt; PitchName -&gt; PitchName
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: PitchName -&gt; PitchName -&gt; PitchName
+$cmin :: PitchName -&gt; PitchName -&gt; PitchName
+max :: PitchName -&gt; PitchName -&gt; PitchName
+$cmax :: PitchName -&gt; PitchName -&gt; PitchName
+&gt;= :: PitchName -&gt; PitchName -&gt; Bool
+$c&gt;= :: PitchName -&gt; PitchName -&gt; Bool
+&gt; :: PitchName -&gt; PitchName -&gt; Bool
+$c&gt; :: PitchName -&gt; PitchName -&gt; Bool
+&lt;= :: PitchName -&gt; PitchName -&gt; Bool
+$c&lt;= :: PitchName -&gt; PitchName -&gt; Bool
+&lt; :: PitchName -&gt; PitchName -&gt; Bool
+$c&lt; :: PitchName -&gt; PitchName -&gt; Bool
+compare :: PitchName -&gt; PitchName -&gt; Ordering
+$ccompare :: PitchName -&gt; PitchName -&gt; Ordering
+$cp1Ord :: Eq PitchName
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680590301"><span id="local-6989586621680590303"><span id="local-6989586621680590305"><span class="annot"><span class="annottext">Int -&gt; PitchName -&gt; ShowS
+[PitchName] -&gt; ShowS
+PitchName -&gt; String
+(Int -&gt; PitchName -&gt; ShowS)
+-&gt; (PitchName -&gt; String)
+-&gt; ([PitchName] -&gt; ShowS)
+-&gt; Show PitchName
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [PitchName] -&gt; ShowS
+$cshowList :: [PitchName] -&gt; ShowS
+show :: PitchName -&gt; String
+$cshow :: PitchName -&gt; String
+showsPrec :: Int -&gt; PitchName -&gt; ShowS
+$cshowsPrec :: Int -&gt; PitchName -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680590284"><span id="local-6989586621680590286"><span id="local-6989586621680590288"><span id="local-6989586621680590290"><span id="local-6989586621680590292"><span id="local-6989586621680590294"><span id="local-6989586621680590296"><span id="local-6989586621680590298"><span class="annot"><span class="annottext">Int -&gt; PitchName
+PitchName -&gt; Int
+PitchName -&gt; [PitchName]
+PitchName -&gt; PitchName
+PitchName -&gt; PitchName -&gt; [PitchName]
+PitchName -&gt; PitchName -&gt; PitchName -&gt; [PitchName]
+(PitchName -&gt; PitchName)
+-&gt; (PitchName -&gt; PitchName)
+-&gt; (Int -&gt; PitchName)
+-&gt; (PitchName -&gt; Int)
+-&gt; (PitchName -&gt; [PitchName])
+-&gt; (PitchName -&gt; PitchName -&gt; [PitchName])
+-&gt; (PitchName -&gt; PitchName -&gt; [PitchName])
+-&gt; (PitchName -&gt; PitchName -&gt; PitchName -&gt; [PitchName])
+-&gt; Enum PitchName
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+enumFromThenTo :: PitchName -&gt; PitchName -&gt; PitchName -&gt; [PitchName]
+$cenumFromThenTo :: PitchName -&gt; PitchName -&gt; PitchName -&gt; [PitchName]
+enumFromTo :: PitchName -&gt; PitchName -&gt; [PitchName]
+$cenumFromTo :: PitchName -&gt; PitchName -&gt; [PitchName]
+enumFromThen :: PitchName -&gt; PitchName -&gt; [PitchName]
+$cenumFromThen :: PitchName -&gt; PitchName -&gt; [PitchName]
+enumFrom :: PitchName -&gt; [PitchName]
+$cenumFrom :: PitchName -&gt; [PitchName]
+fromEnum :: PitchName -&gt; Int
+$cfromEnum :: PitchName -&gt; Int
+toEnum :: Int -&gt; PitchName
+$ctoEnum :: Int -&gt; PitchName
+pred :: PitchName -&gt; PitchName
+$cpred :: PitchName -&gt; PitchName
+succ :: PitchName -&gt; PitchName
+$csucc :: PitchName -&gt; PitchName
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">newtype</span><span> </span><span id="Pitch"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Pitch"><span class="hs-identifier hs-var">Pitch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Pitch"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Pitch"><span class="hs-identifier hs-var">Pitch</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getPitch"><span class="annot"><span class="annottext">Pitch -&gt; (PitchName, Int, Int)
+</span><a href="Data.Music.Lilypond.Pitch.html#getPitch"><span class="hs-identifier hs-var hs-var">getPitch</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#PitchName"><span class="hs-identifier hs-type">PitchName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Accidental"><span class="hs-identifier hs-type">Accidental</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span><span class="hs-special">)</span><span class="hs-special">}</span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680590277"><span id="local-6989586621680590279"><span class="annot"><span class="annottext">Pitch -&gt; Pitch -&gt; Bool
+(Pitch -&gt; Pitch -&gt; Bool) -&gt; (Pitch -&gt; Pitch -&gt; Bool) -&gt; Eq Pitch
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Pitch -&gt; Pitch -&gt; Bool
+$c/= :: Pitch -&gt; Pitch -&gt; Bool
+== :: Pitch -&gt; Pitch -&gt; Bool
+$c== :: Pitch -&gt; Pitch -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680590262"><span id="local-6989586621680590264"><span id="local-6989586621680590266"><span id="local-6989586621680590268"><span id="local-6989586621680590270"><span id="local-6989586621680590272"><span id="local-6989586621680590274"><span class="annot"><span class="annottext">Eq Pitch
+Eq Pitch =&gt;
+(Pitch -&gt; Pitch -&gt; Ordering)
+-&gt; (Pitch -&gt; Pitch -&gt; Bool)
+-&gt; (Pitch -&gt; Pitch -&gt; Bool)
+-&gt; (Pitch -&gt; Pitch -&gt; Bool)
+-&gt; (Pitch -&gt; Pitch -&gt; Bool)
+-&gt; (Pitch -&gt; Pitch -&gt; Pitch)
+-&gt; (Pitch -&gt; Pitch -&gt; Pitch)
+-&gt; Ord Pitch
+Pitch -&gt; Pitch -&gt; Bool
+Pitch -&gt; Pitch -&gt; Ordering
+Pitch -&gt; Pitch -&gt; Pitch
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Pitch -&gt; Pitch -&gt; Pitch
+$cmin :: Pitch -&gt; Pitch -&gt; Pitch
+max :: Pitch -&gt; Pitch -&gt; Pitch
+$cmax :: Pitch -&gt; Pitch -&gt; Pitch
+&gt;= :: Pitch -&gt; Pitch -&gt; Bool
+$c&gt;= :: Pitch -&gt; Pitch -&gt; Bool
+&gt; :: Pitch -&gt; Pitch -&gt; Bool
+$c&gt; :: Pitch -&gt; Pitch -&gt; Bool
+&lt;= :: Pitch -&gt; Pitch -&gt; Bool
+$c&lt;= :: Pitch -&gt; Pitch -&gt; Bool
+&lt; :: Pitch -&gt; Pitch -&gt; Bool
+$c&lt; :: Pitch -&gt; Pitch -&gt; Bool
+compare :: Pitch -&gt; Pitch -&gt; Ordering
+$ccompare :: Pitch -&gt; Pitch -&gt; Ordering
+$cp1Ord :: Eq Pitch
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680590256"><span id="local-6989586621680590258"><span id="local-6989586621680590260"><span class="annot"><span class="annottext">Int -&gt; Pitch -&gt; ShowS
+[Pitch] -&gt; ShowS
+Pitch -&gt; String
+(Int -&gt; Pitch -&gt; ShowS)
+-&gt; (Pitch -&gt; String) -&gt; ([Pitch] -&gt; ShowS) -&gt; Show Pitch
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Pitch] -&gt; ShowS
+$cshowList :: [Pitch] -&gt; ShowS
+show :: Pitch -&gt; String
+$cshow :: Pitch -&gt; String
+showsPrec :: Int -&gt; Pitch -&gt; ShowS
+$cshowsPrec :: Int -&gt; Pitch -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680590253"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Pitch"><span class="hs-identifier hs-type">Pitch</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-38"></span><span>  </span><span id="local-6989586621680590251"><span class="annot"><span class="annottext">pretty :: Pitch -&gt; Printer
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Pitch"><span class="hs-identifier hs-type">Pitch</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680590249"><span class="annot"><span class="annottext">c :: PitchName
+</span><a href="#local-6989586621680590249"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680590248"><span class="annot"><span class="annottext">a :: Int
+</span><a href="#local-6989586621680590248"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680590247"><span class="annot"><span class="annottext">o :: Int
+</span><a href="#local-6989586621680590247"><span class="hs-identifier hs-var">o</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Printer
+</span><span class="hs-identifier hs-var">string</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Printer) -&gt; String -&gt; Printer
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">PitchName -&gt; String
+forall p. IsString p =&gt; PitchName -&gt; p
+</span><a href="#local-6989586621680590245"><span class="hs-identifier hs-var">pc</span></a></span><span> </span><span class="annot"><span class="annottext">PitchName
+</span><a href="#local-6989586621680590249"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
+</span><a href="#local-6989586621680590244"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590248"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
+</span><a href="#local-6989586621680590243"><span class="hs-identifier hs-var">oct</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590247"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-40"></span><span>      </span><span id="local-6989586621680590245"><span class="annot"><span class="annottext">pc :: PitchName -&gt; p
+</span><a href="#local-6989586621680590245"><span class="hs-identifier hs-var hs-var">pc</span></a></span></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#C"><span class="hs-identifier hs-type">C</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;c&quot;</span></span><span>
+</span><span id="line-41"></span><span>      </span><span class="annot"><a href="#local-6989586621680590245"><span class="hs-identifier hs-var">pc</span></a></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#D"><span class="hs-identifier hs-type">D</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;d&quot;</span></span><span>
+</span><span id="line-42"></span><span>      </span><span class="annot"><a href="#local-6989586621680590245"><span class="hs-identifier hs-var">pc</span></a></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#E"><span class="hs-identifier hs-type">E</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;e&quot;</span></span><span>
+</span><span id="line-43"></span><span>      </span><span class="annot"><a href="#local-6989586621680590245"><span class="hs-identifier hs-var">pc</span></a></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#F"><span class="hs-identifier hs-type">F</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;f&quot;</span></span><span>
+</span><span id="line-44"></span><span>      </span><span class="annot"><a href="#local-6989586621680590245"><span class="hs-identifier hs-var">pc</span></a></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#G"><span class="hs-identifier hs-type">G</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;g&quot;</span></span><span>
+</span><span id="line-45"></span><span>      </span><span class="annot"><a href="#local-6989586621680590245"><span class="hs-identifier hs-var">pc</span></a></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#A"><span class="hs-identifier hs-type">A</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;a&quot;</span></span><span>
+</span><span id="line-46"></span><span>      </span><span class="annot"><a href="#local-6989586621680590245"><span class="hs-identifier hs-var">pc</span></a></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#B"><span class="hs-identifier hs-type">B</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;b&quot;</span></span><span>
+</span><span id="line-47"></span><span>      </span><span id="local-6989586621680590244"><span class="annot"><span class="annottext">acc :: Int -&gt; String
+</span><a href="#local-6989586621680590244"><span class="hs-identifier hs-var hs-var">acc</span></a></span></span><span> </span><span id="local-6989586621680590242"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621680590242"><span class="hs-identifier hs-var">n</span></a></span></span><span>
+</span><span id="line-48"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590242"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; String
+forall (t :: * -&gt; *) a. Foldable t =&gt; t [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">concat</span></a></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; String) -&gt; [String] -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String -&gt; [String]
+forall a. Int -&gt; a -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">replicate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">negate</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590242"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-string">&quot;es&quot;</span></span><span>
+</span><span id="line-49"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590242"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;&quot;</span></span><span>
+</span><span id="line-50"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590242"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&gt;</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; String
+forall (t :: * -&gt; *) a. Foldable t =&gt; t [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">concat</span></a></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; String) -&gt; [String] -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String -&gt; [String]
+forall a. Int -&gt; a -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">replicate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590242"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-string">&quot;is&quot;</span></span><span>
+</span><span id="line-51"></span><span>      </span><span id="local-6989586621680590243"><span class="annot"><span class="annottext">oct :: Int -&gt; String
+</span><a href="#local-6989586621680590243"><span class="hs-identifier hs-var hs-var">oct</span></a></span></span><span> </span><span id="local-6989586621680590237"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621680590237"><span class="hs-identifier hs-var">n</span></a></span></span><span>
+</span><span id="line-52"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590237"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; String
+forall (t :: * -&gt; *) a. Foldable t =&gt; t [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">concat</span></a></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; String) -&gt; [String] -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String -&gt; [String]
+forall a. Int -&gt; a -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">replicate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">negate</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590237"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-string">&quot;,&quot;</span></span><span>
+</span><span id="line-53"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590237"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;&quot;</span></span><span>
+</span><span id="line-54"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590237"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&gt;</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; String
+forall (t :: * -&gt; *) a. Foldable t =&gt; t [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">concat</span></a></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; String) -&gt; [String] -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String -&gt; [String]
+forall a. Int -&gt; a -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">replicate</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680590237"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;'&quot;</span></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Pitch"><span class="hs-identifier hs-type">Pitch</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-57"></span><span>  </span><span id="local-6989586621680590234"><span class="annot"><span class="annottext">fromPitch :: Pitch -&gt; Pitch
+</span><a href="Music.Pitch.Common.Internal.html#fromPitch"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromPitch</span></a></span></span><span> </span><span id="local-6989586621680590232"><span class="annot"><span class="annottext">p :: Pitch
+</span><a href="#local-6989586621680590232"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680590231"><span class="annot"><span class="annottext">i :: Diff Pitch
+</span><a href="#local-6989586621680590231"><span class="hs-identifier hs-var hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pitch
+</span><a href="#local-6989586621680590232"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; Pitch -&gt; Diff Pitch
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">Pitch
+forall a. IsPitch a =&gt; a
+</span><a href="Music.Pitch.Common.Internal.html#c"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(PitchName, Int, Int) -&gt; Pitch
+</span><a href="Data.Music.Lilypond.Pitch.html#Pitch"><span class="hs-identifier hs-var">Pitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; PitchName
+forall a. Enum a =&gt; Int -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toEnum</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; PitchName) -&gt; Int -&gt; PitchName
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Name -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromEnum</span></a></span><span> </span><span class="annot"><span class="annottext">(Name -&gt; Int) -&gt; Name -&gt; Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; Name
+</span><a href="Music.Pitch.Common.Internal.html#name"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch
+</span><a href="#local-6989586621680590232"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Accidental -&gt; Int
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">(Accidental -&gt; Int) -&gt; Accidental -&gt; Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; Accidental
+</span><a href="Music.Pitch.Common.Internal.html#accidental"><span class="hs-identifier hs-var">accidental</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch
+</span><a href="#local-6989586621680590232"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Octaves -&gt; Int
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">(Octaves -&gt; Int) -&gt; Octaves -&gt; Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Interval -&gt; Octaves
+forall a. HasOctaves a =&gt; a -&gt; Octaves
+</span><a href="Music.Pitch.Common.Internal.html#octaves"><span class="hs-identifier hs-var">octaves</span></a></span><span> </span><span class="annot"><span class="annottext">Diff Pitch
+Interval
+</span><a href="#local-6989586621680590231"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- | For double flat -2, flat -1, natural 0, sharp 1 and double sharp 2.</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">type</span><span> </span><span id="Accidental"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Accidental"><span class="hs-identifier hs-var">Accidental</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- | Number of octaves raised (positive) or flattened (negative).</span><span>
+</span><span id="line-63"></span><span class="hs-keyword">type</span><span> </span><span id="Octaves"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Octaves"><span class="hs-identifier hs-var">Octaves</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- | Mode (for key signatures).</span><span>
+</span><span id="line-66"></span><span class="hs-keyword">data</span><span> </span><span id="Mode"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Mode"><span class="hs-identifier hs-var">Mode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Major"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Major"><span class="hs-identifier hs-var">Major</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Minor"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Minor"><span class="hs-identifier hs-var">Minor</span></a></span></span><span>
+</span><span id="line-67"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680590222"><span id="local-6989586621680590224"><span class="annot"><span class="annottext">Mode -&gt; Mode -&gt; Bool
+(Mode -&gt; Mode -&gt; Bool) -&gt; (Mode -&gt; Mode -&gt; Bool) -&gt; Eq Mode
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Mode -&gt; Mode -&gt; Bool
+$c/= :: Mode -&gt; Mode -&gt; Bool
+== :: Mode -&gt; Mode -&gt; Bool
+$c== :: Mode -&gt; Mode -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680590216"><span id="local-6989586621680590218"><span id="local-6989586621680590220"><span class="annot"><span class="annottext">Int -&gt; Mode -&gt; ShowS
+[Mode] -&gt; ShowS
+Mode -&gt; String
+(Int -&gt; Mode -&gt; ShowS)
+-&gt; (Mode -&gt; String) -&gt; ([Mode] -&gt; ShowS) -&gt; Show Mode
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Mode] -&gt; ShowS
+$cshowList :: [Mode] -&gt; ShowS
+show :: Mode -&gt; String
+$cshow :: Mode -&gt; String
+showsPrec :: Int -&gt; Mode -&gt; ShowS
+$cshowsPrec :: Int -&gt; Mode -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680590213"><span class="annot"><span class="hs-identifier hs-type">Pretty</span></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Mode"><span class="hs-identifier hs-type">Mode</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-70"></span><span>  </span><span id="local-6989586621680590212"><span class="annot"><span class="annottext">pretty :: Mode -&gt; Printer
+</span><a href="#local-6989586621680590212"><span class="hs-identifier hs-var hs-var hs-var hs-var">pretty</span></a></span></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Major"><span class="hs-identifier hs-type">Major</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;\\major&quot;</span></span><span>
+</span><span id="line-71"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">pretty</span></span><span> </span><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#Minor"><span class="hs-identifier hs-type">Minor</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;\\minor&quot;</span></span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="hs-keyword">data</span><span> </span><span id="OctaveCheck"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#OctaveCheck"><span class="hs-identifier hs-var">OctaveCheck</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="OctaveCheck"><span class="annot"><a href="Data.Music.Lilypond.Pitch.html#OctaveCheck"><span class="hs-identifier hs-var">OctaveCheck</span></a></span></span><span>
+</span><span id="line-74"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680590207"><span id="local-6989586621680590209"><span class="annot"><span class="annottext">OctaveCheck -&gt; OctaveCheck -&gt; Bool
+(OctaveCheck -&gt; OctaveCheck -&gt; Bool)
+-&gt; (OctaveCheck -&gt; OctaveCheck -&gt; Bool) -&gt; Eq OctaveCheck
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: OctaveCheck -&gt; OctaveCheck -&gt; Bool
+$c/= :: OctaveCheck -&gt; OctaveCheck -&gt; Bool
+== :: OctaveCheck -&gt; OctaveCheck -&gt; Bool
+$c== :: OctaveCheck -&gt; OctaveCheck -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680590201"><span id="local-6989586621680590203"><span id="local-6989586621680590205"><span class="annot"><span class="annottext">Int -&gt; OctaveCheck -&gt; ShowS
+[OctaveCheck] -&gt; ShowS
+OctaveCheck -&gt; String
+(Int -&gt; OctaveCheck -&gt; ShowS)
+-&gt; (OctaveCheck -&gt; String)
+-&gt; ([OctaveCheck] -&gt; ShowS)
+-&gt; Show OctaveCheck
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [OctaveCheck] -&gt; ShowS
+$cshowList :: [OctaveCheck] -&gt; ShowS
+show :: OctaveCheck -&gt; String
+$cshow :: OctaveCheck -&gt; String
+showsPrec :: Int -&gt; OctaveCheck -&gt; ShowS
+$cshowsPrec :: Int -&gt; OctaveCheck -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span></pre></body></html>

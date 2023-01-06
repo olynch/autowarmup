@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- | Common intervals.</span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Pitch.Common.Interval</span><span>
+</span><span id="line-3"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Intervals</span></span><span>
+</span><span id="line-4"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#Interval"><span class="hs-identifier">Interval</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Creating intervals</span></span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#interval"><span class="hs-identifier">interval</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#intervalTotalSteps"><span class="hs-identifier">intervalTotalSteps</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#intervalAlterationSteps"><span class="hs-identifier">intervalAlterationSteps</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#steps"><span class="hs-identifier">steps</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#alteration"><span class="hs-identifier">alteration</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Synonyms</span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#perfect"><span class="hs-identifier">perfect</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#major"><span class="hs-identifier">major</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#minor"><span class="hs-identifier">minor</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#augmented"><span class="hs-identifier">augmented</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#diminished"><span class="hs-identifier">diminished</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#doublyAugmented"><span class="hs-identifier">doublyAugmented</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#doublyDiminished"><span class="hs-identifier">doublyDiminished</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Inspecting intervals</span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isNegative"><span class="hs-identifier">isNegative</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isPositive"><span class="hs-identifier">isPositive</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isNonNegative"><span class="hs-identifier">isNonNegative</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isPerfectUnison"><span class="hs-identifier">isPerfectUnison</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isStep"><span class="hs-identifier">isStep</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isLeap"><span class="hs-identifier">isLeap</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Simple and compound intervals</span></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isSimple"><span class="hs-identifier">isSimple</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isCompound"><span class="hs-identifier">isCompound</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#separate"><span class="hs-identifier">separate</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#simple"><span class="hs-identifier">simple</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#HasOctaves"><span class="hs-identifier">HasOctaves</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><span class="hs-comment">-- *** Inversion</span></span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#invert"><span class="hs-identifier">invert</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Basis values</span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IntervalBasis"><span class="hs-identifier">IntervalBasis</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html"><span class="hs-identifier">Music.Pitch.Common.Internal</span></a></span><span>
+</span><span id="line-46"></span></pre></body></html>

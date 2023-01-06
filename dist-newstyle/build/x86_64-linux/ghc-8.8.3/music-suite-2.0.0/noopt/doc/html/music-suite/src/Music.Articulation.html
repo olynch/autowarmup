@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012</span><span>
+</span><span id="line-7"></span><span class="hs-comment">--</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-9"></span><span class="hs-comment">--</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Portability : portable</span><span>
+</span><span id="line-13"></span><span class="hs-comment">--</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Provides abstract musical articulations.</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Articulation</span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Music.Articulation.html#Articulation"><span class="hs-identifier">Articulation</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Either</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Monoid.Average</span></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">type</span><span> </span><span id="Articulation"><span class="annot"><a href="Music.Articulation.html#Articulation"><span class="hs-identifier hs-var">Articulation</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Average</span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Rational</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Average</span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Rational</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span class="hs-comment">{-
+
+  References
+
+    Keller: Phrasing and Articulation: A Contribution to a Rhetoric of Music
+
+      Keller distinguishes between articulation and phrasing:
+        - Phrasing is related to the structure or grammar of the music,
+          how hierarchical relationsship emerges.
+        - Articulation is &quot;everything else&quot;, the individual interpretation of
+          the melodic line.
+        - Keller consider phrasing objective. (It is at least non-deterministic!)
+
+    http://www.speech.kth.se/publications/masterprojects/2004/Jerkert.pdf
+
+      - Articulation is a *local* alteration of other properties
+        - There are multiple interacting hierarchical relationships
+        - Articulation has to do with *emphasis*: alteration of properties leads
+          to more or less emphasis (compare Laws of Perception)
+      - Most common:
+        - Time (common: stacatissimo, staccato, portato, legato)
+          - &quot;articulation ratio&quot;, i.e. duration/IOI
+          - &quot;relative IOI&quot;, i.e. prolongation of a note
+        - Dynamics (common: accent, marcato)
+          - fp/sharp attacks etc (i.e. in wind, string)
+          - Relative level (i.e. in piano music)
+        - Pitch
+          - Vibrato, local adjustments (i.e. brighter notes), &quot;slide-in&quot;
+        - Timbre
+          - Dryness/spectral richness (i.e. more overtones)
+
+    http://www.jbiomech.com/article/S0021-9290%2898%2900113-4/abstract
+-}</span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-comment">{-
+
+From music21:
+  Accent
+  Bowing
+  BrassIndication
+  BreathMark
+  Caesura
+  DetachedLegato
+  Doit
+  DoubleTongue
+  DownBow
+  DynamicArticulation
+  Falloff
+  FretBend
+  FretIndication
+  FretTap
+  FrettedPluck
+  HammerOn
+  Harmonic
+  HarpFingerNails
+  HarpIndication
+  IndeterminantSlide
+  LengthArticulation
+  NailPizzicato
+  OpenString
+  OrganHeel
+  OrganIndication
+  OrganToe
+  PitchArticulation
+  Pizzicato
+  Plop
+  PullOff
+  Scoop
+  SnapPizzicato
+  Spiccato
+  Staccatissimo
+  Staccato
+  Stopped
+  Stress
+  StringFingering
+  StringHarmonic
+  StringIndication
+  StringThumbPosition
+  StrongAccent
+  TechnicalIndication
+  Tenuto
+  TimbreArticulation
+  TonguingIndication
+  TripleTongue
+  Unstress
+  UpBow
+  WindIndication
+  WoodwindIndication
+
+
+
+
+
+
+----------------
+
+
+  Stress
+  Unstress
+  Accent
+  StrongAccent
+
+  Tenuto
+  Spiccato
+  Staccato
+  Staccatissimo
+
+  Harmonic
+  OpenString
+  Stopped
+  HammerOn
+  PullOff
+
+  OrganIndication
+  OrganHeel
+  OrganToe
+  UpBow
+  DownBow
+
+  DetachedLegato (laisser vibrer)
+  IndeterminantSlide
+
+
+
+  Doit (grace?)
+  Falloff?
+  StringFingering
+  HarpFingerNails
+
+  NailPizzicato
+  Pizzicato
+  SnapPizzicato
+
+  Bowing?
+
+  TonguingIndication
+  DoubleTongue
+  TripleTongue
+
+
+  HarpIndication
+  FretIndication
+  FrettedPluck
+  FretTap
+  LengthArticulation
+  StringIndication
+  StringThumbPosition
+
+
+  Plop
+  Scoop
+
+  FretBend
+
+  WindIndication
+  BrassIndication
+  WoodwindIndication
+  TechnicalIndication
+  TimbreArticulation
+
+  BreathMark
+  Caesura
+
+-}</span><span>
+</span><span id="line-192"></span></pre></body></html>

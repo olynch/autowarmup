@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_5EYV37A0T69GZ6kJlUjk36"></span><span class="hs-pragma">{-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE DeriveFoldable #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE DeriveFunctor #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE DeriveTraversable #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-11"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-12"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-20"></span><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012-2014</span><span>
+</span><span id="line-28"></span><span class="hs-comment">--</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-30"></span><span class="hs-comment">--</span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- Portability : non-portable (TF,GNTD)</span><span>
+</span><span id="line-34"></span><span class="hs-comment">--</span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- Provides special barlines as meta-data.</span><span>
+</span><span id="line-36"></span><span class="hs-comment">--</span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- (Ordinary barlines are generated automatically, see also &quot;Music.Score.Meta.Time&quot;).</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Meta.Barline</span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Barline type</span></span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Barline.html#Barline"><span class="hs-identifier">Barline</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Adding barlines to scores</span></span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Barline.html#barline"><span class="hs-identifier">barline</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Barline.html#barlineDuring"><span class="hs-identifier">barlineDuring</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">view</span></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Plus</span></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Foldable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">F</span></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">List</span></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Map</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Set</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.String</span></a></span><span>
+</span><span id="line-60"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Traversable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Internal.Util.html"><span class="hs-identifier">Music.Score.Internal.Util</span></a></span><span>
+</span><span id="line-65"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.html"><span class="hs-identifier">Music.Score.Meta</span></a></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html"><span class="hs-identifier">Music.Score.Pitch</span></a></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html"><span class="hs-identifier">Music.Time.Reactive</span></a></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- | Represents an explicitly added barline.</span><span>
+</span><span id="line-72"></span><span class="hs-keyword">data</span><span> </span><span id="Barline"><span class="annot"><a href="Music.Score.Meta.Barline.html#Barline"><span class="hs-identifier hs-var">Barline</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="StandardBarline"><span class="annot"><a href="Music.Score.Meta.Barline.html#StandardBarline"><span class="hs-identifier hs-var">StandardBarline</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="DoubleBarline"><span class="annot"><a href="Music.Score.Meta.Barline.html#DoubleBarline"><span class="hs-identifier hs-var">DoubleBarline</span></a></span></span><span>
+</span><span id="line-73"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680595370"><span id="local-6989586621680595372"><span class="annot"><span class="annottext">Barline -&gt; Barline -&gt; Bool
+(Barline -&gt; Barline -&gt; Bool)
+-&gt; (Barline -&gt; Barline -&gt; Bool) -&gt; Eq Barline
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Barline -&gt; Barline -&gt; Bool
+$c/= :: Barline -&gt; Barline -&gt; Bool
+== :: Barline -&gt; Barline -&gt; Bool
+$c== :: Barline -&gt; Barline -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680595354"><span id="local-6989586621680595356"><span id="local-6989586621680595358"><span id="local-6989586621680595360"><span id="local-6989586621680595362"><span id="local-6989586621680595364"><span id="local-6989586621680595366"><span class="annot"><span class="annottext">Eq Barline
+Eq Barline =&gt;
+(Barline -&gt; Barline -&gt; Ordering)
+-&gt; (Barline -&gt; Barline -&gt; Bool)
+-&gt; (Barline -&gt; Barline -&gt; Bool)
+-&gt; (Barline -&gt; Barline -&gt; Bool)
+-&gt; (Barline -&gt; Barline -&gt; Bool)
+-&gt; (Barline -&gt; Barline -&gt; Barline)
+-&gt; (Barline -&gt; Barline -&gt; Barline)
+-&gt; Ord Barline
+Barline -&gt; Barline -&gt; Bool
+Barline -&gt; Barline -&gt; Ordering
+Barline -&gt; Barline -&gt; Barline
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Barline -&gt; Barline -&gt; Barline
+$cmin :: Barline -&gt; Barline -&gt; Barline
+max :: Barline -&gt; Barline -&gt; Barline
+$cmax :: Barline -&gt; Barline -&gt; Barline
+&gt;= :: Barline -&gt; Barline -&gt; Bool
+$c&gt;= :: Barline -&gt; Barline -&gt; Bool
+&gt; :: Barline -&gt; Barline -&gt; Bool
+$c&gt; :: Barline -&gt; Barline -&gt; Bool
+&lt;= :: Barline -&gt; Barline -&gt; Bool
+$c&lt;= :: Barline -&gt; Barline -&gt; Bool
+&lt; :: Barline -&gt; Barline -&gt; Bool
+$c&lt; :: Barline -&gt; Barline -&gt; Bool
+compare :: Barline -&gt; Barline -&gt; Ordering
+$ccompare :: Barline -&gt; Barline -&gt; Ordering
+$cp1Ord :: Eq Barline
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680595347"><span id="local-6989586621680595349"><span id="local-6989586621680595351"><span class="annot"><span class="annottext">Int -&gt; Barline -&gt; ShowS
+[Barline] -&gt; ShowS
+Barline -&gt; String
+(Int -&gt; Barline -&gt; ShowS)
+-&gt; (Barline -&gt; String) -&gt; ([Barline] -&gt; ShowS) -&gt; Show Barline
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Barline] -&gt; ShowS
+$cshowList :: [Barline] -&gt; ShowS
+show :: Barline -&gt; String
+$cshow :: Barline -&gt; String
+showsPrec :: Int -&gt; Barline -&gt; ShowS
+$cshowsPrec :: Int -&gt; Barline -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- | Add a barline over the whole score.</span><span>
+</span><span id="line-76"></span><span id="local-6989586621680595345"><span class="annot"><a href="Music.Score.Meta.Barline.html#barline"><span class="hs-identifier hs-type">barline</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595345"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595345"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Barline.html#Barline"><span class="hs-identifier hs-type">Barline</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680595345"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680595345"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-77"></span><span id="barline"><span class="annot"><span class="annottext">barline :: Barline -&gt; a -&gt; a
+</span><a href="Music.Score.Meta.Barline.html#barline"><span class="hs-identifier hs-var hs-var">barline</span></a></span></span><span> </span><span id="local-6989586621680595344"><span class="annot"><span class="annottext">c :: Barline
+</span><a href="#local-6989586621680595344"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621680595343"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680595343"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680595343"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-78"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680595343"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-79"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680595341"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680595341"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Span -&gt; Barline -&gt; a -&gt; a
+forall a. HasMeta a =&gt; Span -&gt; Barline -&gt; a -&gt; a
+</span><a href="Music.Score.Meta.Barline.html#barlineDuring"><span class="hs-identifier hs-var">barlineDuring</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680595341"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Barline
+</span><a href="#local-6989586621680595344"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680595343"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- | Add a barline to the given score.</span><span>
+</span><span id="line-82"></span><span id="local-6989586621680595404"><span class="annot"><a href="Music.Score.Meta.Barline.html#barlineDuring"><span class="hs-identifier hs-type">barlineDuring</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680595404"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Barline.html#Barline"><span class="hs-identifier hs-type">Barline</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680595404"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680595404"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-83"></span><span id="barlineDuring"><span class="annot"><span class="annottext">barlineDuring :: Span -&gt; Barline -&gt; a -&gt; a
+</span><a href="Music.Score.Meta.Barline.html#barlineDuring"><span class="hs-identifier hs-var hs-var">barlineDuring</span></a></span></span><span> </span><span id="local-6989586621680595340"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680595340"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680595339"><span class="annot"><span class="annottext">c :: Barline
+</span><a href="#local-6989586621680595339"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Event (Option (Last Barline)) -&gt; a -&gt; a
+forall a b. (AttributeClass a, HasMeta b) =&gt; Event a -&gt; b -&gt; b
+</span><a href="Music.Score.Meta.html#addMetaNote"><span class="hs-identifier hs-var">addMetaNote</span></a></span><span> </span><span class="annot"><span class="annottext">(Event (Option (Last Barline)) -&gt; a -&gt; a)
+-&gt; Event (Option (Last Barline)) -&gt; a -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Getting
+  (Event (Option (Last Barline)))
+  (Span, Option (Last Barline))
+  (Event (Option (Last Barline)))
+-&gt; (Span, Option (Last Barline)) -&gt; Event (Option (Last Barline))
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting
+  (Event (Option (Last Barline)))
+  (Span, Option (Last Barline))
+  (Event (Option (Last Barline)))
+forall a b. Iso (Span, a) (Span, b) (Event a) (Event b)
+</span><a href="Music.Time.Event.html#event"><span class="hs-identifier hs-var">event</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680595340"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe (Last Barline) -&gt; Option (Last Barline)
+forall a. Maybe a -&gt; Option a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Option</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Last Barline) -&gt; Option (Last Barline))
+-&gt; Maybe (Last Barline) -&gt; Option (Last Barline)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Last Barline -&gt; Maybe (Last Barline)
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">(Last Barline -&gt; Maybe (Last Barline))
+-&gt; Last Barline -&gt; Maybe (Last Barline)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Barline -&gt; Last Barline
+forall a. a -&gt; Last a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Last</span></a></span><span> </span><span class="annot"><span class="annottext">Barline
+</span><a href="#local-6989586621680595339"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span></pre></body></html>

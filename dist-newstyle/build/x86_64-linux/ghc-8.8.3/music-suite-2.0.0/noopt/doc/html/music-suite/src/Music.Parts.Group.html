@@ -1,0 +1,683 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_84bYCFlRERJ2uhlTJbwUkM"><span id="%24con2tag_1Wv6Usj4uek8uI0fCdZm1W"><span id="%24maxtag_FQOppiZ5Ba5Fe0hgPxYbiK"><span id="%24tag2con_FQOppiZ5Ba5Fe0hgPxYbiK"><span id="%24con2tag_FQOppiZ5Ba5Fe0hgPxYbiK"></span></span></span></span></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Parts.Group</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Lens</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Lens'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(^.)</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">toListOf</span></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">FromJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">ToJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/9y6f8f1i5hwjjrj3cjs7ndnrhc7b2186-data-default-0.7.1.1-doc/share/doc/data-default-0.7.1.1/html/src"><span class="hs-identifier">Data.Default</span></a></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Semigroup.Option.Instances.html"><span class="hs-identifier">Data.Semigroup.Option.Instances</span></a></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">traverse</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Division.html"><span class="hs-identifier">Music.Parts.Division</span></a></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Instrument.html"><span class="hs-identifier">Music.Parts.Instrument</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Instrument.Brass.html"><span class="hs-identifier">Music.Parts.Instrument.Brass</span></a></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Instrument.Keyboard.html"><span class="hs-identifier">Music.Parts.Instrument.Keyboard</span></a></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Instrument.Percussion.html"><span class="hs-identifier">Music.Parts.Instrument.Percussion</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Instrument.Strings.html"><span class="hs-identifier">Music.Parts.Instrument.Strings</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Instrument.Vocal.html"><span class="hs-identifier">Music.Parts.Instrument.Vocal</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Instrument.Woodwind.html"><span class="hs-identifier">Music.Parts.Instrument.Woodwind</span></a></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Part.html"><span class="hs-identifier">Music.Parts.Part</span></a></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Solo.html"><span class="hs-identifier">Music.Parts.Solo</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html"><span class="hs-identifier">Music.Parts.Subpart</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Numeral.Roman</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">toRoman</span></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="hs-comment">{-
+    ## Terminology: Voice vs Part
+
+    A voice is a container of notes (non-overlapping)
+
+    A part is an identifier for a set of singers/musicians AND all the notes in a score
+    designated for this set of performers. Part extraction has the type
+
+        extractParts :: HasPart a =&gt; Score a -&gt; [Score a]
+
+    I.e. in a score for piano and ensemble, certain notes may be *in the piano part*, i.e.
+    designated for the piano. Typically, a part is monophonic or polyphonic. A monophonic
+    part is a voice, i.e.
+
+        -- | Are there overlapping notes?
+        isMonophonic :: Score a -&gt; Bool
+
+        -- | Fails for polyphonic scores.
+        s_oreToVoice :: Score a -&gt; Voice (Maybe a)
+
+    A polyphonic score contains several voices, i.e.
+
+        s_oreToVoices :: Score a -&gt; [Voice (Maybe a)]
+
+
+    A part is any type a that satisfies (Ord a, Show a).
+    Optionally, we may add a contraint (HasPartName a), i.e.
+
+        class HasPartName a where
+            partName :: a -&gt; String
+            partAbbr :: a -&gt; String
+
+
+    These contraints are used when printing scores (to get the order of the parts and their name).
+
+        Vln1, Vln2 etc.
+
+    Often we want to group parts, i.e.
+
+        Chorus {
+            Sop  { Sop1 Sop2 }
+            Alto { Alto1 Alto2 }
+            Ten  { Ten1 Ten 2 }
+            Bass { Bass1 Bass2 }
+        }
+        Orchestra {
+            Woodwinds { ... }
+            Brass { ... }
+            Perc { ... }
+            Strings { ... }
+        }
+
+
+    isInGroup :: Group -&gt; Part -&gt; Bool
+    partGroups :: Part -&gt; [Group]
+
+
+    partGroup :: (Part -&gt; [Group] -&gt; a) -&gt; Group -&gt; a
+    tree :: (a -&gt; [Tree a] -&gt; b) -&gt; Tree a -&gt; b
+
+
+    data MyPart
+        = Fl
+        | Sop
+        | Vl1
+        | Vl2
+        | Pno
+
+-}</span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="hs-comment">-- | How to draw to barlines between staff groups.</span><span>
+</span><span id="line-107"></span><span class="hs-keyword">data</span><span> </span><span id="BarLines"><span class="annot"><a href="Music.Parts.Group.html#BarLines"><span class="hs-identifier hs-var">BarLines</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="HideBarlines"><span class="annot"><a href="Music.Parts.Group.html#HideBarlines"><span class="hs-identifier hs-var">HideBarlines</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="ShowBarlines"><span class="annot"><a href="Music.Parts.Group.html#ShowBarlines"><span class="hs-identifier hs-var">ShowBarlines</span></a></span></span><span>
+</span><span id="line-108"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680586233"><span id="local-6989586621680586235"><span class="annot"><span class="annottext">BarLines -&gt; BarLines -&gt; Bool
+(BarLines -&gt; BarLines -&gt; Bool)
+-&gt; (BarLines -&gt; BarLines -&gt; Bool) -&gt; Eq BarLines
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: BarLines -&gt; BarLines -&gt; Bool
+$c/= :: BarLines -&gt; BarLines -&gt; Bool
+== :: BarLines -&gt; BarLines -&gt; Bool
+$c== :: BarLines -&gt; BarLines -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586217"><span id="local-6989586621680586219"><span id="local-6989586621680586221"><span id="local-6989586621680586223"><span id="local-6989586621680586225"><span id="local-6989586621680586227"><span id="local-6989586621680586229"><span class="annot"><span class="annottext">Eq BarLines
+Eq BarLines =&gt;
+(BarLines -&gt; BarLines -&gt; Ordering)
+-&gt; (BarLines -&gt; BarLines -&gt; Bool)
+-&gt; (BarLines -&gt; BarLines -&gt; Bool)
+-&gt; (BarLines -&gt; BarLines -&gt; Bool)
+-&gt; (BarLines -&gt; BarLines -&gt; Bool)
+-&gt; (BarLines -&gt; BarLines -&gt; BarLines)
+-&gt; (BarLines -&gt; BarLines -&gt; BarLines)
+-&gt; Ord BarLines
+BarLines -&gt; BarLines -&gt; Bool
+BarLines -&gt; BarLines -&gt; Ordering
+BarLines -&gt; BarLines -&gt; BarLines
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: BarLines -&gt; BarLines -&gt; BarLines
+$cmin :: BarLines -&gt; BarLines -&gt; BarLines
+max :: BarLines -&gt; BarLines -&gt; BarLines
+$cmax :: BarLines -&gt; BarLines -&gt; BarLines
+&gt;= :: BarLines -&gt; BarLines -&gt; Bool
+$c&gt;= :: BarLines -&gt; BarLines -&gt; Bool
+&gt; :: BarLines -&gt; BarLines -&gt; Bool
+$c&gt; :: BarLines -&gt; BarLines -&gt; Bool
+&lt;= :: BarLines -&gt; BarLines -&gt; Bool
+$c&lt;= :: BarLines -&gt; BarLines -&gt; Bool
+&lt; :: BarLines -&gt; BarLines -&gt; Bool
+$c&lt; :: BarLines -&gt; BarLines -&gt; Bool
+compare :: BarLines -&gt; BarLines -&gt; Ordering
+$ccompare :: BarLines -&gt; BarLines -&gt; Ordering
+$cp1Ord :: Eq BarLines
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586210"><span id="local-6989586621680586212"><span id="local-6989586621680586214"><span class="annot"><span class="annottext">Int -&gt; BarLines -&gt; ShowS
+[BarLines] -&gt; ShowS
+BarLines -&gt; String
+(Int -&gt; BarLines -&gt; ShowS)
+-&gt; (BarLines -&gt; String) -&gt; ([BarLines] -&gt; ShowS) -&gt; Show BarLines
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [BarLines] -&gt; ShowS
+$cshowList :: [BarLines] -&gt; ShowS
+show :: BarLines -&gt; String
+$cshow :: BarLines -&gt; String
+showsPrec :: Int -&gt; BarLines -&gt; ShowS
+$cshowsPrec :: Int -&gt; BarLines -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586193"><span id="local-6989586621680586195"><span id="local-6989586621680586197"><span id="local-6989586621680586199"><span id="local-6989586621680586201"><span id="local-6989586621680586203"><span id="local-6989586621680586205"><span id="local-6989586621680586207"><span class="annot"><span class="annottext">Int -&gt; BarLines
+BarLines -&gt; Int
+BarLines -&gt; [BarLines]
+BarLines -&gt; BarLines
+BarLines -&gt; BarLines -&gt; [BarLines]
+BarLines -&gt; BarLines -&gt; BarLines -&gt; [BarLines]
+(BarLines -&gt; BarLines)
+-&gt; (BarLines -&gt; BarLines)
+-&gt; (Int -&gt; BarLines)
+-&gt; (BarLines -&gt; Int)
+-&gt; (BarLines -&gt; [BarLines])
+-&gt; (BarLines -&gt; BarLines -&gt; [BarLines])
+-&gt; (BarLines -&gt; BarLines -&gt; [BarLines])
+-&gt; (BarLines -&gt; BarLines -&gt; BarLines -&gt; [BarLines])
+-&gt; Enum BarLines
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+enumFromThenTo :: BarLines -&gt; BarLines -&gt; BarLines -&gt; [BarLines]
+$cenumFromThenTo :: BarLines -&gt; BarLines -&gt; BarLines -&gt; [BarLines]
+enumFromTo :: BarLines -&gt; BarLines -&gt; [BarLines]
+$cenumFromTo :: BarLines -&gt; BarLines -&gt; [BarLines]
+enumFromThen :: BarLines -&gt; BarLines -&gt; [BarLines]
+$cenumFromThen :: BarLines -&gt; BarLines -&gt; [BarLines]
+enumFrom :: BarLines -&gt; [BarLines]
+$cenumFrom :: BarLines -&gt; [BarLines]
+fromEnum :: BarLines -&gt; Int
+$cfromEnum :: BarLines -&gt; Int
+toEnum :: Int -&gt; BarLines
+$ctoEnum :: Int -&gt; BarLines
+pred :: BarLines -&gt; BarLines
+$cpred :: BarLines -&gt; BarLines
+succ :: BarLines -&gt; BarLines
+$csucc :: BarLines -&gt; BarLines
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586188"><span id="local-6989586621680586190"><span class="annot"><span class="annottext">BarLines
+BarLines -&gt; BarLines -&gt; Bounded BarLines
+forall a. a -&gt; a -&gt; Bounded a
+maxBound :: BarLines
+$cmaxBound :: BarLines
+minBound :: BarLines
+$cminBound :: BarLines
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Bounded</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="hs-comment">-- | Staff group types.</span><span>
+</span><span id="line-111"></span><span class="hs-keyword">data</span><span> </span><span id="GroupType"><span class="annot"><a href="Music.Parts.Group.html#GroupType"><span class="hs-identifier hs-var">GroupType</span></a></span></span><span>
+</span><span id="line-112"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Invisible"><span class="annot"><a href="Music.Parts.Group.html#Invisible"><span class="hs-identifier hs-var">Invisible</span></a></span></span><span>
+</span><span id="line-113"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Bracket"><span class="annot"><a href="Music.Parts.Group.html#Bracket"><span class="hs-identifier hs-var">Bracket</span></a></span></span><span> </span><span class="hs-comment">-- ly: StaffGroup,  xml: GroupSymbol=bracket</span><span>
+</span><span id="line-114"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="SubBracket"><span class="annot"><a href="Music.Parts.Group.html#SubBracket"><span class="hs-identifier hs-var">SubBracket</span></a></span></span><span> </span><span class="hs-comment">-- ly: PianoStaff?, xml: GroupSymbol=line</span><span>
+</span><span id="line-115"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PianoStaff"><span class="annot"><a href="Music.Parts.Group.html#PianoStaff"><span class="hs-identifier hs-var">PianoStaff</span></a></span></span><span> </span><span class="hs-comment">-- ly: PianoStaff,  xml: GroupSymbol=brace</span><span>
+</span><span id="line-116"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="GrandStaff"><span class="annot"><a href="Music.Parts.Group.html#GrandStaff"><span class="hs-identifier hs-var">GrandStaff</span></a></span></span><span> </span><span class="hs-comment">-- ly: GrandStaff,  xml: GroupSymbol=brace</span><span>
+</span><span id="line-117"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680586178"><span id="local-6989586621680586180"><span class="annot"><span class="annottext">GroupType -&gt; GroupType -&gt; Bool
+(GroupType -&gt; GroupType -&gt; Bool)
+-&gt; (GroupType -&gt; GroupType -&gt; Bool) -&gt; Eq GroupType
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: GroupType -&gt; GroupType -&gt; Bool
+$c/= :: GroupType -&gt; GroupType -&gt; Bool
+== :: GroupType -&gt; GroupType -&gt; Bool
+$c== :: GroupType -&gt; GroupType -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586163"><span id="local-6989586621680586165"><span id="local-6989586621680586167"><span id="local-6989586621680586169"><span id="local-6989586621680586171"><span id="local-6989586621680586173"><span id="local-6989586621680586175"><span class="annot"><span class="annottext">Eq GroupType
+Eq GroupType =&gt;
+(GroupType -&gt; GroupType -&gt; Ordering)
+-&gt; (GroupType -&gt; GroupType -&gt; Bool)
+-&gt; (GroupType -&gt; GroupType -&gt; Bool)
+-&gt; (GroupType -&gt; GroupType -&gt; Bool)
+-&gt; (GroupType -&gt; GroupType -&gt; Bool)
+-&gt; (GroupType -&gt; GroupType -&gt; GroupType)
+-&gt; (GroupType -&gt; GroupType -&gt; GroupType)
+-&gt; Ord GroupType
+GroupType -&gt; GroupType -&gt; Bool
+GroupType -&gt; GroupType -&gt; Ordering
+GroupType -&gt; GroupType -&gt; GroupType
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: GroupType -&gt; GroupType -&gt; GroupType
+$cmin :: GroupType -&gt; GroupType -&gt; GroupType
+max :: GroupType -&gt; GroupType -&gt; GroupType
+$cmax :: GroupType -&gt; GroupType -&gt; GroupType
+&gt;= :: GroupType -&gt; GroupType -&gt; Bool
+$c&gt;= :: GroupType -&gt; GroupType -&gt; Bool
+&gt; :: GroupType -&gt; GroupType -&gt; Bool
+$c&gt; :: GroupType -&gt; GroupType -&gt; Bool
+&lt;= :: GroupType -&gt; GroupType -&gt; Bool
+$c&lt;= :: GroupType -&gt; GroupType -&gt; Bool
+&lt; :: GroupType -&gt; GroupType -&gt; Bool
+$c&lt; :: GroupType -&gt; GroupType -&gt; Bool
+compare :: GroupType -&gt; GroupType -&gt; Ordering
+$ccompare :: GroupType -&gt; GroupType -&gt; Ordering
+$cp1Ord :: Eq GroupType
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586157"><span id="local-6989586621680586159"><span id="local-6989586621680586161"><span class="annot"><span class="annottext">Int -&gt; GroupType -&gt; ShowS
+[GroupType] -&gt; ShowS
+GroupType -&gt; String
+(Int -&gt; GroupType -&gt; ShowS)
+-&gt; (GroupType -&gt; String)
+-&gt; ([GroupType] -&gt; ShowS)
+-&gt; Show GroupType
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [GroupType] -&gt; ShowS
+$cshowList :: [GroupType] -&gt; ShowS
+show :: GroupType -&gt; String
+$cshow :: GroupType -&gt; String
+showsPrec :: Int -&gt; GroupType -&gt; ShowS
+$cshowsPrec :: Int -&gt; GroupType -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="hs-comment">-- | A tree of values with instruments and bracketing.</span><span>
+</span><span id="line-120"></span><span class="hs-keyword">data</span><span> </span><span id="ScoreLayout"><span class="annot"><a href="Music.Parts.Group.html#ScoreLayout"><span class="hs-identifier hs-var">ScoreLayout</span></a></span></span><span> </span><span id="local-6989586621680586261"><span class="annot"><a href="#local-6989586621680586261"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-121"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Single"><span class="annot"><a href="Music.Parts.Group.html#Single"><span class="hs-identifier hs-var">Single</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Parts.Instrument.html#Instrument"><span class="hs-identifier hs-type">Instrument</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680586261"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-122"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Many"><span class="annot"><a href="Music.Parts.Group.html#Many"><span class="hs-identifier hs-var">Many</span></a></span></span><span> </span><span class="annot"><a href="Music.Parts.Group.html#GroupType"><span class="hs-identifier hs-type">GroupType</span></a></span><span> </span><span class="annot"><a href="Music.Parts.Group.html#BarLines"><span class="hs-identifier hs-type">BarLines</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Parts.Group.html#ScoreLayout"><span class="hs-identifier hs-type">ScoreLayout</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680586261"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-123"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680586151"><span id="local-6989586621680586153"><span class="annot"><span class="annottext">ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+(ScoreLayout a -&gt; ScoreLayout a -&gt; Bool)
+-&gt; (ScoreLayout a -&gt; ScoreLayout a -&gt; Bool) -&gt; Eq (ScoreLayout a)
+forall a. Eq a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+== :: ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+$c== :: forall a. Eq a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586136"><span id="local-6989586621680586138"><span id="local-6989586621680586140"><span id="local-6989586621680586142"><span id="local-6989586621680586144"><span id="local-6989586621680586146"><span id="local-6989586621680586148"><span class="annot"><span class="annottext">Eq (ScoreLayout a)
+Eq (ScoreLayout a) =&gt;
+(ScoreLayout a -&gt; ScoreLayout a -&gt; Ordering)
+-&gt; (ScoreLayout a -&gt; ScoreLayout a -&gt; Bool)
+-&gt; (ScoreLayout a -&gt; ScoreLayout a -&gt; Bool)
+-&gt; (ScoreLayout a -&gt; ScoreLayout a -&gt; Bool)
+-&gt; (ScoreLayout a -&gt; ScoreLayout a -&gt; Bool)
+-&gt; (ScoreLayout a -&gt; ScoreLayout a -&gt; ScoreLayout a)
+-&gt; (ScoreLayout a -&gt; ScoreLayout a -&gt; ScoreLayout a)
+-&gt; Ord (ScoreLayout a)
+ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+ScoreLayout a -&gt; ScoreLayout a -&gt; Ordering
+ScoreLayout a -&gt; ScoreLayout a -&gt; ScoreLayout a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (ScoreLayout a)
+forall a. Ord a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+forall a. Ord a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; Ordering
+forall a. Ord a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; ScoreLayout a
+min :: ScoreLayout a -&gt; ScoreLayout a -&gt; ScoreLayout a
+$cmin :: forall a. Ord a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; ScoreLayout a
+max :: ScoreLayout a -&gt; ScoreLayout a -&gt; ScoreLayout a
+$cmax :: forall a. Ord a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; ScoreLayout a
+&gt;= :: ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+&gt; :: ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+&lt;= :: ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+&lt; :: ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; Bool
+compare :: ScoreLayout a -&gt; ScoreLayout a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; ScoreLayout a -&gt; ScoreLayout a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (ScoreLayout a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586130"><span id="local-6989586621680586132"><span id="local-6989586621680586134"><span class="annot"><span class="annottext">Int -&gt; ScoreLayout a -&gt; ShowS
+[ScoreLayout a] -&gt; ShowS
+ScoreLayout a -&gt; String
+(Int -&gt; ScoreLayout a -&gt; ShowS)
+-&gt; (ScoreLayout a -&gt; String)
+-&gt; ([ScoreLayout a] -&gt; ShowS)
+-&gt; Show (ScoreLayout a)
+forall a. Show a =&gt; Int -&gt; ScoreLayout a -&gt; ShowS
+forall a. Show a =&gt; [ScoreLayout a] -&gt; ShowS
+forall a. Show a =&gt; ScoreLayout a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ScoreLayout a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [ScoreLayout a] -&gt; ShowS
+show :: ScoreLayout a -&gt; String
+$cshow :: forall a. Show a =&gt; ScoreLayout a -&gt; String
+showsPrec :: Int -&gt; ScoreLayout a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; ScoreLayout a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586126"><span id="local-6989586621680586128"><span class="annot"><span class="annottext">a -&gt; ScoreLayout b -&gt; ScoreLayout a
+(a -&gt; b) -&gt; ScoreLayout a -&gt; ScoreLayout b
+(forall a b. (a -&gt; b) -&gt; ScoreLayout a -&gt; ScoreLayout b)
+-&gt; (forall a b. a -&gt; ScoreLayout b -&gt; ScoreLayout a)
+-&gt; Functor ScoreLayout
+forall a b. a -&gt; ScoreLayout b -&gt; ScoreLayout a
+forall a b. (a -&gt; b) -&gt; ScoreLayout a -&gt; ScoreLayout b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; ScoreLayout b -&gt; ScoreLayout a
+$c&lt;$ :: forall a b. a -&gt; ScoreLayout b -&gt; ScoreLayout a
+fmap :: (a -&gt; b) -&gt; ScoreLayout a -&gt; ScoreLayout b
+$cfmap :: forall a b. (a -&gt; b) -&gt; ScoreLayout a -&gt; ScoreLayout b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586091"><span id="local-6989586621680586093"><span id="local-6989586621680586095"><span id="local-6989586621680586097"><span id="local-6989586621680586099"><span id="local-6989586621680586101"><span id="local-6989586621680586103"><span id="local-6989586621680586105"><span id="local-6989586621680586107"><span id="local-6989586621680586109"><span id="local-6989586621680586111"><span id="local-6989586621680586113"><span id="local-6989586621680586115"><span id="local-6989586621680586117"><span id="local-6989586621680586119"><span id="local-6989586621680586121"><span id="local-6989586621680586123"><span class="annot"><span class="annottext">ScoreLayout a -&gt; Bool
+(a -&gt; m) -&gt; ScoreLayout a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+(forall m. Monoid m =&gt; ScoreLayout m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; ScoreLayout a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; ScoreLayout a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; ScoreLayout a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; ScoreLayout a -&gt; a)
+-&gt; (forall a. ScoreLayout a -&gt; [a])
+-&gt; (forall a. ScoreLayout a -&gt; Bool)
+-&gt; (forall a. ScoreLayout a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; ScoreLayout a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; ScoreLayout a -&gt; a)
+-&gt; (forall a. Ord a =&gt; ScoreLayout a -&gt; a)
+-&gt; (forall a. Num a =&gt; ScoreLayout a -&gt; a)
+-&gt; (forall a. Num a =&gt; ScoreLayout a -&gt; a)
+-&gt; Foldable ScoreLayout
+forall a. Eq a =&gt; a -&gt; ScoreLayout a -&gt; Bool
+forall a. Num a =&gt; ScoreLayout a -&gt; a
+forall a. Ord a =&gt; ScoreLayout a -&gt; a
+forall m. Monoid m =&gt; ScoreLayout m -&gt; m
+forall a. ScoreLayout a -&gt; Bool
+forall a. ScoreLayout a -&gt; Int
+forall a. ScoreLayout a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; ScoreLayout a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; ScoreLayout a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: ScoreLayout a -&gt; a
+$cproduct :: forall a. Num a =&gt; ScoreLayout a -&gt; a
+sum :: ScoreLayout a -&gt; a
+$csum :: forall a. Num a =&gt; ScoreLayout a -&gt; a
+minimum :: ScoreLayout a -&gt; a
+$cminimum :: forall a. Ord a =&gt; ScoreLayout a -&gt; a
+maximum :: ScoreLayout a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; ScoreLayout a -&gt; a
+elem :: a -&gt; ScoreLayout a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; ScoreLayout a -&gt; Bool
+length :: ScoreLayout a -&gt; Int
+$clength :: forall a. ScoreLayout a -&gt; Int
+null :: ScoreLayout a -&gt; Bool
+$cnull :: forall a. ScoreLayout a -&gt; Bool
+toList :: ScoreLayout a -&gt; [a]
+$ctoList :: forall a. ScoreLayout a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; ScoreLayout a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; ScoreLayout a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; ScoreLayout a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; ScoreLayout a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; ScoreLayout a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; ScoreLayout a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; ScoreLayout a -&gt; m
+foldMap :: (a -&gt; m) -&gt; ScoreLayout a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; ScoreLayout a -&gt; m
+fold :: ScoreLayout m -&gt; m
+$cfold :: forall m. Monoid m =&gt; ScoreLayout m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680586080"><span id="local-6989586621680586082"><span id="local-6989586621680586084"><span id="local-6989586621680586086"><span class="annot"><span class="annottext">Functor ScoreLayout
+Foldable ScoreLayout
+(Functor ScoreLayout, Foldable ScoreLayout) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; ScoreLayout a -&gt; f (ScoreLayout b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    ScoreLayout (f a) -&gt; f (ScoreLayout a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; ScoreLayout a -&gt; m (ScoreLayout b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    ScoreLayout (m a) -&gt; m (ScoreLayout a))
+-&gt; Traversable ScoreLayout
+(a -&gt; f b) -&gt; ScoreLayout a -&gt; f (ScoreLayout b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a.
+Monad m =&gt;
+ScoreLayout (m a) -&gt; m (ScoreLayout a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+ScoreLayout (f a) -&gt; f (ScoreLayout a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; ScoreLayout a -&gt; m (ScoreLayout b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; ScoreLayout a -&gt; f (ScoreLayout b)
+sequence :: ScoreLayout (m a) -&gt; m (ScoreLayout a)
+$csequence :: forall (m :: * -&gt; *) a.
+Monad m =&gt;
+ScoreLayout (m a) -&gt; m (ScoreLayout a)
+mapM :: (a -&gt; m b) -&gt; ScoreLayout a -&gt; m (ScoreLayout b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; ScoreLayout a -&gt; m (ScoreLayout b)
+sequenceA :: ScoreLayout (f a) -&gt; f (ScoreLayout a)
+$csequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+ScoreLayout (f a) -&gt; f (ScoreLayout a)
+traverse :: (a -&gt; f b) -&gt; ScoreLayout a -&gt; f (ScoreLayout b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; ScoreLayout a -&gt; f (ScoreLayout b)
+$cp2Traversable :: Foldable ScoreLayout
+$cp1Traversable :: Functor ScoreLayout
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="hs-comment">-- | Default score layout with woodwinds at the top, strings at the bottom.</span><span>
+</span><span id="line-126"></span><span id="local-6989586621680586078"><span class="annot"><a href="Music.Parts.Group.html#groupDefault"><span class="hs-identifier hs-type">groupDefault</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Parts.Instrument.html#Instrument"><span class="hs-identifier hs-type">Instrument</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680586078"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Parts.Group.html#ScoreLayout"><span class="hs-identifier hs-type">ScoreLayout</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680586078"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-127"></span><span id="groupDefault"><span class="annot"><span class="annottext">groupDefault :: [(Instrument, a)] -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#groupDefault"><span class="hs-identifier hs-var hs-var">groupDefault</span></a></span></span><span> </span><span id="local-6989586621680586076"><span class="annot"><span class="annottext">xs :: [(Instrument, a)]
+</span><a href="#local-6989586621680586076"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-128"></span><span>  </span><span class="annot"><span class="annottext">GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a. GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Many"><span class="hs-identifier hs-var">Many</span></a></span><span>
+</span><span id="line-129"></span><span>    </span><span class="annot"><span class="annottext">GroupType
+</span><a href="Music.Parts.Group.html#Invisible"><span class="hs-identifier hs-var">Invisible</span></a></span><span>
+</span><span id="line-130"></span><span>    </span><span class="annot"><span class="annottext">BarLines
+</span><a href="Music.Parts.Group.html#HideBarlines"><span class="hs-identifier hs-var">HideBarlines</span></a></span><span>
+</span><span id="line-131"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a. GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Many"><span class="hs-identifier hs-var">Many</span></a></span><span> </span><span class="annot"><span class="annottext">GroupType
+</span><a href="Music.Parts.Group.html#Bracket"><span class="hs-identifier hs-var">Bracket</span></a></span><span> </span><span class="annot"><span class="annottext">BarLines
+</span><a href="Music.Parts.Group.html#ShowBarlines"><span class="hs-identifier hs-var">ShowBarlines</span></a></span><span> </span><span class="annot"><span class="annottext">([ScoreLayout a] -&gt; ScoreLayout a)
+-&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; ScoreLayout a)
+-&gt; [(Instrument, a)] -&gt; [ScoreLayout a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; ScoreLayout a
+forall a. (Instrument, a) -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Single"><span class="hs-identifier hs-var">Single</span></a></span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586075"><span class="hs-identifier hs-var">ww</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-132"></span><span>      </span><span class="annot"><span class="annottext">GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a. GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Many"><span class="hs-identifier hs-var">Many</span></a></span><span> </span><span class="annot"><span class="annottext">GroupType
+</span><a href="Music.Parts.Group.html#Bracket"><span class="hs-identifier hs-var">Bracket</span></a></span><span> </span><span class="annot"><span class="annottext">BarLines
+</span><a href="Music.Parts.Group.html#ShowBarlines"><span class="hs-identifier hs-var">ShowBarlines</span></a></span><span> </span><span class="annot"><span class="annottext">([ScoreLayout a] -&gt; ScoreLayout a)
+-&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; ScoreLayout a)
+-&gt; [(Instrument, a)] -&gt; [ScoreLayout a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; ScoreLayout a
+forall a. (Instrument, a) -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Single"><span class="hs-identifier hs-var">Single</span></a></span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586074"><span class="hs-identifier hs-var">br</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-133"></span><span>      </span><span class="annot"><span class="annottext">GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a. GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Many"><span class="hs-identifier hs-var">Many</span></a></span><span> </span><span class="annot"><span class="annottext">GroupType
+</span><a href="Music.Parts.Group.html#Bracket"><span class="hs-identifier hs-var">Bracket</span></a></span><span> </span><span class="annot"><span class="annottext">BarLines
+</span><a href="Music.Parts.Group.html#ShowBarlines"><span class="hs-identifier hs-var">ShowBarlines</span></a></span><span> </span><span class="annot"><span class="annottext">([ScoreLayout a] -&gt; ScoreLayout a)
+-&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; ScoreLayout a)
+-&gt; [(Instrument, a)] -&gt; [ScoreLayout a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; ScoreLayout a
+forall a. (Instrument, a) -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Single"><span class="hs-identifier hs-var">Single</span></a></span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586073"><span class="hs-identifier hs-var">pc</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-134"></span><span>      </span><span class="annot"><span class="annottext">GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a. GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Many"><span class="hs-identifier hs-var">Many</span></a></span><span> </span><span class="annot"><span class="annottext">GroupType
+</span><a href="Music.Parts.Group.html#Invisible"><span class="hs-identifier hs-var">Invisible</span></a></span><span> </span><span class="annot"><span class="annottext">BarLines
+</span><a href="Music.Parts.Group.html#ShowBarlines"><span class="hs-identifier hs-var">ShowBarlines</span></a></span><span> </span><span class="annot"><span class="annottext">([ScoreLayout a] -&gt; ScoreLayout a)
+-&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; ScoreLayout a)
+-&gt; [(Instrument, a)] -&gt; [ScoreLayout a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; ScoreLayout a
+forall a. (Instrument, a) -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Single"><span class="hs-identifier hs-var">Single</span></a></span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586072"><span class="hs-identifier hs-var">kb</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-135"></span><span>      </span><span class="annot"><span class="annottext">GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a. GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Many"><span class="hs-identifier hs-var">Many</span></a></span><span> </span><span class="annot"><span class="annottext">GroupType
+</span><a href="Music.Parts.Group.html#Bracket"><span class="hs-identifier hs-var">Bracket</span></a></span><span> </span><span class="annot"><span class="annottext">BarLines
+</span><a href="Music.Parts.Group.html#HideBarlines"><span class="hs-identifier hs-var">HideBarlines</span></a></span><span> </span><span class="annot"><span class="annottext">([ScoreLayout a] -&gt; ScoreLayout a)
+-&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; ScoreLayout a)
+-&gt; [(Instrument, a)] -&gt; [ScoreLayout a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; ScoreLayout a
+forall a. (Instrument, a) -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Single"><span class="hs-identifier hs-var">Single</span></a></span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586071"><span class="hs-identifier hs-var">voc</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-136"></span><span>      </span><span class="annot"><span class="annottext">GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a. GroupType -&gt; BarLines -&gt; [ScoreLayout a] -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Many"><span class="hs-identifier hs-var">Many</span></a></span><span> </span><span class="annot"><span class="annottext">GroupType
+</span><a href="Music.Parts.Group.html#Bracket"><span class="hs-identifier hs-var">Bracket</span></a></span><span> </span><span class="annot"><span class="annottext">BarLines
+</span><a href="Music.Parts.Group.html#ShowBarlines"><span class="hs-identifier hs-var">ShowBarlines</span></a></span><span> </span><span class="annot"><span class="annottext">([ScoreLayout a] -&gt; ScoreLayout a)
+-&gt; [ScoreLayout a] -&gt; ScoreLayout a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; ScoreLayout a)
+-&gt; [(Instrument, a)] -&gt; [ScoreLayout a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; ScoreLayout a
+forall a. (Instrument, a) -&gt; ScoreLayout a
+</span><a href="Music.Parts.Group.html#Single"><span class="hs-identifier hs-var">Single</span></a></span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586070"><span class="hs-identifier hs-var">str</span></a></span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-special">]</span><span>
+</span><span id="line-138"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-139"></span><span>    </span><span id="local-6989586621680586075"><span class="annot"><span class="annottext">ww :: [(Instrument, a)]
+</span><a href="#local-6989586621680586075"><span class="hs-identifier hs-var hs-var">ww</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; Bool) -&gt; [(Instrument, a)] -&gt; [(Instrument, a)]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">filter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Instrument -&gt; Bool
+</span><a href="Music.Parts.Instrument.Woodwind.html#isWoodwindInstrument"><span class="hs-identifier hs-var">isWoodwindInstrument</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument -&gt; Bool)
+-&gt; ((Instrument, a) -&gt; Instrument) -&gt; (Instrument, a) -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; Instrument
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586076"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-140"></span><span>    </span><span id="local-6989586621680586074"><span class="annot"><span class="annottext">br :: [(Instrument, a)]
+</span><a href="#local-6989586621680586074"><span class="hs-identifier hs-var hs-var">br</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; Bool) -&gt; [(Instrument, a)] -&gt; [(Instrument, a)]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">filter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Instrument -&gt; Bool
+</span><a href="Music.Parts.Instrument.Brass.html#isBrassInstrument"><span class="hs-identifier hs-var">isBrassInstrument</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument -&gt; Bool)
+-&gt; ((Instrument, a) -&gt; Instrument) -&gt; (Instrument, a) -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; Instrument
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586076"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-141"></span><span>    </span><span id="local-6989586621680586073"><span class="annot"><span class="annottext">pc :: [(Instrument, a)]
+</span><a href="#local-6989586621680586073"><span class="hs-identifier hs-var hs-var">pc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; Bool) -&gt; [(Instrument, a)] -&gt; [(Instrument, a)]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">filter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Instrument -&gt; Bool
+</span><a href="Music.Parts.Instrument.Percussion.html#isPercussionInstrument"><span class="hs-identifier hs-var">isPercussionInstrument</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument -&gt; Bool)
+-&gt; ((Instrument, a) -&gt; Instrument) -&gt; (Instrument, a) -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; Instrument
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586076"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-142"></span><span>    </span><span id="local-6989586621680586072"><span class="annot"><span class="annottext">kb :: [(Instrument, a)]
+</span><a href="#local-6989586621680586072"><span class="hs-identifier hs-var hs-var">kb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; Bool) -&gt; [(Instrument, a)] -&gt; [(Instrument, a)]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">filter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Instrument -&gt; Bool
+</span><a href="Music.Parts.Instrument.Keyboard.html#isKeyboardInstrument"><span class="hs-identifier hs-var">isKeyboardInstrument</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument -&gt; Bool)
+-&gt; ((Instrument, a) -&gt; Instrument) -&gt; (Instrument, a) -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; Instrument
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586076"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-143"></span><span>    </span><span id="local-6989586621680586071"><span class="annot"><span class="annottext">voc :: [(Instrument, a)]
+</span><a href="#local-6989586621680586071"><span class="hs-identifier hs-var hs-var">voc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; Bool) -&gt; [(Instrument, a)] -&gt; [(Instrument, a)]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">filter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Instrument -&gt; Bool
+</span><a href="Music.Parts.Instrument.Vocal.html#isVocalist"><span class="hs-identifier hs-var">isVocalist</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument -&gt; Bool)
+-&gt; ((Instrument, a) -&gt; Instrument) -&gt; (Instrument, a) -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; Instrument
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586076"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-144"></span><span>    </span><span id="local-6989586621680586070"><span class="annot"><span class="annottext">str :: [(Instrument, a)]
+</span><a href="#local-6989586621680586070"><span class="hs-identifier hs-var hs-var">str</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Instrument, a) -&gt; Bool) -&gt; [(Instrument, a)] -&gt; [(Instrument, a)]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">filter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Instrument -&gt; Bool
+</span><a href="Music.Parts.Instrument.Strings.html#isStringInstrument"><span class="hs-identifier hs-var">isStringInstrument</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument -&gt; Bool)
+-&gt; ((Instrument, a) -&gt; Instrument) -&gt; (Instrument, a) -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Instrument, a) -&gt; Instrument
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Instrument, a)]
+</span><a href="#local-6989586621680586076"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-145"></span></pre></body></html>

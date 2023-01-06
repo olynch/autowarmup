@@ -1,0 +1,612 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE DeriveFoldable #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE DeriveFunctor #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE DeriveTraversable #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-11"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-12"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-13"></span><span class="hs-pragma">{-# LANGUAGE ViewPatterns #-}</span><span>
+</span><span id="line-14"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-22"></span><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012-2014</span><span>
+</span><span id="line-30"></span><span class="hs-comment">--</span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-32"></span><span class="hs-comment">--</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- Portability : non-portable (TF,GNTD)</span><span>
+</span><span id="line-36"></span><span class="hs-comment">--</span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- Provides tempo meta-data.</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Meta.Tempo</span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Tempo type</span></span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Bpm"><span class="hs-identifier">Bpm</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#NoteValue"><span class="hs-identifier">NoteValue</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier">Tempo</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier">metronome</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#tempoNoteValue"><span class="hs-identifier">tempoNoteValue</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#tempoBeatsPerMinute"><span class="hs-identifier">tempoBeatsPerMinute</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#getTempo"><span class="hs-identifier">getTempo</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#tempoToDuration"><span class="hs-identifier">tempoToDuration</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Adding tempo to scores</span></span><span>
+</span><span id="line-50"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#tempo"><span class="hs-identifier">tempo</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#tempoDuring"><span class="hs-identifier">tempoDuring</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Common tempi</span></span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#presto"><span class="hs-identifier">presto</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-55"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#allegro"><span class="hs-identifier">allegro</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#allegretto"><span class="hs-identifier">allegretto</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#moderato"><span class="hs-identifier">moderato</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#andante"><span class="hs-identifier">andante</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#adagio"><span class="hs-identifier">adagio</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-60"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#largo"><span class="hs-identifier">largo</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#lento"><span class="hs-identifier">lento</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Plus</span></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Foldable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">F</span></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">List</span></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Map</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-73"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-75"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Set</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-77"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.String</span></a></span><span>
+</span><span id="line-78"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Traversable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-80"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-81"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.VectorSpace</span></span><span>
+</span><span id="line-82"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-83"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Internal.Util.html"><span class="hs-identifier">Music.Score.Internal.Util</span></a></span><span>
+</span><span id="line-84"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.html"><span class="hs-identifier">Music.Score.Meta</span></a></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html"><span class="hs-identifier">Music.Score.Pitch</span></a></span><span>
+</span><span id="line-87"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span class="hs-keyword">type</span><span> </span><span id="Bpm"><span class="annot"><a href="Music.Score.Meta.Tempo.html#Bpm"><span class="hs-identifier hs-var">Bpm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-keyword">type</span><span> </span><span id="NoteValue"><span class="annot"><a href="Music.Score.Meta.Tempo.html#NoteValue"><span class="hs-identifier hs-var">NoteValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- | Represents musical tempo as a scaling factor with an optional name and/or beat duration.</span><span>
+</span><span id="line-94"></span><span class="hs-comment">--</span><span>
+</span><span id="line-95"></span><span class="hs-comment">-- 'tempoToDuration' provides a scaling factor such that</span><span>
+</span><span id="line-96"></span><span class="hs-comment">--</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- &gt; stretch (tempoToDuration t) notation = sounding</span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- &gt; compress (tempoToDuration t) sounding = notation</span><span>
+</span><span id="line-99"></span><span class="hs-comment">--</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- You can construct a tempo in various ways</span><span>
+</span><span id="line-101"></span><span class="hs-comment">--</span><span>
+</span><span id="line-102"></span><span class="hs-comment">-- &gt; tempoToDuration (metronome (1/4) 120) == tempoToDuration (metronome (1/2) 60)</span><span>
+</span><span id="line-103"></span><span class="hs-comment">-- &gt; metronome (1/4) 120                   /=                  metronome (1/2) 60</span><span>
+</span><span id="line-104"></span><span class="hs-keyword">data</span><span> </span><span id="Tempo"><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-var">Tempo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Tempo"><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-var">Tempo</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span>
+</span><span id="line-105"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594737"><span id="local-6989586621680594739"><span class="annot"><span class="annottext">Tempo -&gt; Tempo -&gt; Bool
+(Tempo -&gt; Tempo -&gt; Bool) -&gt; (Tempo -&gt; Tempo -&gt; Bool) -&gt; Eq Tempo
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Tempo -&gt; Tempo -&gt; Bool
+$c/= :: Tempo -&gt; Tempo -&gt; Bool
+== :: Tempo -&gt; Tempo -&gt; Bool
+$c== :: Tempo -&gt; Tempo -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594721"><span id="local-6989586621680594723"><span id="local-6989586621680594725"><span id="local-6989586621680594727"><span id="local-6989586621680594729"><span id="local-6989586621680594731"><span id="local-6989586621680594733"><span class="annot"><span class="annottext">Eq Tempo
+Eq Tempo =&gt;
+(Tempo -&gt; Tempo -&gt; Ordering)
+-&gt; (Tempo -&gt; Tempo -&gt; Bool)
+-&gt; (Tempo -&gt; Tempo -&gt; Bool)
+-&gt; (Tempo -&gt; Tempo -&gt; Bool)
+-&gt; (Tempo -&gt; Tempo -&gt; Bool)
+-&gt; (Tempo -&gt; Tempo -&gt; Tempo)
+-&gt; (Tempo -&gt; Tempo -&gt; Tempo)
+-&gt; Ord Tempo
+Tempo -&gt; Tempo -&gt; Bool
+Tempo -&gt; Tempo -&gt; Ordering
+Tempo -&gt; Tempo -&gt; Tempo
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Tempo -&gt; Tempo -&gt; Tempo
+$cmin :: Tempo -&gt; Tempo -&gt; Tempo
+max :: Tempo -&gt; Tempo -&gt; Tempo
+$cmax :: Tempo -&gt; Tempo -&gt; Tempo
+&gt;= :: Tempo -&gt; Tempo -&gt; Bool
+$c&gt;= :: Tempo -&gt; Tempo -&gt; Bool
+&gt; :: Tempo -&gt; Tempo -&gt; Bool
+$c&gt; :: Tempo -&gt; Tempo -&gt; Bool
+&lt;= :: Tempo -&gt; Tempo -&gt; Bool
+$c&lt;= :: Tempo -&gt; Tempo -&gt; Bool
+&lt; :: Tempo -&gt; Tempo -&gt; Bool
+$c&lt; :: Tempo -&gt; Tempo -&gt; Bool
+compare :: Tempo -&gt; Tempo -&gt; Ordering
+$ccompare :: Tempo -&gt; Tempo -&gt; Ordering
+$cp1Ord :: Eq Tempo
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- The internal representation is actually: maybeName maybeDisplayNoteValue scalingFactor</span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680594715"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span>  </span><span id="local-6989586621680594710"><span class="annot"><span class="annottext">+ :: Tempo -&gt; Tempo -&gt; Tempo
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(+)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Tempo -&gt; Tempo -&gt; Tempo
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Num Tempo: No implementation&quot;</span></span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span>  </span><span id="local-6989586621680594707"><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="hs-special">)</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Tempo -&gt; Tempo -&gt; Tempo
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Num Tempo: No implementation&quot;</span></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span>  </span><span id="local-6989586621680594706"><span class="annot"><span class="annottext">* :: Tempo -&gt; Tempo -&gt; Tempo
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(*)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Tempo -&gt; Tempo -&gt; Tempo
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Num Tempo: No implementation&quot;</span></span><span>
+</span><span id="line-116"></span><span>
+</span><span id="line-117"></span><span>  </span><span id="local-6989586621680594704"><span class="annot"><span class="annottext">abs :: Tempo -&gt; Tempo
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">abs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Tempo -&gt; Tempo
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Num Tempo: No implementation&quot;</span></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span>  </span><span id="local-6989586621680594702"><span class="annot"><span class="annottext">signum :: Tempo -&gt; Tempo
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">signum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Tempo -&gt; Tempo
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Num Tempo: No implementation&quot;</span></span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span>  </span><span id="local-6989586621680594700"><span class="annot"><span class="annottext">fromInteger :: Integer -&gt; Tempo
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromInteger</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe [Char] -&gt; Maybe Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-var">Tempo</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe [Char]
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Duration
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration -&gt; Tempo) -&gt; (Integer -&gt; Duration) -&gt; Integer -&gt; Tempo
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Duration
+forall a. Num a =&gt; Integer -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromInteger</span></a></span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680594694"><span id="local-6989586621680594697"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-124"></span><span>  </span><span id="local-6989586621680594692"><span class="annot"><span class="annottext">show :: Tempo -&gt; [Char]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Tempo -&gt; (Duration, Duration)
+</span><a href="Music.Score.Meta.Tempo.html#getTempo"><span class="hs-identifier hs-var">getTempo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594690"><span class="annot"><span class="annottext">nv :: Duration
+</span><a href="#local-6989586621680594690"><span class="hs-identifier hs-var">nv</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594689"><span class="annot"><span class="annottext">bpm :: Duration
+</span><a href="#local-6989586621680594689"><span class="hs-identifier hs-var">bpm</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;metronome &quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; [Char]
+forall _. Real _ =&gt; _ -&gt; [Char]
+</span><a href="#local-6989586621680594688"><span class="hs-identifier hs-var">showR</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680594690"><span class="hs-identifier hs-var">nv</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; [Char]
+forall _. Real _ =&gt; _ -&gt; [Char]
+</span><a href="#local-6989586621680594688"><span class="hs-identifier hs-var">showR</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680594689"><span class="hs-identifier hs-var">bpm</span></a></span><span>
+</span><span id="line-125"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-126"></span><span>      </span><span id="local-6989586621680594688"><span class="annot"><span class="annottext">showR :: _ -&gt; [Char]
+</span><a href="#local-6989586621680594688"><span class="hs-identifier hs-var hs-var">showR</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Ratio Integer -&gt; [Char]
+forall a. (Eq a, Num a, Show a) =&gt; Ratio a -&gt; [Char]
+</span><a href="#local-6989586621680594687"><span class="hs-identifier hs-var">showR'</span></a></span><span> </span><span class="annot"><span class="annottext">(Ratio Integer -&gt; [Char]) -&gt; (_ -&gt; Ratio Integer) -&gt; _ -&gt; [Char]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Real _, Fractional (Ratio Integer)) =&gt; _ -&gt; Ratio Integer
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Rational</span></a></span><span>
+</span><span id="line-127"></span><span>      </span><span id="local-6989586621680594687"><span class="annot"><span class="annottext">showR' :: Ratio a -&gt; [Char]
+</span><a href="#local-6989586621680594687"><span class="hs-identifier hs-var hs-var">showR'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Ratio a -&gt; (a, a)
+forall a. Ratio a -&gt; (a, a)
+</span><a href="Music.Score.Internal.Util.html#unRatio"><span class="hs-identifier hs-var">unRatio</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594685"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680594685"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-number">1</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; [Char]
+forall a. Show a =&gt; a -&gt; [Char]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594685"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-128"></span><span>      </span><span class="annot"><a href="#local-6989586621680594687"><span class="hs-identifier hs-var">showR'</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Ratio a -&gt; (a, a)
+forall a. Ratio a -&gt; (a, a)
+</span><a href="Music.Score.Internal.Util.html#unRatio"><span class="hs-identifier hs-var">unRatio</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680594684"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680594684"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680594683"><span class="annot"><span class="annottext">y :: a
+</span><a href="#local-6989586621680594683"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [Char]
+forall a. Show a =&gt; a -&gt; [Char]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594684"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;/&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [Char]
+forall a. Show a =&gt; a -&gt; [Char]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594683"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;)&quot;</span></span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span><span class="hs-comment">{-
+instance Default Tempo where
+    def = mempty
+-}</span><span>
+</span><span id="line-134"></span><span>
+</span><span id="line-135"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680594678"><span id="local-6989586621680594680"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-136"></span><span>  </span><span id="local-6989586621680594676"><span class="annot"><span class="annottext">a :: Tempo
+</span><a href="#local-6989586621680594676"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680594675"><span class="annot"><span class="annottext">&lt;&gt; :: Tempo -&gt; Tempo -&gt; Tempo
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span id="local-6989586621680594674"><span class="annot"><span class="annottext">b :: Tempo
+</span><a href="#local-6989586621680594674"><span class="hs-identifier hs-var">b</span></a></span></span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Tempo
+</span><a href="#local-6989586621680594676"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Tempo -&gt; Tempo -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Tempo
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Tempo
+</span><a href="#local-6989586621680594674"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-138"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Tempo
+</span><a href="#local-6989586621680594674"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Tempo -&gt; Tempo -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">==</span></a></span><span> </span><span class="annot"><span class="annottext">Tempo
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Tempo
+</span><a href="#local-6989586621680594676"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">otherwise</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Tempo
+</span><a href="#local-6989586621680594676"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-140"></span><span>
+</span><span id="line-141"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680594668"><span id="local-6989586621680594670"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-142"></span><span>  </span><span id="local-6989586621680594666"><span class="annot"><span class="annottext">mempty :: Tempo
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-var">metronome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-number">120</span></span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span class="hs-comment">-- | Create a tempo from a duration and a number of beats per minute.</span><span>
+</span><span id="line-145"></span><span class="hs-comment">--</span><span>
+</span><span id="line-146"></span><span class="hs-comment">--   For example @metronome (1/2) 48@ means 48 half notes per minute.</span><span>
+</span><span id="line-147"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-type">metronome</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Bpm"><span class="hs-identifier hs-type">Bpm</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span>
+</span><span id="line-148"></span><span id="metronome"><span class="annot"><span class="annottext">metronome :: Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-var hs-var">metronome</span></a></span></span><span> </span><span id="local-6989586621680594664"><span class="annot"><span class="annottext">noteVal :: Duration
+</span><a href="#local-6989586621680594664"><span class="hs-identifier hs-var">noteVal</span></a></span></span><span> </span><span id="local-6989586621680594663"><span class="annot"><span class="annottext">bpm :: Duration
+</span><a href="#local-6989586621680594663"><span class="hs-identifier hs-var">bpm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe [Char] -&gt; Maybe Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-var">Tempo</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe [Char]
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration -&gt; Maybe Duration
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680594664"><span class="hs-identifier hs-var">noteVal</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Duration -&gt; Tempo) -&gt; Duration -&gt; Tempo
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="hs-number">60</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680594663"><span class="hs-identifier hs-var">bpm</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680594664"><span class="hs-identifier hs-var">noteVal</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span class="hs-comment">-- TODO use lenses</span><span>
+</span><span id="line-151"></span><span class="hs-comment">--</span><span>
+</span><span id="line-152"></span><span class="hs-comment">-- noteValue :: Lens' Tempo (Maybe NoteValue)</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- noteValue = lens g s</span><span>
+</span><span id="line-154"></span><span class="hs-comment">--   where</span><span>
+</span><span id="line-155"></span><span class="hs-comment">--     g (Tempo n nv d)    = nv</span><span>
+</span><span id="line-156"></span><span class="hs-comment">--     s (Tempo n _  d) nv = Tempo n nv d</span><span>
+</span><span id="line-157"></span><span class="hs-comment">--</span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- bpm :: Lens' Tempo Bpm</span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- bpm = lens g s</span><span>
+</span><span id="line-160"></span><span class="hs-comment">--   where</span><span>
+</span><span id="line-161"></span><span class="hs-comment">--     g (Tempo n nv d)    = nv</span><span>
+</span><span id="line-162"></span><span class="hs-comment">--     s (Tempo n _  d) nv = Tempo n nv d</span><span>
+</span><span id="line-163"></span><span>
+</span><span id="line-164"></span><span class="hs-comment">-- | Get the note value indicated by a tempo.</span><span>
+</span><span id="line-165"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#tempoNoteValue"><span class="hs-identifier hs-type">tempoNoteValue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#NoteValue"><span class="hs-identifier hs-type">NoteValue</span></a></span><span>
+</span><span id="line-166"></span><span id="tempoNoteValue"><span class="annot"><span class="annottext">tempoNoteValue :: Tempo -&gt; Maybe Duration
+</span><a href="Music.Score.Meta.Tempo.html#tempoNoteValue"><span class="hs-identifier hs-var hs-var">tempoNoteValue</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span> </span><span id="local-6989586621680594662"><span class="annot"><span class="annottext">_n :: Maybe [Char]
+</span><a href="#local-6989586621680594662"><span class="hs-identifier hs-var">_n</span></a></span></span><span> </span><span id="local-6989586621680594661"><span class="annot"><span class="annottext">nv :: Maybe Duration
+</span><a href="#local-6989586621680594661"><span class="hs-identifier hs-var">nv</span></a></span></span><span> </span><span id="local-6989586621680594660"><span class="annot"><span class="annottext">_d :: Duration
+</span><a href="#local-6989586621680594660"><span class="hs-identifier hs-var">_d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe Duration
+</span><a href="#local-6989586621680594661"><span class="hs-identifier hs-var">nv</span></a></span><span>
+</span><span id="line-167"></span><span>
+</span><span id="line-168"></span><span class="hs-comment">-- | Get the number of beats per minute indicated by a tempo.</span><span>
+</span><span id="line-169"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#tempoBeatsPerMinute"><span class="hs-identifier hs-type">tempoBeatsPerMinute</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Bpm"><span class="hs-identifier hs-type">Bpm</span></a></span><span>
+</span><span id="line-170"></span><span id="tempoBeatsPerMinute"><span class="annot"><span class="annottext">tempoBeatsPerMinute :: Tempo -&gt; Duration
+</span><a href="Music.Score.Meta.Tempo.html#tempoBeatsPerMinute"><span class="hs-identifier hs-var hs-var">tempoBeatsPerMinute</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Duration, Duration) -&gt; Duration
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span> </span><span class="annot"><span class="annottext">((Duration, Duration) -&gt; Duration)
+-&gt; (Tempo -&gt; (Duration, Duration)) -&gt; Tempo -&gt; Duration
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Tempo -&gt; (Duration, Duration)
+</span><a href="Music.Score.Meta.Tempo.html#getTempo"><span class="hs-identifier hs-var">getTempo</span></a></span><span>
+</span><span id="line-171"></span><span>
+</span><span id="line-172"></span><span class="hs-comment">-- | Get the note value and number of beats per minute indicated by a tempo.</span><span>
+</span><span id="line-173"></span><span class="hs-comment">--</span><span>
+</span><span id="line-174"></span><span class="hs-comment">-- Typically used with the @ViewPatterns@ extension, as in</span><span>
+</span><span id="line-175"></span><span class="hs-comment">--</span><span>
+</span><span id="line-176"></span><span class="hs-comment">-- &gt; foo (getTempo -&gt; (nv, bpm)) = ...</span><span>
+</span><span id="line-177"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#getTempo"><span class="hs-identifier hs-type">getTempo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Tempo.html#NoteValue"><span class="hs-identifier hs-type">NoteValue</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Bpm"><span class="hs-identifier hs-type">Bpm</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-178"></span><span id="getTempo"><span class="annot"><span class="annottext">getTempo :: Tempo -&gt; (Duration, Duration)
+</span><a href="Music.Score.Meta.Tempo.html#getTempo"><span class="hs-identifier hs-var hs-var">getTempo</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span id="local-6989586621680594659"><span class="annot"><span class="annottext">x :: Duration
+</span><a href="#local-6989586621680594659"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">60</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">recip</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680594659"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- assume whole note</span><span>
+</span><span id="line-179"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#getTempo"><span class="hs-identifier hs-var">getTempo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680594657"><span class="annot"><span class="annottext">nv :: Duration
+</span><a href="#local-6989586621680594657"><span class="hs-identifier hs-var">nv</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680594656"><span class="annot"><span class="annottext">x :: Duration
+</span><a href="#local-6989586621680594656"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680594657"><span class="hs-identifier hs-var">nv</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">60</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">recip</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680594656"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680594657"><span class="hs-identifier hs-var">nv</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-180"></span><span>
+</span><span id="line-181"></span><span class="hs-comment">-- | Convert a tempo to a duration suitable for converting written to sounding durations.</span><span>
+</span><span id="line-182"></span><span class="hs-comment">--</span><span>
+</span><span id="line-183"></span><span class="hs-comment">-- &gt; stretch (tempoToDuration t) notation = sounding</span><span>
+</span><span id="line-184"></span><span class="hs-comment">-- &gt; compress (tempoToDuration t) sounding = notation</span><span>
+</span><span id="line-185"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#tempoToDuration"><span class="hs-identifier hs-type">tempoToDuration</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span>
+</span><span id="line-186"></span><span id="tempoToDuration"><span class="annot"><span class="annottext">tempoToDuration :: Tempo -&gt; Duration
+</span><a href="Music.Score.Meta.Tempo.html#tempoToDuration"><span class="hs-identifier hs-var hs-var">tempoToDuration</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span id="local-6989586621680594655"><span class="annot"><span class="annottext">x :: Duration
+</span><a href="#local-6989586621680594655"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680594655"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-187"></span><span>
+</span><span id="line-188"></span><span class="hs-comment">-- | Set the tempo of the given score.</span><span>
+</span><span id="line-189"></span><span id="local-6989586621680594654"><span class="annot"><a href="Music.Score.Meta.Tempo.html#tempo"><span class="hs-identifier hs-type">tempo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594654"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594654"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594654"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594654"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-190"></span><span id="tempo"><span class="annot"><span class="annottext">tempo :: Tempo -&gt; a -&gt; a
+</span><a href="Music.Score.Meta.Tempo.html#tempo"><span class="hs-identifier hs-var hs-var">tempo</span></a></span></span><span> </span><span id="local-6989586621680594653"><span class="annot"><span class="annottext">c :: Tempo
+</span><a href="#local-6989586621680594653"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621680594652"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680594652"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594652"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-191"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594652"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-192"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680594650"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680594650"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Span -&gt; Tempo -&gt; a -&gt; a
+forall a. HasMeta a =&gt; Span -&gt; Tempo -&gt; a -&gt; a
+</span><a href="Music.Score.Meta.Tempo.html#tempoDuring"><span class="hs-identifier hs-var">tempoDuring</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680594650"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Tempo
+</span><a href="#local-6989586621680594653"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680594652"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-193"></span><span>
+</span><span id="line-194"></span><span class="hs-comment">-- | Set the tempo of the given part of a score.</span><span>
+</span><span id="line-195"></span><span id="local-6989586621680594776"><span class="annot"><a href="Music.Score.Meta.Tempo.html#tempoDuring"><span class="hs-identifier hs-type">tempoDuring</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680594776"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594776"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680594776"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-196"></span><span id="tempoDuring"><span class="annot"><span class="annottext">tempoDuring :: Span -&gt; Tempo -&gt; a -&gt; a
+</span><a href="Music.Score.Meta.Tempo.html#tempoDuring"><span class="hs-identifier hs-var hs-var">tempoDuring</span></a></span></span><span> </span><span id="local-6989586621680594649"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680594649"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680594648"><span class="annot"><span class="annottext">c :: Tempo
+</span><a href="#local-6989586621680594648"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Event Tempo -&gt; a -&gt; a
+forall a b. (AttributeClass a, HasMeta b) =&gt; Event a -&gt; b -&gt; b
+</span><a href="Music.Score.Meta.html#addMetaNote"><span class="hs-identifier hs-var">addMetaNote</span></a></span><span> </span><span class="annot"><span class="annottext">(Event Tempo -&gt; a -&gt; a) -&gt; Event Tempo -&gt; a -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Getting (Event Tempo) (Span, Tempo) (Event Tempo)
+-&gt; (Span, Tempo) -&gt; Event Tempo
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting (Event Tempo) (Span, Tempo) (Event Tempo)
+forall a b. Iso (Span, a) (Span, b) (Event a) (Event b)
+</span><a href="Music.Time.Event.html#event"><span class="hs-identifier hs-var">event</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680594649"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Tempo
+</span><a href="#local-6989586621680594648"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-197"></span><span>
+</span><span id="line-198"></span><span class="hs-comment">{-
+inSpan' (view onsetAndOffset -&gt; (t,u)) x = t &lt;= x &amp;&amp; x &lt; u
+mkNote s x = view note (s, x)
+
+-- | Split a reactive into notes, as well as the values before and after the first/last update
+-- TODO fails if not positive
+-- TODO consolidate
+reactiveIn :: Span -&gt; Reactive a -&gt; [Note a]
+reactiveIn s r
+    | _duration s &lt;= 0 = error &quot;reactiveIn: Needs positive duration&quot;
+    | otherwise       = let r2 = trimR s (fmap optionFirst r)
+    in fmap (fmap $ fromJust . unOptionFirst) $ case updates r2 of
+        -- We have at least 2 value because of trim
+        (frl -&gt; ((t,x),[],(u,_))) -&gt; [view note (t &lt;-&gt; u, x)] -- one note
+        (frl -&gt; ((t0,x0), unzip -&gt; (tn,xn), (tl,_))) -&gt; let
+            times  = [t0] ++ tn
+            spans  = mapWithNext (\t mu -&gt; t &lt;-&gt; fromMaybe tl mu) times
+            values = [x0] ++ xn
+            in zipWith mkNote spans values
+
+renderTempo sc =
+    flip composed sc $ fmap renderTempoScore
+        $ tempoRegions (_era sc)
+        $ tempoRegions0 (_era sc)
+        $ getTempoChanges defTempo sc
+
+renderTempoTest :: Score a -&gt; [TempoRegion]
+renderTempoTest sc = id
+    $ tempoRegions (_era sc)
+    $ tempoRegions0 (_era sc)
+    $ getTempoChanges defTempo sc
+
+
+-- | Standard tempo
+--
+-- &gt; tempoToDuration defTempo == 1
+defTempo :: Tempo
+defTempo = metronome (1/1) 60
+
+getTempoChanges :: Tempo -&gt; Score a -&gt; Reactive Tempo
+getTempoChanges def = fmap (fromMaybe def . unOptionFirst) . fromMetaReactive (Nothing::Maybe Int) . (view meta)
+
+
+-- | Get all tempo regions for the given span.
+tempoRegions0 :: Span -&gt; Reactive Tempo -&gt; [TempoRegion0]
+tempoRegions0 s r = fmap f $ s `reactiveIn` r
+    where
+        f (view (from note) -&gt; (view delta -&gt; (t,u),x)) = TempoRegion0 t u (tempoToDuration x)
+
+tempoRegions :: Span -&gt; [TempoRegion0] -&gt; [TempoRegion]
+tempoRegions s = snd . List.mapAccumL f (s^.onset, s^.onset) -- XXX offset?
+    where
+        f (nt,st) (TempoRegion0 _ d x) = ((nt .+^ d, st .+^ (d*x)),
+            TempoRegion nt (nt .+^ d) st x
+            )
+
+
+
+
+
+-- | Return the sounding position of the given notated position, given its tempo region.
+--   Does nothing if the given point is outside the given region.
+renderTempoTime :: TempoRegion -&gt; Time -&gt; Time
+renderTempoTime (TempoRegion notRegOn notRegOff soRegOn str) t
+    | notRegOn &lt;= t &amp;&amp; t &lt; notRegOff = soRegOn .+^ (t .-. notRegOn) ^* str
+    | otherwise                      = t
+
+renderTempoTime' (TempoRegion notRegOn notRegOff soRegOn str) t  = soRegOn .+^ ((t .-. notRegOn) ^* str)
+
+renderTempoSpan :: TempoRegion -&gt; Span -&gt; Span
+renderTempoSpan tr = over onsetAndOffset $ \(t,u) -&gt;
+    if inSpan' (tempoRegionNotated tr) t
+        then (renderTempoTime' tr t, renderTempoTime' tr u)
+        else (t, u)
+
+-- TODO use lens
+renderTempoScore :: TempoRegion -&gt; Score a -&gt; Score a
+renderTempoScore tr = over notes $ fmap $ over (from note . _1) $ renderTempoSpan tr
+
+
+data TempoRegion0 =
+    TempoRegion0 {
+        notatedOnset0    :: Time,
+        notatedDuration0 :: Duration,
+        stretching0      :: Duration
+    }
+    deriving (Eq, Ord, Show)
+
+data TempoRegion =
+    TempoRegion {
+        notatedOnset  :: Time,           -- same
+        notatedOffset :: Time,          -- notOns + notDur
+        soundingOnset :: Time,          -- sum of previous sounding durations
+        stretching    :: Duration          -- same
+    }
+    deriving (Eq, Ord, Show)
+
+tempoRegionNotated (TempoRegion t u _ _) = t &lt;-&gt; u
+
+frl []  = error &quot;frl: No value&quot;
+frl [x] = error &quot;frl: Just one value&quot;
+frl xs  = (head xs, (tail.init) xs, last xs)
+
+-}</span><span>
+</span><span id="line-302"></span><span>
+</span><span id="line-303"></span><span class="hs-comment">{-
+    A &quot;tempo region&quot; is a consecutive span in which the tempo is constant (obtained by @renderR tempo@)
+
+    Tempo region:
+        - Its offset is the sum of the duration of all the previous regions
+        - Its scaling is simply (tempoToDuration tempo)
+        - Its duration is (scaling `stretch` notatedDuration)
+
+    To &quot;render tempo&quot; for a time point:
+        - Its position is the offset in its tempo region + the offset of the tempo region
+
+    To &quot;render tempo&quot; for a span:
+        - Its onset and offset are rendered separately
+        - Its duration is (offset - onset) as per the duration law
+
+
+
+
+-}</span><span>
+</span><span id="line-322"></span><span>
+</span><span id="line-323"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#presto"><span class="hs-identifier hs-type">presto</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span>
+</span><span id="line-324"></span><span>
+</span><span id="line-325"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#allegro"><span class="hs-identifier hs-type">allegro</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span>
+</span><span id="line-326"></span><span>
+</span><span id="line-327"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#allegretto"><span class="hs-identifier hs-type">allegretto</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span>
+</span><span id="line-328"></span><span>
+</span><span id="line-329"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#moderato"><span class="hs-identifier hs-type">moderato</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span>
+</span><span id="line-330"></span><span>
+</span><span id="line-331"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#andante"><span class="hs-identifier hs-type">andante</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span>
+</span><span id="line-332"></span><span>
+</span><span id="line-333"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#adagio"><span class="hs-identifier hs-type">adagio</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span>
+</span><span id="line-334"></span><span>
+</span><span id="line-335"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#largo"><span class="hs-identifier hs-type">largo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span>
+</span><span id="line-336"></span><span>
+</span><span id="line-337"></span><span class="annot"><a href="Music.Score.Meta.Tempo.html#lento"><span class="hs-identifier hs-type">lento</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html#Tempo"><span class="hs-identifier hs-type">Tempo</span></a></span><span>
+</span><span id="line-338"></span><span>
+</span><span id="line-339"></span><span class="hs-comment">-- presto     = metronome (1/4) 125</span><span>
+</span><span id="line-340"></span><span class="hs-comment">-- allegro    = metronome (1/4) 115</span><span>
+</span><span id="line-341"></span><span class="hs-comment">-- allegretto = metronome (1/4) 105</span><span>
+</span><span id="line-342"></span><span class="hs-comment">-- moderato   = metronome (1/4) 95</span><span>
+</span><span id="line-343"></span><span class="hs-comment">-- andante    = metronome (1/4) 85</span><span>
+</span><span id="line-344"></span><span class="hs-comment">-- adagio     = metronome (1/4) 65</span><span>
+</span><span id="line-345"></span><span class="hs-comment">-- largo      = metronome (1/4) 55</span><span>
+</span><span id="line-346"></span><span class="hs-comment">-- lento      = metronome (1/4) 45</span><span>
+</span><span id="line-347"></span><span>
+</span><span id="line-348"></span><span id="presto"><span class="annot"><span class="annottext">presto :: Tempo
+</span><a href="Music.Score.Meta.Tempo.html#presto"><span class="hs-identifier hs-var hs-var">presto</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-var">metronome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-number">140</span></span><span>
+</span><span id="line-349"></span><span>
+</span><span id="line-350"></span><span id="allegro"><span class="annot"><span class="annottext">allegro :: Tempo
+</span><a href="Music.Score.Meta.Tempo.html#allegro"><span class="hs-identifier hs-var hs-var">allegro</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-var">metronome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-number">128</span></span><span>
+</span><span id="line-351"></span><span>
+</span><span id="line-352"></span><span id="allegretto"><span class="annot"><span class="annottext">allegretto :: Tempo
+</span><a href="Music.Score.Meta.Tempo.html#allegretto"><span class="hs-identifier hs-var hs-var">allegretto</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-var">metronome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-number">118</span></span><span>
+</span><span id="line-353"></span><span>
+</span><span id="line-354"></span><span id="moderato"><span class="annot"><span class="annottext">moderato :: Tempo
+</span><a href="Music.Score.Meta.Tempo.html#moderato"><span class="hs-identifier hs-var hs-var">moderato</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-var">metronome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-number">98</span></span><span>
+</span><span id="line-355"></span><span>
+</span><span id="line-356"></span><span id="andante"><span class="annot"><span class="annottext">andante :: Tempo
+</span><a href="Music.Score.Meta.Tempo.html#andante"><span class="hs-identifier hs-var hs-var">andante</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-var">metronome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-number">84</span></span><span>
+</span><span id="line-357"></span><span>
+</span><span id="line-358"></span><span id="adagio"><span class="annot"><span class="annottext">adagio :: Tempo
+</span><a href="Music.Score.Meta.Tempo.html#adagio"><span class="hs-identifier hs-var hs-var">adagio</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-var">metronome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-number">64</span></span><span>
+</span><span id="line-359"></span><span>
+</span><span id="line-360"></span><span id="largo"><span class="annot"><span class="annottext">largo :: Tempo
+</span><a href="Music.Score.Meta.Tempo.html#largo"><span class="hs-identifier hs-var hs-var">largo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-var">metronome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-number">48</span></span><span>
+</span><span id="line-361"></span><span>
+</span><span id="line-362"></span><span id="lento"><span class="annot"><span class="annottext">lento :: Tempo
+</span><a href="Music.Score.Meta.Tempo.html#lento"><span class="hs-identifier hs-var hs-var">lento</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Tempo
+</span><a href="Music.Score.Meta.Tempo.html#metronome"><span class="hs-identifier hs-var">metronome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-number">42</span></span><span>
+</span><span id="line-363"></span></pre></body></html>

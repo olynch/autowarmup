@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- | Common pitch.</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Pitch.Common.Pitch</span><span>
+</span><span id="line-5"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Accidentals</span></span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#Accidental"><span class="hs-identifier">Accidental</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#natural"><span class="hs-identifier">natural</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#flat"><span class="hs-identifier">flat</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#sharp"><span class="hs-identifier">sharp</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#doubleFlat"><span class="hs-identifier">doubleFlat</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#doubleSharp"><span class="hs-identifier">doubleSharp</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Inspecting accidentals</span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isNatural"><span class="hs-identifier">isNatural</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isFlattened"><span class="hs-identifier">isFlattened</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isSharpened"><span class="hs-identifier">isSharpened</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#isStandardAccidental"><span class="hs-identifier">isStandardAccidental</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Name</span></span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#Name"><span class="hs-identifier">Name</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Pitch</span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#Pitch"><span class="hs-identifier">Pitch</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#mkPitch"><span class="hs-identifier">mkPitch</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#name"><span class="hs-identifier">name</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#accidental"><span class="hs-identifier">accidental</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Diatonic and chromatic pitch</span></span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#upDiatonicP"><span class="hs-identifier">upDiatonicP</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#downDiatonicP"><span class="hs-identifier">downDiatonicP</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#upChromaticP"><span class="hs-identifier">upChromaticP</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#downChromaticP"><span class="hs-identifier">downChromaticP</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#invertDiatonicallyP"><span class="hs-identifier">invertDiatonicallyP</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#invertChromaticallyP"><span class="hs-identifier">invertChromaticallyP</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html"><span class="hs-identifier">Music.Pitch.Common.Internal</span></a></span><span>
+</span><span id="line-39"></span></pre></body></html>

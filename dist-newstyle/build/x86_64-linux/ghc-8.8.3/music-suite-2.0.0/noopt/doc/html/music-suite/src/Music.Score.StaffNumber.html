@@ -1,0 +1,697 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DefaultSignatures #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-matches
+  -fno-warn-unused-imports #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.StaffNumber</span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * StaffNumber</span></span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier">HasStaffNumber</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Music.Score.StaffNumber.html#staffNumber"><span class="hs-identifier">staffNumber</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** StaffNumber note transformer</span></span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier">StaffNumberT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Score.StaffNumber.html#runStaffNumberT"><span class="hs-identifier">runStaffNumberT</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Comonad</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html"><span class="hs-identifier">Data.Functor.Couple</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Monoid</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Ratio</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Word</span></a></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html"><span class="hs-identifier">Music.Pitch.Alterable</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html"><span class="hs-identifier">Music.Pitch.Alterable</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html"><span class="hs-identifier">Music.Pitch.Augmentable</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html"><span class="hs-identifier">Music.Pitch.Augmentable</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html"><span class="hs-identifier">Music.Score.Articulation</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html"><span class="hs-identifier">Music.Score.Dynamics</span></a></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html"><span class="hs-identifier">Music.Score.Harmonics</span></a></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.html"><span class="hs-identifier">Music.Score.Meta</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Phrases.html"><span class="hs-identifier">Music.Score.Phrases</span></a></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html"><span class="hs-identifier">Music.Score.Pitch</span></a></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Slide.html"><span class="hs-identifier">Music.Score.Slide</span></a></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Text.html"><span class="hs-identifier">Music.Score.Text</span></a></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Ties.html"><span class="hs-identifier">Music.Score.Ties</span></a></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Numeric.Natural</span></a></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- Class of types with a notion of staff number.</span><span>
+</span><span id="line-56"></span><span class="hs-comment">--</span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- ==== Laws</span><span>
+</span><span id="line-58"></span><span class="hs-comment">--</span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- [/set-set/]</span><span>
+</span><span id="line-60"></span><span class="hs-comment">--</span><span>
+</span><span id="line-61"></span><span class="hs-comment">--    @'setStaffNumber' n ('setStaffNumber' n x) = 'setStaffNumber' n x@</span><span>
+</span><span id="line-62"></span><span class="hs-keyword">class</span><span> </span><span id="HasStaffNumber"><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-var">HasStaffNumber</span></a></span></span><span> </span><span id="local-6989586621680598577"><span class="annot"><a href="#local-6989586621680598577"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span>  </span><span id="setStaffNumber"><span class="annot"><a href="Music.Score.StaffNumber.html#setStaffNumber"><span class="hs-identifier hs-type">setStaffNumber</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Natural</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680598577"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680598577"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span>  </span><span class="hs-keyword">default</span><span> </span><span id="setStaffNumber"><span class="annot"><a href="Music.Score.StaffNumber.html#setStaffNumber"><span class="hs-identifier hs-type">setStaffNumber</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680598301"><span class="annot"><a href="#local-6989586621680598301"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621680598300"><span class="annot"><a href="#local-6989586621680598300"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680598577"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">~</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598301"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598300"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598301"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598300"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Natural</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680598577"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680598577"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-67"></span><span>  </span><span id="local-6989586621680598299"><span class="annot"><a href="Music.Score.StaffNumber.html#setStaffNumber"><span class="hs-identifier hs-var hs-var">setStaffNumber</span></a></span><span> </span><span id="local-6989586621680598298"><span class="annot"><span class="annottext">s :: Natural
+</span><a href="#local-6989586621680598298"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(b -&gt; b) -&gt; f b -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Natural -&gt; b -&gt; b
+forall a. HasStaffNumber a =&gt; Natural -&gt; a -&gt; a
+</span><a href="Music.Score.StaffNumber.html#setStaffNumber"><span class="hs-identifier hs-var">setStaffNumber</span></a></span><span> </span><span class="annot"><span class="annottext">Natural
+</span><a href="#local-6989586621680598298"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span id="local-6989586621680598296"><span id="local-6989586621680598297"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680598294"><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598297"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680598296"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680598297"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span id="local-6989586621680598291"><span id="local-6989586621680598292"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680598289"><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598292"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598291"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598292"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span id="local-6989586621680598288"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680598286"><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598288"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680598288"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span id="local-6989586621680598285"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680598283"><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598285"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598285"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span id="local-6989586621680598282"><span class="annot"><a href="Music.Score.StaffNumber.html#staffNumber"><span class="hs-identifier hs-type">staffNumber</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598282"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Natural</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680598282"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680598282"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-78"></span><span id="staffNumber"><span class="annot"><span class="annottext">staffNumber :: Natural -&gt; a -&gt; a
+</span><a href="Music.Score.StaffNumber.html#staffNumber"><span class="hs-identifier hs-var hs-var">staffNumber</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Natural -&gt; a -&gt; a
+forall a. HasStaffNumber a =&gt; Natural -&gt; a -&gt; a
+</span><a href="Music.Score.StaffNumber.html#setStaffNumber"><span class="hs-identifier hs-var">setStaffNumber</span></a></span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="hs-keyword">newtype</span><span> </span><span id="StaffNumberT"><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-var">StaffNumberT</span></a></span></span><span> </span><span id="local-6989586621680598431"><span class="annot"><a href="#local-6989586621680598431"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="StaffNumberT"><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-var">StaffNumberT</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getStaffNumberT"><span class="annot"><span class="annottext">StaffNumberT a -&gt; Couple (First Natural) a
+</span><a href="Music.Score.StaffNumber.html#getStaffNumberT"><span class="hs-identifier hs-var hs-var">getStaffNumberT</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">First</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Natural</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680598431"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-81"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680598276"><span id="local-6989586621680598278"><span class="annot"><span class="annottext">StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+(StaffNumberT a -&gt; StaffNumberT a -&gt; Bool)
+-&gt; (StaffNumberT a -&gt; StaffNumberT a -&gt; Bool)
+-&gt; Eq (StaffNumberT a)
+forall a. Eq a =&gt; StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+== :: StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+$c== :: forall a. Eq a =&gt; StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680598269"><span id="local-6989586621680598271"><span id="local-6989586621680598273"><span class="annot"><span class="annottext">Int -&gt; StaffNumberT a -&gt; ShowS
+[StaffNumberT a] -&gt; ShowS
+StaffNumberT a -&gt; String
+(Int -&gt; StaffNumberT a -&gt; ShowS)
+-&gt; (StaffNumberT a -&gt; String)
+-&gt; ([StaffNumberT a] -&gt; ShowS)
+-&gt; Show (StaffNumberT a)
+forall a. Show a =&gt; Int -&gt; StaffNumberT a -&gt; ShowS
+forall a. Show a =&gt; [StaffNumberT a] -&gt; ShowS
+forall a. Show a =&gt; StaffNumberT a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [StaffNumberT a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [StaffNumberT a] -&gt; ShowS
+show :: StaffNumberT a -&gt; String
+$cshow :: forall a. Show a =&gt; StaffNumberT a -&gt; String
+showsPrec :: Int -&gt; StaffNumberT a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; StaffNumberT a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680598253"><span id="local-6989586621680598255"><span id="local-6989586621680598257"><span id="local-6989586621680598259"><span id="local-6989586621680598261"><span id="local-6989586621680598263"><span id="local-6989586621680598265"><span class="annot"><span class="annottext">Eq (StaffNumberT a)
+Eq (StaffNumberT a) =&gt;
+(StaffNumberT a -&gt; StaffNumberT a -&gt; Ordering)
+-&gt; (StaffNumberT a -&gt; StaffNumberT a -&gt; Bool)
+-&gt; (StaffNumberT a -&gt; StaffNumberT a -&gt; Bool)
+-&gt; (StaffNumberT a -&gt; StaffNumberT a -&gt; Bool)
+-&gt; (StaffNumberT a -&gt; StaffNumberT a -&gt; Bool)
+-&gt; (StaffNumberT a -&gt; StaffNumberT a -&gt; StaffNumberT a)
+-&gt; (StaffNumberT a -&gt; StaffNumberT a -&gt; StaffNumberT a)
+-&gt; Ord (StaffNumberT a)
+StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+StaffNumberT a -&gt; StaffNumberT a -&gt; Ordering
+StaffNumberT a -&gt; StaffNumberT a -&gt; StaffNumberT a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (StaffNumberT a)
+forall a. Ord a =&gt; StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+forall a. Ord a =&gt; StaffNumberT a -&gt; StaffNumberT a -&gt; Ordering
+forall a.
+Ord a =&gt;
+StaffNumberT a -&gt; StaffNumberT a -&gt; StaffNumberT a
+min :: StaffNumberT a -&gt; StaffNumberT a -&gt; StaffNumberT a
+$cmin :: forall a.
+Ord a =&gt;
+StaffNumberT a -&gt; StaffNumberT a -&gt; StaffNumberT a
+max :: StaffNumberT a -&gt; StaffNumberT a -&gt; StaffNumberT a
+$cmax :: forall a.
+Ord a =&gt;
+StaffNumberT a -&gt; StaffNumberT a -&gt; StaffNumberT a
+&gt;= :: StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+&gt; :: StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+&lt;= :: StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+&lt; :: StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; StaffNumberT a -&gt; StaffNumberT a -&gt; Bool
+compare :: StaffNumberT a -&gt; StaffNumberT a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; StaffNumberT a -&gt; StaffNumberT a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (StaffNumberT a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680598248"><span id="local-6989586621680598250"><span class="annot"><span class="annottext">a -&gt; StaffNumberT b -&gt; StaffNumberT a
+(a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+(forall a b. (a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b)
+-&gt; (forall a b. a -&gt; StaffNumberT b -&gt; StaffNumberT a)
+-&gt; Functor StaffNumberT
+forall a b. a -&gt; StaffNumberT b -&gt; StaffNumberT a
+forall a b. (a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; StaffNumberT b -&gt; StaffNumberT a
+$c&lt;$ :: forall a b. a -&gt; StaffNumberT b -&gt; StaffNumberT a
+fmap :: (a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+$cfmap :: forall a b. (a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680598213"><span id="local-6989586621680598215"><span id="local-6989586621680598217"><span id="local-6989586621680598219"><span id="local-6989586621680598221"><span id="local-6989586621680598223"><span id="local-6989586621680598225"><span id="local-6989586621680598227"><span id="local-6989586621680598229"><span id="local-6989586621680598231"><span id="local-6989586621680598233"><span id="local-6989586621680598235"><span id="local-6989586621680598237"><span id="local-6989586621680598239"><span id="local-6989586621680598241"><span id="local-6989586621680598243"><span id="local-6989586621680598245"><span class="annot"><span class="annottext">a -&gt; StaffNumberT a -&gt; Bool
+StaffNumberT m -&gt; m
+StaffNumberT a -&gt; [a]
+StaffNumberT a -&gt; Bool
+StaffNumberT a -&gt; Int
+StaffNumberT a -&gt; a
+StaffNumberT a -&gt; a
+StaffNumberT a -&gt; a
+StaffNumberT a -&gt; a
+(a -&gt; m) -&gt; StaffNumberT a -&gt; m
+(a -&gt; m) -&gt; StaffNumberT a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+(a -&gt; a -&gt; a) -&gt; StaffNumberT a -&gt; a
+(a -&gt; a -&gt; a) -&gt; StaffNumberT a -&gt; a
+(forall m. Monoid m =&gt; StaffNumberT m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; StaffNumberT a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; StaffNumberT a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; StaffNumberT a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; StaffNumberT a -&gt; a)
+-&gt; (forall a. StaffNumberT a -&gt; [a])
+-&gt; (forall a. StaffNumberT a -&gt; Bool)
+-&gt; (forall a. StaffNumberT a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; StaffNumberT a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; StaffNumberT a -&gt; a)
+-&gt; (forall a. Ord a =&gt; StaffNumberT a -&gt; a)
+-&gt; (forall a. Num a =&gt; StaffNumberT a -&gt; a)
+-&gt; (forall a. Num a =&gt; StaffNumberT a -&gt; a)
+-&gt; Foldable StaffNumberT
+forall a. Eq a =&gt; a -&gt; StaffNumberT a -&gt; Bool
+forall a. Num a =&gt; StaffNumberT a -&gt; a
+forall a. Ord a =&gt; StaffNumberT a -&gt; a
+forall m. Monoid m =&gt; StaffNumberT m -&gt; m
+forall a. StaffNumberT a -&gt; Bool
+forall a. StaffNumberT a -&gt; Int
+forall a. StaffNumberT a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; StaffNumberT a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; StaffNumberT a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: StaffNumberT a -&gt; a
+$cproduct :: forall a. Num a =&gt; StaffNumberT a -&gt; a
+sum :: StaffNumberT a -&gt; a
+$csum :: forall a. Num a =&gt; StaffNumberT a -&gt; a
+minimum :: StaffNumberT a -&gt; a
+$cminimum :: forall a. Ord a =&gt; StaffNumberT a -&gt; a
+maximum :: StaffNumberT a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; StaffNumberT a -&gt; a
+elem :: a -&gt; StaffNumberT a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; StaffNumberT a -&gt; Bool
+length :: StaffNumberT a -&gt; Int
+$clength :: forall a. StaffNumberT a -&gt; Int
+null :: StaffNumberT a -&gt; Bool
+$cnull :: forall a. StaffNumberT a -&gt; Bool
+toList :: StaffNumberT a -&gt; [a]
+$ctoList :: forall a. StaffNumberT a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; StaffNumberT a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; StaffNumberT a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; StaffNumberT a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; StaffNumberT a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; StaffNumberT a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; StaffNumberT a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; StaffNumberT a -&gt; m
+foldMap :: (a -&gt; m) -&gt; StaffNumberT a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; StaffNumberT a -&gt; m
+fold :: StaffNumberT m -&gt; m
+$cfold :: forall m. Monoid m =&gt; StaffNumberT m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680598202"><span id="local-6989586621680598204"><span id="local-6989586621680598206"><span id="local-6989586621680598208"><span class="annot"><span class="annottext">Functor StaffNumberT
+Foldable StaffNumberT
+(Functor StaffNumberT, Foldable StaffNumberT) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; StaffNumberT a -&gt; f (StaffNumberT b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    StaffNumberT (f a) -&gt; f (StaffNumberT a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; StaffNumberT a -&gt; m (StaffNumberT b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    StaffNumberT (m a) -&gt; m (StaffNumberT a))
+-&gt; Traversable StaffNumberT
+(a -&gt; f b) -&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a.
+Monad m =&gt;
+StaffNumberT (m a) -&gt; m (StaffNumberT a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+StaffNumberT (f a) -&gt; f (StaffNumberT a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; StaffNumberT a -&gt; m (StaffNumberT b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+sequence :: StaffNumberT (m a) -&gt; m (StaffNumberT a)
+$csequence :: forall (m :: * -&gt; *) a.
+Monad m =&gt;
+StaffNumberT (m a) -&gt; m (StaffNumberT a)
+mapM :: (a -&gt; m b) -&gt; StaffNumberT a -&gt; m (StaffNumberT b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; StaffNumberT a -&gt; m (StaffNumberT b)
+sequenceA :: StaffNumberT (f a) -&gt; f (StaffNumberT a)
+$csequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+StaffNumberT (f a) -&gt; f (StaffNumberT a)
+traverse :: (a -&gt; f b) -&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+$cp2Traversable :: Foldable StaffNumberT
+$cp1Traversable :: Functor StaffNumberT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680598190"><span id="local-6989586621680598192"><span id="local-6989586621680598194"><span id="local-6989586621680598196"><span id="local-6989586621680598198"><span class="annot"><span class="annottext">Functor StaffNumberT
+a -&gt; StaffNumberT a
+Functor StaffNumberT =&gt;
+(forall a. a -&gt; StaffNumberT a)
+-&gt; (forall a b.
+    StaffNumberT (a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c)
+    -&gt; StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT c)
+-&gt; (forall a b. StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT b)
+-&gt; (forall a b. StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT a)
+-&gt; Applicative StaffNumberT
+StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT b
+StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT a
+StaffNumberT (a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+(a -&gt; b -&gt; c) -&gt; StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT c
+forall a. a -&gt; StaffNumberT a
+forall a b. StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT a
+forall a b. StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT b
+forall a b.
+StaffNumberT (a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+forall a b c.
+(a -&gt; b -&gt; c) -&gt; StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT a
+$c&lt;* :: forall a b. StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT a
+*&gt; :: StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT b
+$c*&gt; :: forall a b. StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT c
+$cliftA2 :: forall a b c.
+(a -&gt; b -&gt; c) -&gt; StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT c
+&lt;*&gt; :: StaffNumberT (a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+$c&lt;*&gt; :: forall a b.
+StaffNumberT (a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+pure :: a -&gt; StaffNumberT a
+$cpure :: forall a. a -&gt; StaffNumberT a
+$cp1Applicative :: Functor StaffNumberT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680598182"><span id="local-6989586621680598184"><span id="local-6989586621680598186"><span class="annot"><span class="annottext">Applicative StaffNumberT
+a -&gt; StaffNumberT a
+Applicative StaffNumberT =&gt;
+(forall a b.
+ StaffNumberT a -&gt; (a -&gt; StaffNumberT b) -&gt; StaffNumberT b)
+-&gt; (forall a b. StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT b)
+-&gt; (forall a. a -&gt; StaffNumberT a)
+-&gt; Monad StaffNumberT
+StaffNumberT a -&gt; (a -&gt; StaffNumberT b) -&gt; StaffNumberT b
+StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT b
+forall a. a -&gt; StaffNumberT a
+forall a b. StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT b
+forall a b.
+StaffNumberT a -&gt; (a -&gt; StaffNumberT b) -&gt; StaffNumberT b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; StaffNumberT a
+$creturn :: forall a. a -&gt; StaffNumberT a
+&gt;&gt; :: StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT b
+$c&gt;&gt; :: forall a b. StaffNumberT a -&gt; StaffNumberT b -&gt; StaffNumberT b
+&gt;&gt;= :: StaffNumberT a -&gt; (a -&gt; StaffNumberT b) -&gt; StaffNumberT b
+$c&gt;&gt;= :: forall a b.
+StaffNumberT a -&gt; (a -&gt; StaffNumberT b) -&gt; StaffNumberT b
+$cp1Monad :: Applicative StaffNumberT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680598174"><span id="local-6989586621680598176"><span id="local-6989586621680598178"><span class="annot"><span class="annottext">Functor StaffNumberT
+Functor StaffNumberT =&gt;
+(forall a. StaffNumberT a -&gt; a)
+-&gt; (forall a. StaffNumberT a -&gt; StaffNumberT (StaffNumberT a))
+-&gt; (forall a b.
+    (StaffNumberT a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b)
+-&gt; Comonad StaffNumberT
+StaffNumberT a -&gt; a
+StaffNumberT a -&gt; StaffNumberT (StaffNumberT a)
+(StaffNumberT a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+forall a. StaffNumberT a -&gt; a
+forall a. StaffNumberT a -&gt; StaffNumberT (StaffNumberT a)
+forall a b.
+(StaffNumberT a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (StaffNumberT a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+$cextend :: forall a b.
+(StaffNumberT a -&gt; b) -&gt; StaffNumberT a -&gt; StaffNumberT b
+duplicate :: StaffNumberT a -&gt; StaffNumberT (StaffNumberT a)
+$cduplicate :: forall a. StaffNumberT a -&gt; StaffNumberT (StaffNumberT a)
+extract :: StaffNumberT a -&gt; a
+$cextract :: forall a. StaffNumberT a -&gt; a
+$cp1Comonad :: Functor StaffNumberT
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span class="hs-comment">--</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- We use Word instead of Int to get (mempty = Max 0), as (Max.mempty = Max minBound)</span><span>
+</span><span id="line-85"></span><span class="hs-comment">-- Preferably we would use Natural but unfortunately this is not an instance of Bounded</span><span>
+</span><span id="line-86"></span><span class="hs-comment">--</span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span id="local-6989586621680598172"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598172"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598172"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">First</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Natural</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680598172"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span>  </span><span id="local-6989586621680598169"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (StaffNumberT a)) (f (Unwrapped (StaffNumberT a)))
+-&gt; p (StaffNumberT a) (f (StaffNumberT a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(StaffNumberT a -&gt; Couple (First Natural) a)
+-&gt; (Couple (First Natural) a -&gt; StaffNumberT a)
+-&gt; Iso
+     (StaffNumberT a)
+     (StaffNumberT a)
+     (Couple (First Natural) a)
+     (Couple (First Natural) a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">StaffNumberT a -&gt; Couple (First Natural) a
+forall a. StaffNumberT a -&gt; Couple (First Natural) a
+</span><a href="Music.Score.StaffNumber.html#getStaffNumberT"><span class="hs-identifier hs-var hs-var">getStaffNumberT</span></a></span><span> </span><span class="annot"><span class="annottext">Couple (First Natural) a -&gt; StaffNumberT a
+forall a. Couple (First Natural) a -&gt; StaffNumberT a
+</span><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-var">StaffNumberT</span></a></span></span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span id="local-6989586621680598165"><span id="local-6989586621680598166"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598166"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598165"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span id="local-6989586621680598162"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#HasStaffNumber"><span class="hs-identifier hs-type">HasStaffNumber</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598162"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-97"></span><span>  </span><span id="local-6989586621680598160"><span class="annot"><span class="annottext">setStaffNumber :: Natural -&gt; StaffNumberT a -&gt; StaffNumberT a
+</span><a href="#local-6989586621680598160"><span class="hs-identifier hs-var hs-var hs-var hs-var">setStaffNumber</span></a></span></span><span> </span><span id="local-6989586621680598159"><span class="annot"><span class="annottext">n :: Natural
+</span><a href="#local-6989586621680598159"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter
+  (StaffNumberT a) (StaffNumberT a) (First Natural) (First Natural)
+-&gt; First Natural -&gt; StaffNumberT a -&gt; StaffNumberT a
+forall s t a b. ASetter s t a b -&gt; b -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">set</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Couple (First Natural) a -&gt; Identity (Couple (First Natural) a))
+-&gt; StaffNumberT a -&gt; Identity (StaffNumberT a)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (First Natural) a -&gt; Identity (Couple (First Natural) a))
+ -&gt; StaffNumberT a -&gt; Identity (StaffNumberT a))
+-&gt; ((First Natural -&gt; Identity (First Natural))
+    -&gt; Couple (First Natural) a -&gt; Identity (Couple (First Natural) a))
+-&gt; ASetter
+     (StaffNumberT a) (StaffNumberT a) (First Natural) (First Natural)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">((First Natural, a) -&gt; Identity (First Natural, a))
+-&gt; Couple (First Natural) a -&gt; Identity (Couple (First Natural) a)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">(((First Natural, a) -&gt; Identity (First Natural, a))
+ -&gt; Couple (First Natural) a -&gt; Identity (Couple (First Natural) a))
+-&gt; ((First Natural -&gt; Identity (First Natural))
+    -&gt; (First Natural, a) -&gt; Identity (First Natural, a))
+-&gt; (First Natural -&gt; Identity (First Natural))
+-&gt; Couple (First Natural) a
+-&gt; Identity (Couple (First Natural) a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(First Natural -&gt; Identity (First Natural))
+-&gt; (First Natural, a) -&gt; Identity (First Natural, a)
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Natural -&gt; First Natural
+forall a. Maybe a -&gt; First a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">First</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Natural -&gt; First Natural) -&gt; Maybe Natural -&gt; First Natural
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Natural -&gt; Maybe Natural
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">Natural
+</span><a href="#local-6989586621680598159"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span class="hs-comment">-- Lifted instances</span><span>
+</span><span id="line-100"></span><span id="local-6989586621680598139"><span id="local-6989586621680598141"><span id="local-6989586621680598143"><span id="local-6989586621680598145"><span id="local-6989586621680598147"><span id="local-6989586621680598149"><span id="local-6989586621680598151"><span id="local-6989586621680598153"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598153"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598153"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span id="local-6989586621680598130"><span id="local-6989586621680598132"><span id="local-6989586621680598134"><span id="local-6989586621680598137"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598137"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598137"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span id="local-6989586621680598083"><span id="local-6989586621680598085"><span id="local-6989586621680598087"><span id="local-6989586621680598089"><span id="local-6989586621680598091"><span id="local-6989586621680598093"><span id="local-6989586621680598095"><span id="local-6989586621680598097"><span id="local-6989586621680598099"><span id="local-6989586621680598101"><span id="local-6989586621680598103"><span id="local-6989586621680598105"><span id="local-6989586621680598107"><span id="local-6989586621680598109"><span id="local-6989586621680598111"><span id="local-6989586621680598113"><span id="local-6989586621680598115"><span id="local-6989586621680598117"><span id="local-6989586621680598119"><span id="local-6989586621680598121"><span id="local-6989586621680598123"><span id="local-6989586621680598125"><span id="local-6989586621680598128"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598128"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598128"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span id="local-6989586621680598065"><span id="local-6989586621680598067"><span id="local-6989586621680598069"><span id="local-6989586621680598071"><span id="local-6989586621680598073"><span id="local-6989586621680598075"><span id="local-6989586621680598077"><span id="local-6989586621680598079"><span id="local-6989586621680598081"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598081"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598081"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span id="local-6989586621680598059"><span id="local-6989586621680598061"><span id="local-6989586621680598063"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598063"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598063"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span id="local-6989586621680598053"><span id="local-6989586621680598057"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598057"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598057"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598057"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598057"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span id="local-6989586621680598035"><span id="local-6989586621680598037"><span id="local-6989586621680598039"><span id="local-6989586621680598041"><span id="local-6989586621680598043"><span id="local-6989586621680598045"><span id="local-6989586621680598047"><span id="local-6989586621680598051"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598051"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598051"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598051"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598051"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span id="local-6989586621680598031"><span id="local-6989586621680598033"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598033"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598033"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span id="local-6989586621680598027"><span id="local-6989586621680598029"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598029"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598029"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span id="local-6989586621680598019"><span id="local-6989586621680598021"><span id="local-6989586621680598023"><span id="local-6989586621680598025"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598025"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598025"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span id="local-6989586621680598011"><span id="local-6989586621680598013"><span id="local-6989586621680598015"><span id="local-6989586621680598017"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598017"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598017"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span id="local-6989586621680598005"><span id="local-6989586621680598007"><span id="local-6989586621680598009"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598009"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598009"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span id="local-6989586621680597995"><span id="local-6989586621680597997"><span id="local-6989586621680597999"><span id="local-6989586621680598001"><span id="local-6989586621680598003"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Slide.html#HasSlide"><span class="hs-identifier hs-type">HasSlide</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598003"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Slide.html#HasSlide"><span class="hs-identifier hs-type">HasSlide</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680598003"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span id="local-6989586621680597991"><span id="local-6989586621680597993"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597993"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597993"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span id="local-6989586621680597987"><span id="local-6989586621680597989"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597989"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597989"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span><span id="local-6989586621680597981"><span id="local-6989586621680597983"><span id="local-6989586621680597985"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html#Alterable"><span class="hs-identifier hs-type">Alterable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597985"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html#Alterable"><span class="hs-identifier hs-type">Alterable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597985"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-131"></span><span>
+</span><span id="line-132"></span><span id="local-6989586621680597975"><span id="local-6989586621680597977"><span id="local-6989586621680597979"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html#Augmentable"><span class="hs-identifier hs-type">Augmentable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597979"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html#Augmentable"><span class="hs-identifier hs-type">Augmentable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597979"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Pitch"><span class="annot"><a href="Music.Score.Pitch.html#Pitch"><span class="hs-identifier hs-var">Pitch</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span id="local-6989586621680597973"><span class="annot"><a href="#local-6989586621680597973"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html#Pitch"><span class="hs-identifier hs-type">Pitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597973"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-135"></span><span>
+</span><span id="line-136"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="SetPitch"><span class="annot"><a href="Music.Score.Pitch.html#SetPitch"><span class="hs-identifier hs-var">SetPitch</span></a></span></span><span> </span><span id="local-6989586621680597972"><span class="annot"><a href="#local-6989586621680597972"><span class="hs-identifier hs-type hs-type">g</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span id="local-6989586621680597971"><span class="annot"><a href="#local-6989586621680597971"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Pitch.html#SetPitch"><span class="hs-identifier hs-type">SetPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597972"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597971"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="GetDynamic"><span class="annot"><a href="Music.Score.Dynamics.html#GetDynamic"><span class="hs-identifier hs-var">GetDynamic</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span id="local-6989586621680597970"><span class="annot"><a href="#local-6989586621680597970"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#GetDynamic"><span class="hs-identifier hs-type">GetDynamic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597970"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="SetDynamic"><span class="annot"><a href="Music.Score.Dynamics.html#SetDynamic"><span class="hs-identifier hs-var">SetDynamic</span></a></span></span><span> </span><span id="local-6989586621680597968"><span class="annot"><a href="#local-6989586621680597968"><span class="hs-identifier hs-type hs-type">g</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span id="local-6989586621680597967"><span class="annot"><a href="#local-6989586621680597967"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Dynamics.html#SetDynamic"><span class="hs-identifier hs-type">SetDynamic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597968"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597967"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Articulation"><span class="annot"><a href="Music.Score.Articulation.html#Articulation"><span class="hs-identifier hs-var">Articulation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span id="local-6989586621680597966"><span class="annot"><a href="#local-6989586621680597966"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#Articulation"><span class="hs-identifier hs-type">Articulation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597966"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="SetArticulation"><span class="annot"><a href="Music.Score.Articulation.html#SetArticulation"><span class="hs-identifier hs-var">SetArticulation</span></a></span></span><span> </span><span id="local-6989586621680597964"><span class="annot"><a href="#local-6989586621680597964"><span class="hs-identifier hs-type hs-type">g</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span id="local-6989586621680597963"><span class="annot"><a href="#local-6989586621680597963"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#SetArticulation"><span class="hs-identifier hs-type">SetArticulation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597964"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597963"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span id="local-6989586621680597961"><span id="local-6989586621680597962"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Pitch.html#HasPitches"><span class="hs-identifier hs-type">HasPitches</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597962"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597961"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html#HasPitches"><span class="hs-identifier hs-type">HasPitches</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597962"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597961"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-147"></span><span>  </span><span id="local-6989586621680597957"><span class="annot"><span class="annottext">pitches :: (Pitch (StaffNumberT a) -&gt; f (Pitch (StaffNumberT b)))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+</span><a href="Music.Score.Pitch.html#pitches"><span class="hs-identifier hs-var hs-var hs-var hs-var">pitches</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+ -&gt; StaffNumberT a -&gt; f (StaffNumberT b))
+-&gt; ((Pitch a -&gt; f (Pitch b))
+    -&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; (Pitch a -&gt; f (Pitch b))
+-&gt; StaffNumberT a
+-&gt; f (StaffNumberT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Pitch a -&gt; f (Pitch b))
+-&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b)
+forall s t. HasPitches s t =&gt; Traversal s t (Pitch s) (Pitch t)
+</span><a href="Music.Score.Pitch.html#pitches"><span class="hs-identifier hs-var">pitches</span></a></span></span></span><span>
+</span><span id="line-148"></span><span>
+</span><span id="line-149"></span><span id="local-6989586621680597954"><span id="local-6989586621680597955"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Pitch.html#HasPitch"><span class="hs-identifier hs-type">HasPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597955"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597954"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html#HasPitch"><span class="hs-identifier hs-type">HasPitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597955"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597954"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-150"></span><span>  </span><span id="local-6989586621680597950"><span class="annot"><span class="annottext">pitch :: (Pitch (StaffNumberT a) -&gt; f (Pitch (StaffNumberT b)))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+</span><a href="Music.Score.Pitch.html#pitch"><span class="hs-identifier hs-var hs-var hs-var hs-var">pitch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+ -&gt; StaffNumberT a -&gt; f (StaffNumberT b))
+-&gt; ((Pitch a -&gt; f (Pitch b))
+    -&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; (Pitch a -&gt; f (Pitch b))
+-&gt; StaffNumberT a
+-&gt; f (StaffNumberT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Pitch a -&gt; f (Pitch b))
+-&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b)
+forall s t. HasPitch s t =&gt; Lens s t (Pitch s) (Pitch t)
+</span><a href="Music.Score.Pitch.html#pitch"><span class="hs-identifier hs-var">pitch</span></a></span></span></span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span id="local-6989586621680597947"><span id="local-6989586621680597948"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Dynamics.html#HasDynamics"><span class="hs-identifier hs-type">HasDynamics</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597948"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597947"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#HasDynamics"><span class="hs-identifier hs-type">HasDynamics</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597948"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597947"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-153"></span><span>  </span><span id="local-6989586621680597943"><span class="annot"><span class="annottext">dynamics :: (GetDynamic (StaffNumberT a) -&gt; f (GetDynamic (StaffNumberT b)))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+</span><a href="Music.Score.Dynamics.html#dynamics"><span class="hs-identifier hs-var hs-var hs-var hs-var">dynamics</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+ -&gt; StaffNumberT a -&gt; f (StaffNumberT b))
+-&gt; ((GetDynamic a -&gt; f (GetDynamic b))
+    -&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; (GetDynamic a -&gt; f (GetDynamic b))
+-&gt; StaffNumberT a
+-&gt; f (StaffNumberT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(GetDynamic a -&gt; f (GetDynamic b))
+-&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b)
+forall s t.
+HasDynamics s t =&gt;
+Traversal s t (GetDynamic s) (GetDynamic t)
+</span><a href="Music.Score.Dynamics.html#dynamics"><span class="hs-identifier hs-var">dynamics</span></a></span></span></span><span>
+</span><span id="line-154"></span><span>
+</span><span id="line-155"></span><span id="local-6989586621680597940"><span id="local-6989586621680597941"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Dynamics.html#HasDynamic"><span class="hs-identifier hs-type">HasDynamic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597941"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597940"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#HasDynamic"><span class="hs-identifier hs-type">HasDynamic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597941"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597940"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-156"></span><span>  </span><span id="local-6989586621680597936"><span class="annot"><span class="annottext">dynamic :: (GetDynamic (StaffNumberT a) -&gt; f (GetDynamic (StaffNumberT b)))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+</span><a href="Music.Score.Dynamics.html#dynamic"><span class="hs-keyword hs-var hs-var hs-var hs-var">dynamic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+ -&gt; StaffNumberT a -&gt; f (StaffNumberT b))
+-&gt; ((GetDynamic a -&gt; f (GetDynamic b))
+    -&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; (GetDynamic a -&gt; f (GetDynamic b))
+-&gt; StaffNumberT a
+-&gt; f (StaffNumberT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(GetDynamic a -&gt; f (GetDynamic b))
+-&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b)
+forall s t.
+HasDynamic s t =&gt;
+Lens s t (GetDynamic s) (GetDynamic t)
+</span><a href="Music.Score.Dynamics.html#dynamic"><span class="hs-keyword hs-var">dynamic</span></a></span></span></span><span>
+</span><span id="line-157"></span><span>
+</span><span id="line-158"></span><span id="local-6989586621680597933"><span id="local-6989586621680597934"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#HasArticulations"><span class="hs-identifier hs-type">HasArticulations</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597934"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597933"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#HasArticulations"><span class="hs-identifier hs-type">HasArticulations</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597934"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597933"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-159"></span><span>  </span><span id="local-6989586621680597929"><span class="annot"><span class="annottext">articulations :: (Articulation (StaffNumberT a)
+ -&gt; f (Articulation (StaffNumberT b)))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+</span><a href="Music.Score.Articulation.html#articulations"><span class="hs-identifier hs-var hs-var hs-var hs-var">articulations</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+ -&gt; StaffNumberT a -&gt; f (StaffNumberT b))
+-&gt; ((Articulation a -&gt; f (Articulation b))
+    -&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; (Articulation a -&gt; f (Articulation b))
+-&gt; StaffNumberT a
+-&gt; f (StaffNumberT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Articulation a -&gt; f (Articulation b))
+-&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b)
+forall s t.
+HasArticulations s t =&gt;
+Traversal s t (Articulation s) (Articulation t)
+</span><a href="Music.Score.Articulation.html#articulations"><span class="hs-identifier hs-var">articulations</span></a></span></span></span><span>
+</span><span id="line-160"></span><span>
+</span><span id="line-161"></span><span id="local-6989586621680597926"><span id="local-6989586621680597927"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#HasArticulation"><span class="hs-identifier hs-type">HasArticulation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597927"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597926"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#HasArticulation"><span class="hs-identifier hs-type">HasArticulation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597927"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597926"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-162"></span><span>  </span><span id="local-6989586621680597922"><span class="annot"><span class="annottext">articulation :: (Articulation (StaffNumberT a)
+ -&gt; f (Articulation (StaffNumberT b)))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+</span><a href="Music.Score.Articulation.html#articulation"><span class="hs-identifier hs-var hs-var hs-var hs-var">articulation</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; StaffNumberT a -&gt; f (StaffNumberT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+ -&gt; StaffNumberT a -&gt; f (StaffNumberT b))
+-&gt; ((Articulation a -&gt; f (Articulation b))
+    -&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b))
+-&gt; (Articulation a -&gt; f (Articulation b))
+-&gt; StaffNumberT a
+-&gt; f (StaffNumberT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Articulation a -&gt; f (Articulation b))
+-&gt; Couple (First Natural) a -&gt; f (Couple (First Natural) b)
+forall s t.
+HasArticulation s t =&gt;
+Lens s t (Articulation s) (Articulation t)
+</span><a href="Music.Score.Articulation.html#articulation"><span class="hs-identifier hs-var">articulation</span></a></span></span></span><span>
+</span><span id="line-163"></span><span>
+</span><span id="line-164"></span><span id="local-6989586621680597920"><span class="annot"><a href="Music.Score.StaffNumber.html#runStaffNumberT"><span class="hs-identifier hs-type">runStaffNumberT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597920"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Natural</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680597920"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-165"></span><span id="runStaffNumberT"><span class="annot"><span class="annottext">runStaffNumberT :: StaffNumberT a -&gt; (Natural, a)
+</span><a href="Music.Score.StaffNumber.html#runStaffNumberT"><span class="hs-identifier hs-var hs-var">runStaffNumberT</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.StaffNumber.html#StaffNumberT"><span class="hs-identifier hs-type">StaffNumberT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">First</span></a></span><span> </span><span id="local-6989586621680597918"><span class="annot"><span class="annottext">n :: Maybe Natural
+</span><a href="#local-6989586621680597918"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597917"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680597917"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Natural -&gt; (Natural -&gt; Natural) -&gt; Maybe Natural -&gt; Natural
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">maybe</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Natural -&gt; Natural
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Natural
+</span><a href="#local-6989586621680597918"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680597917"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-166"></span><span class="hs-comment">{-
+TODO
+  - Add Tecnique as a polymorphic transformer
+  - See if the approach for dynamics can be copied exactly for contextual notation
+    (see asp2ToAsp3!)
+  - Will this be partwise?
+
+-}</span><span>
+</span><span id="line-174"></span></pre></body></html>

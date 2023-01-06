@@ -1,0 +1,665 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DefaultSignatures #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-matches
+  -fno-warn-unused-imports #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Tremolo</span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Tremolo</span></span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier">HasTremolo</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Music.Score.Tremolo.html#tremolo"><span class="hs-identifier">tremolo</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Tremolo note transformer</span></span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier">TremoloT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Score.Tremolo.html#runTremoloT"><span class="hs-identifier">runTremoloT</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Comonad</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html"><span class="hs-identifier">Data.Functor.Couple</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Ratio</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Word</span></a></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html"><span class="hs-identifier">Music.Pitch.Alterable</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html"><span class="hs-identifier">Music.Pitch.Alterable</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html"><span class="hs-identifier">Music.Pitch.Augmentable</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html"><span class="hs-identifier">Music.Pitch.Augmentable</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html"><span class="hs-identifier">Music.Score.Articulation</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html"><span class="hs-identifier">Music.Score.Dynamics</span></a></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html"><span class="hs-identifier">Music.Score.Harmonics</span></a></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.html"><span class="hs-identifier">Music.Score.Meta</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Phrases.html"><span class="hs-identifier">Music.Score.Phrases</span></a></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html"><span class="hs-identifier">Music.Score.Pitch</span></a></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Slide.html"><span class="hs-identifier">Music.Score.Slide</span></a></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Text.html"><span class="hs-identifier">Music.Score.Text</span></a></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Ties.html"><span class="hs-identifier">Music.Score.Ties</span></a></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- Class of types with a notion of tremolo.</span><span>
+</span><span id="line-55"></span><span class="hs-comment">--</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- ==== Laws</span><span>
+</span><span id="line-57"></span><span class="hs-comment">--</span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- [/set-set/]</span><span>
+</span><span id="line-59"></span><span class="hs-comment">--</span><span>
+</span><span id="line-60"></span><span class="hs-comment">--    @'setTrem' n ('setTrem' n x) = 'setTrem' n x@</span><span>
+</span><span id="line-61"></span><span class="hs-keyword">class</span><span> </span><span id="HasTremolo"><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-var">HasTremolo</span></a></span></span><span> </span><span id="local-6989586621680597427"><span class="annot"><a href="#local-6989586621680597427"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span>  </span><span id="setTrem"><span class="annot"><a href="Music.Score.Tremolo.html#setTrem"><span class="hs-identifier hs-type">setTrem</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597427"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597427"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-keyword">default</span><span> </span><span id="setTrem"><span class="annot"><a href="Music.Score.Tremolo.html#setTrem"><span class="hs-identifier hs-type">setTrem</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680597152"><span class="annot"><a href="#local-6989586621680597152"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621680597151"><span class="annot"><a href="#local-6989586621680597151"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680597427"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">~</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597152"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597151"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597152"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597151"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597427"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597427"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-66"></span><span>  </span><span id="local-6989586621680597150"><span class="annot"><a href="Music.Score.Tremolo.html#setTrem"><span class="hs-identifier hs-var hs-var">setTrem</span></a></span><span> </span><span id="local-6989586621680597149"><span class="annot"><span class="annottext">s :: Int
+</span><a href="#local-6989586621680597149"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(b -&gt; b) -&gt; f b -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; b -&gt; b
+forall a. HasTremolo a =&gt; Int -&gt; a -&gt; a
+</span><a href="Music.Score.Tremolo.html#setTrem"><span class="hs-identifier hs-var">setTrem</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680597149"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span id="local-6989586621680597148"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597146"><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597148"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597148"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span id="local-6989586621680597143"><span id="local-6989586621680597144"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597141"><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597144"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680597143"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680597144"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span id="local-6989586621680597139"><span id="local-6989586621680597140"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597137"><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597140"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597139"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597140"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span id="local-6989586621680597136"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597134"><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597136"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680597136"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span id="local-6989586621680597133"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597131"><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597133"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597133"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- Set the number of tremolo divisions for all notes in the score.</span><span>
+</span><span id="line-80"></span><span id="local-6989586621680597130"><span class="annot"><a href="Music.Score.Tremolo.html#tremolo"><span class="hs-identifier hs-type">tremolo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597130"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597130"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597130"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-81"></span><span id="tremolo"><span class="annot"><span class="annottext">tremolo :: Int -&gt; a -&gt; a
+</span><a href="Music.Score.Tremolo.html#tremolo"><span class="hs-identifier hs-var hs-var">tremolo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; a -&gt; a
+forall a. HasTremolo a =&gt; Int -&gt; a -&gt; a
+</span><a href="Music.Score.Tremolo.html#setTrem"><span class="hs-identifier hs-var">setTrem</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span class="hs-keyword">newtype</span><span> </span><span id="TremoloT"><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-var">TremoloT</span></a></span></span><span> </span><span id="local-6989586621680597280"><span class="annot"><a href="#local-6989586621680597280"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="TremoloT"><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-var">TremoloT</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getTremoloT"><span class="annot"><span class="annottext">TremoloT a -&gt; Couple (Max Word) a
+</span><a href="Music.Score.Tremolo.html#getTremoloT"><span class="hs-identifier hs-var hs-var">getTremoloT</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Max</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Word</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680597280"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-84"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680597124"><span id="local-6989586621680597126"><span class="annot"><span class="annottext">TremoloT a -&gt; TremoloT a -&gt; Bool
+(TremoloT a -&gt; TremoloT a -&gt; Bool)
+-&gt; (TremoloT a -&gt; TremoloT a -&gt; Bool) -&gt; Eq (TremoloT a)
+forall a. Eq a =&gt; TremoloT a -&gt; TremoloT a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: TremoloT a -&gt; TremoloT a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; TremoloT a -&gt; TremoloT a -&gt; Bool
+== :: TremoloT a -&gt; TremoloT a -&gt; Bool
+$c== :: forall a. Eq a =&gt; TremoloT a -&gt; TremoloT a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597117"><span id="local-6989586621680597119"><span id="local-6989586621680597121"><span class="annot"><span class="annottext">Int -&gt; TremoloT a -&gt; ShowS
+[TremoloT a] -&gt; ShowS
+TremoloT a -&gt; String
+(Int -&gt; TremoloT a -&gt; ShowS)
+-&gt; (TremoloT a -&gt; String)
+-&gt; ([TremoloT a] -&gt; ShowS)
+-&gt; Show (TremoloT a)
+forall a. Show a =&gt; Int -&gt; TremoloT a -&gt; ShowS
+forall a. Show a =&gt; [TremoloT a] -&gt; ShowS
+forall a. Show a =&gt; TremoloT a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [TremoloT a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [TremoloT a] -&gt; ShowS
+show :: TremoloT a -&gt; String
+$cshow :: forall a. Show a =&gt; TremoloT a -&gt; String
+showsPrec :: Int -&gt; TremoloT a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; TremoloT a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597101"><span id="local-6989586621680597103"><span id="local-6989586621680597105"><span id="local-6989586621680597107"><span id="local-6989586621680597109"><span id="local-6989586621680597111"><span id="local-6989586621680597113"><span class="annot"><span class="annottext">Eq (TremoloT a)
+Eq (TremoloT a) =&gt;
+(TremoloT a -&gt; TremoloT a -&gt; Ordering)
+-&gt; (TremoloT a -&gt; TremoloT a -&gt; Bool)
+-&gt; (TremoloT a -&gt; TremoloT a -&gt; Bool)
+-&gt; (TremoloT a -&gt; TremoloT a -&gt; Bool)
+-&gt; (TremoloT a -&gt; TremoloT a -&gt; Bool)
+-&gt; (TremoloT a -&gt; TremoloT a -&gt; TremoloT a)
+-&gt; (TremoloT a -&gt; TremoloT a -&gt; TremoloT a)
+-&gt; Ord (TremoloT a)
+TremoloT a -&gt; TremoloT a -&gt; Bool
+TremoloT a -&gt; TremoloT a -&gt; Ordering
+TremoloT a -&gt; TremoloT a -&gt; TremoloT a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (TremoloT a)
+forall a. Ord a =&gt; TremoloT a -&gt; TremoloT a -&gt; Bool
+forall a. Ord a =&gt; TremoloT a -&gt; TremoloT a -&gt; Ordering
+forall a. Ord a =&gt; TremoloT a -&gt; TremoloT a -&gt; TremoloT a
+min :: TremoloT a -&gt; TremoloT a -&gt; TremoloT a
+$cmin :: forall a. Ord a =&gt; TremoloT a -&gt; TremoloT a -&gt; TremoloT a
+max :: TremoloT a -&gt; TremoloT a -&gt; TremoloT a
+$cmax :: forall a. Ord a =&gt; TremoloT a -&gt; TremoloT a -&gt; TremoloT a
+&gt;= :: TremoloT a -&gt; TremoloT a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; TremoloT a -&gt; TremoloT a -&gt; Bool
+&gt; :: TremoloT a -&gt; TremoloT a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; TremoloT a -&gt; TremoloT a -&gt; Bool
+&lt;= :: TremoloT a -&gt; TremoloT a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; TremoloT a -&gt; TremoloT a -&gt; Bool
+&lt; :: TremoloT a -&gt; TremoloT a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; TremoloT a -&gt; TremoloT a -&gt; Bool
+compare :: TremoloT a -&gt; TremoloT a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; TremoloT a -&gt; TremoloT a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (TremoloT a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597096"><span id="local-6989586621680597098"><span class="annot"><span class="annottext">a -&gt; TremoloT b -&gt; TremoloT a
+(a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+(forall a b. (a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b)
+-&gt; (forall a b. a -&gt; TremoloT b -&gt; TremoloT a) -&gt; Functor TremoloT
+forall a b. a -&gt; TremoloT b -&gt; TremoloT a
+forall a b. (a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; TremoloT b -&gt; TremoloT a
+$c&lt;$ :: forall a b. a -&gt; TremoloT b -&gt; TremoloT a
+fmap :: (a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+$cfmap :: forall a b. (a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597061"><span id="local-6989586621680597063"><span id="local-6989586621680597065"><span id="local-6989586621680597067"><span id="local-6989586621680597069"><span id="local-6989586621680597071"><span id="local-6989586621680597073"><span id="local-6989586621680597075"><span id="local-6989586621680597077"><span id="local-6989586621680597079"><span id="local-6989586621680597081"><span id="local-6989586621680597083"><span id="local-6989586621680597085"><span id="local-6989586621680597087"><span id="local-6989586621680597089"><span id="local-6989586621680597091"><span id="local-6989586621680597093"><span class="annot"><span class="annottext">a -&gt; TremoloT a -&gt; Bool
+TremoloT m -&gt; m
+TremoloT a -&gt; [a]
+TremoloT a -&gt; Bool
+TremoloT a -&gt; Int
+TremoloT a -&gt; a
+TremoloT a -&gt; a
+TremoloT a -&gt; a
+TremoloT a -&gt; a
+(a -&gt; m) -&gt; TremoloT a -&gt; m
+(a -&gt; m) -&gt; TremoloT a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+(a -&gt; a -&gt; a) -&gt; TremoloT a -&gt; a
+(a -&gt; a -&gt; a) -&gt; TremoloT a -&gt; a
+(forall m. Monoid m =&gt; TremoloT m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TremoloT a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TremoloT a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; TremoloT a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; TremoloT a -&gt; a)
+-&gt; (forall a. TremoloT a -&gt; [a])
+-&gt; (forall a. TremoloT a -&gt; Bool)
+-&gt; (forall a. TremoloT a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; TremoloT a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; TremoloT a -&gt; a)
+-&gt; (forall a. Ord a =&gt; TremoloT a -&gt; a)
+-&gt; (forall a. Num a =&gt; TremoloT a -&gt; a)
+-&gt; (forall a. Num a =&gt; TremoloT a -&gt; a)
+-&gt; Foldable TremoloT
+forall a. Eq a =&gt; a -&gt; TremoloT a -&gt; Bool
+forall a. Num a =&gt; TremoloT a -&gt; a
+forall a. Ord a =&gt; TremoloT a -&gt; a
+forall m. Monoid m =&gt; TremoloT m -&gt; m
+forall a. TremoloT a -&gt; Bool
+forall a. TremoloT a -&gt; Int
+forall a. TremoloT a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; TremoloT a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TremoloT a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: TremoloT a -&gt; a
+$cproduct :: forall a. Num a =&gt; TremoloT a -&gt; a
+sum :: TremoloT a -&gt; a
+$csum :: forall a. Num a =&gt; TremoloT a -&gt; a
+minimum :: TremoloT a -&gt; a
+$cminimum :: forall a. Ord a =&gt; TremoloT a -&gt; a
+maximum :: TremoloT a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; TremoloT a -&gt; a
+elem :: a -&gt; TremoloT a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; TremoloT a -&gt; Bool
+length :: TremoloT a -&gt; Int
+$clength :: forall a. TremoloT a -&gt; Int
+null :: TremoloT a -&gt; Bool
+$cnull :: forall a. TremoloT a -&gt; Bool
+toList :: TremoloT a -&gt; [a]
+$ctoList :: forall a. TremoloT a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; TremoloT a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; TremoloT a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; TremoloT a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; TremoloT a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TremoloT a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; TremoloT a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TremoloT a -&gt; m
+foldMap :: (a -&gt; m) -&gt; TremoloT a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TremoloT a -&gt; m
+fold :: TremoloT m -&gt; m
+$cfold :: forall m. Monoid m =&gt; TremoloT m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597050"><span id="local-6989586621680597052"><span id="local-6989586621680597054"><span id="local-6989586621680597056"><span class="annot"><span class="annottext">Functor TremoloT
+Foldable TremoloT
+(Functor TremoloT, Foldable TremoloT) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; TremoloT a -&gt; f (TremoloT b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    TremoloT (f a) -&gt; f (TremoloT a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; TremoloT a -&gt; m (TremoloT b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    TremoloT (m a) -&gt; m (TremoloT a))
+-&gt; Traversable TremoloT
+(a -&gt; f b) -&gt; TremoloT a -&gt; f (TremoloT b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; TremoloT (m a) -&gt; m (TremoloT a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+TremoloT (f a) -&gt; f (TremoloT a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; TremoloT a -&gt; m (TremoloT b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TremoloT a -&gt; f (TremoloT b)
+sequence :: TremoloT (m a) -&gt; m (TremoloT a)
+$csequence :: forall (m :: * -&gt; *) a. Monad m =&gt; TremoloT (m a) -&gt; m (TremoloT a)
+mapM :: (a -&gt; m b) -&gt; TremoloT a -&gt; m (TremoloT b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; TremoloT a -&gt; m (TremoloT b)
+sequenceA :: TremoloT (f a) -&gt; f (TremoloT a)
+$csequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+TremoloT (f a) -&gt; f (TremoloT a)
+traverse :: (a -&gt; f b) -&gt; TremoloT a -&gt; f (TremoloT b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TremoloT a -&gt; f (TremoloT b)
+$cp2Traversable :: Foldable TremoloT
+$cp1Traversable :: Functor TremoloT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597038"><span id="local-6989586621680597040"><span id="local-6989586621680597042"><span id="local-6989586621680597044"><span id="local-6989586621680597046"><span class="annot"><span class="annottext">Functor TremoloT
+a -&gt; TremoloT a
+Functor TremoloT =&gt;
+(forall a. a -&gt; TremoloT a)
+-&gt; (forall a b. TremoloT (a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; TremoloT a -&gt; TremoloT b -&gt; TremoloT c)
+-&gt; (forall a b. TremoloT a -&gt; TremoloT b -&gt; TremoloT b)
+-&gt; (forall a b. TremoloT a -&gt; TremoloT b -&gt; TremoloT a)
+-&gt; Applicative TremoloT
+TremoloT a -&gt; TremoloT b -&gt; TremoloT b
+TremoloT a -&gt; TremoloT b -&gt; TremoloT a
+TremoloT (a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+(a -&gt; b -&gt; c) -&gt; TremoloT a -&gt; TremoloT b -&gt; TremoloT c
+forall a. a -&gt; TremoloT a
+forall a b. TremoloT a -&gt; TremoloT b -&gt; TremoloT a
+forall a b. TremoloT a -&gt; TremoloT b -&gt; TremoloT b
+forall a b. TremoloT (a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+forall a b c.
+(a -&gt; b -&gt; c) -&gt; TremoloT a -&gt; TremoloT b -&gt; TremoloT c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: TremoloT a -&gt; TremoloT b -&gt; TremoloT a
+$c&lt;* :: forall a b. TremoloT a -&gt; TremoloT b -&gt; TremoloT a
+*&gt; :: TremoloT a -&gt; TremoloT b -&gt; TremoloT b
+$c*&gt; :: forall a b. TremoloT a -&gt; TremoloT b -&gt; TremoloT b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; TremoloT a -&gt; TremoloT b -&gt; TremoloT c
+$cliftA2 :: forall a b c.
+(a -&gt; b -&gt; c) -&gt; TremoloT a -&gt; TremoloT b -&gt; TremoloT c
+&lt;*&gt; :: TremoloT (a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+$c&lt;*&gt; :: forall a b. TremoloT (a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+pure :: a -&gt; TremoloT a
+$cpure :: forall a. a -&gt; TremoloT a
+$cp1Applicative :: Functor TremoloT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597030"><span id="local-6989586621680597032"><span id="local-6989586621680597034"><span class="annot"><span class="annottext">Applicative TremoloT
+a -&gt; TremoloT a
+Applicative TremoloT =&gt;
+(forall a b. TremoloT a -&gt; (a -&gt; TremoloT b) -&gt; TremoloT b)
+-&gt; (forall a b. TremoloT a -&gt; TremoloT b -&gt; TremoloT b)
+-&gt; (forall a. a -&gt; TremoloT a)
+-&gt; Monad TremoloT
+TremoloT a -&gt; (a -&gt; TremoloT b) -&gt; TremoloT b
+TremoloT a -&gt; TremoloT b -&gt; TremoloT b
+forall a. a -&gt; TremoloT a
+forall a b. TremoloT a -&gt; TremoloT b -&gt; TremoloT b
+forall a b. TremoloT a -&gt; (a -&gt; TremoloT b) -&gt; TremoloT b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; TremoloT a
+$creturn :: forall a. a -&gt; TremoloT a
+&gt;&gt; :: TremoloT a -&gt; TremoloT b -&gt; TremoloT b
+$c&gt;&gt; :: forall a b. TremoloT a -&gt; TremoloT b -&gt; TremoloT b
+&gt;&gt;= :: TremoloT a -&gt; (a -&gt; TremoloT b) -&gt; TremoloT b
+$c&gt;&gt;= :: forall a b. TremoloT a -&gt; (a -&gt; TremoloT b) -&gt; TremoloT b
+$cp1Monad :: Applicative TremoloT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597022"><span id="local-6989586621680597024"><span id="local-6989586621680597026"><span class="annot"><span class="annottext">Functor TremoloT
+Functor TremoloT =&gt;
+(forall a. TremoloT a -&gt; a)
+-&gt; (forall a. TremoloT a -&gt; TremoloT (TremoloT a))
+-&gt; (forall a b. (TremoloT a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b)
+-&gt; Comonad TremoloT
+TremoloT a -&gt; a
+TremoloT a -&gt; TremoloT (TremoloT a)
+(TremoloT a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+forall a. TremoloT a -&gt; a
+forall a. TremoloT a -&gt; TremoloT (TremoloT a)
+forall a b. (TremoloT a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (TremoloT a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+$cextend :: forall a b. (TremoloT a -&gt; b) -&gt; TremoloT a -&gt; TremoloT b
+duplicate :: TremoloT a -&gt; TremoloT (TremoloT a)
+$cduplicate :: forall a. TremoloT a -&gt; TremoloT (TremoloT a)
+extract :: TremoloT a -&gt; a
+$cextract :: forall a. TremoloT a -&gt; a
+$cp1Comonad :: Functor TremoloT
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-comment">--</span><span>
+</span><span id="line-87"></span><span class="hs-comment">-- We use Word instead of Int to get (mempty = Max 0), as (Max.mempty = Max minBound)</span><span>
+</span><span id="line-88"></span><span class="hs-comment">-- Preferably we would use Natural but unfortunately this is not an instance of Bounded</span><span>
+</span><span id="line-89"></span><span class="hs-comment">--</span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span id="local-6989586621680597020"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597020"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597020"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Max</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Word</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680597020"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span>  </span><span id="local-6989586621680597017"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (TremoloT a)) (f (Unwrapped (TremoloT a)))
+-&gt; p (TremoloT a) (f (TremoloT a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TremoloT a -&gt; Couple (Max Word) a)
+-&gt; (Couple (Max Word) a -&gt; TremoloT a)
+-&gt; Iso
+     (TremoloT a)
+     (TremoloT a)
+     (Couple (Max Word) a)
+     (Couple (Max Word) a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">TremoloT a -&gt; Couple (Max Word) a
+forall a. TremoloT a -&gt; Couple (Max Word) a
+</span><a href="Music.Score.Tremolo.html#getTremoloT"><span class="hs-identifier hs-var hs-var">getTremoloT</span></a></span><span> </span><span class="annot"><span class="annottext">Couple (Max Word) a -&gt; TremoloT a
+forall a. Couple (Max Word) a -&gt; TremoloT a
+</span><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-var">TremoloT</span></a></span></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span id="local-6989586621680597013"><span id="local-6989586621680597014"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597014"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597013"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span id="local-6989586621680597010"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#HasTremolo"><span class="hs-identifier hs-type">HasTremolo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597010"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-100"></span><span>  </span><span id="local-6989586621680597008"><span class="annot"><span class="annottext">setTrem :: Int -&gt; TremoloT a -&gt; TremoloT a
+</span><a href="#local-6989586621680597008"><span class="hs-identifier hs-var hs-var hs-var hs-var">setTrem</span></a></span></span><span> </span><span id="local-6989586621680597007"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621680597007"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter (TremoloT a) (TremoloT a) (Max Word) (Max Word)
+-&gt; Max Word -&gt; TremoloT a -&gt; TremoloT a
+forall s t a b. ASetter s t a b -&gt; b -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">set</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Couple (Max Word) a -&gt; Identity (Couple (Max Word) a))
+-&gt; TremoloT a -&gt; Identity (TremoloT a)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (Max Word) a -&gt; Identity (Couple (Max Word) a))
+ -&gt; TremoloT a -&gt; Identity (TremoloT a))
+-&gt; ((Max Word -&gt; Identity (Max Word))
+    -&gt; Couple (Max Word) a -&gt; Identity (Couple (Max Word) a))
+-&gt; ASetter (TremoloT a) (TremoloT a) (Max Word) (Max Word)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">((Max Word, a) -&gt; Identity (Max Word, a))
+-&gt; Couple (Max Word) a -&gt; Identity (Couple (Max Word) a)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">(((Max Word, a) -&gt; Identity (Max Word, a))
+ -&gt; Couple (Max Word) a -&gt; Identity (Couple (Max Word) a))
+-&gt; ((Max Word -&gt; Identity (Max Word))
+    -&gt; (Max Word, a) -&gt; Identity (Max Word, a))
+-&gt; (Max Word -&gt; Identity (Max Word))
+-&gt; Couple (Max Word) a
+-&gt; Identity (Couple (Max Word) a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Max Word -&gt; Identity (Max Word))
+-&gt; (Max Word, a) -&gt; Identity (Max Word, a)
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Word -&gt; Max Word
+forall a. a -&gt; Max a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Max</span></a></span><span> </span><span class="annot"><span class="annottext">(Word -&gt; Max Word) -&gt; Word -&gt; Max Word
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Word
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680597007"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span id="local-6989586621680596987"><span id="local-6989586621680596989"><span id="local-6989586621680596991"><span id="local-6989586621680596993"><span id="local-6989586621680596995"><span id="local-6989586621680596997"><span id="local-6989586621680596999"><span id="local-6989586621680597001"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597001"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597001"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span id="local-6989586621680596978"><span id="local-6989586621680596980"><span id="local-6989586621680596982"><span id="local-6989586621680596985"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596985"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596985"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span id="local-6989586621680596931"><span id="local-6989586621680596933"><span id="local-6989586621680596935"><span id="local-6989586621680596937"><span id="local-6989586621680596939"><span id="local-6989586621680596941"><span id="local-6989586621680596943"><span id="local-6989586621680596945"><span id="local-6989586621680596947"><span id="local-6989586621680596949"><span id="local-6989586621680596951"><span id="local-6989586621680596953"><span id="local-6989586621680596955"><span id="local-6989586621680596957"><span id="local-6989586621680596959"><span id="local-6989586621680596961"><span id="local-6989586621680596963"><span id="local-6989586621680596965"><span id="local-6989586621680596967"><span id="local-6989586621680596969"><span id="local-6989586621680596971"><span id="local-6989586621680596973"><span id="local-6989586621680596976"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596976"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596976"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span id="local-6989586621680596913"><span id="local-6989586621680596915"><span id="local-6989586621680596917"><span id="local-6989586621680596919"><span id="local-6989586621680596921"><span id="local-6989586621680596923"><span id="local-6989586621680596925"><span id="local-6989586621680596927"><span id="local-6989586621680596929"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596929"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596929"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span id="local-6989586621680596907"><span id="local-6989586621680596909"><span id="local-6989586621680596911"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596911"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596911"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span id="local-6989586621680596901"><span id="local-6989586621680596905"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596905"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596905"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596905"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596905"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span id="local-6989586621680596883"><span id="local-6989586621680596885"><span id="local-6989586621680596887"><span id="local-6989586621680596889"><span id="local-6989586621680596891"><span id="local-6989586621680596893"><span id="local-6989586621680596895"><span id="local-6989586621680596899"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596899"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596899"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596899"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596899"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span id="local-6989586621680596879"><span id="local-6989586621680596881"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596881"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596881"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span id="local-6989586621680596875"><span id="local-6989586621680596877"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596877"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596877"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span id="local-6989586621680596867"><span id="local-6989586621680596869"><span id="local-6989586621680596871"><span id="local-6989586621680596873"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596873"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596873"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span id="local-6989586621680596859"><span id="local-6989586621680596861"><span id="local-6989586621680596863"><span id="local-6989586621680596865"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596865"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596865"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span id="local-6989586621680596853"><span id="local-6989586621680596855"><span id="local-6989586621680596857"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596857"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html#HasHarmonic"><span class="hs-identifier hs-type">HasHarmonic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596857"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span id="local-6989586621680596843"><span id="local-6989586621680596845"><span id="local-6989586621680596847"><span id="local-6989586621680596849"><span id="local-6989586621680596851"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Slide.html#HasSlide"><span class="hs-identifier hs-type">HasSlide</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596851"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Slide.html#HasSlide"><span class="hs-identifier hs-type">HasSlide</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596851"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span>
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span id="local-6989586621680596839"><span id="local-6989586621680596841"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596841"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Text.html#HasText"><span class="hs-identifier hs-type">HasText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596841"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span><span id="local-6989586621680596835"><span id="local-6989586621680596837"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596837"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596837"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-131"></span><span>
+</span><span id="line-132"></span><span id="local-6989586621680596829"><span id="local-6989586621680596831"><span id="local-6989586621680596833"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html#Alterable"><span class="hs-identifier hs-type">Alterable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596833"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html#Alterable"><span class="hs-identifier hs-type">Alterable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596833"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span id="local-6989586621680596823"><span id="local-6989586621680596825"><span id="local-6989586621680596827"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html#Augmentable"><span class="hs-identifier hs-type">Augmentable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596827"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html#Augmentable"><span class="hs-identifier hs-type">Augmentable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596827"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-135"></span><span>
+</span><span id="line-136"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Pitch"><span class="annot"><a href="Music.Score.Pitch.html#Pitch"><span class="hs-identifier hs-var">Pitch</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span id="local-6989586621680596821"><span class="annot"><a href="#local-6989586621680596821"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html#Pitch"><span class="hs-identifier hs-type">Pitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596821"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="SetPitch"><span class="annot"><a href="Music.Score.Pitch.html#SetPitch"><span class="hs-identifier hs-var">SetPitch</span></a></span></span><span> </span><span id="local-6989586621680596820"><span class="annot"><a href="#local-6989586621680596820"><span class="hs-identifier hs-type hs-type">g</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span id="local-6989586621680596819"><span class="annot"><a href="#local-6989586621680596819"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Pitch.html#SetPitch"><span class="hs-identifier hs-type">SetPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596820"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596819"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="GetDynamic"><span class="annot"><a href="Music.Score.Dynamics.html#GetDynamic"><span class="hs-identifier hs-var">GetDynamic</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span id="local-6989586621680596818"><span class="annot"><a href="#local-6989586621680596818"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#GetDynamic"><span class="hs-identifier hs-type">GetDynamic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596818"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="SetDynamic"><span class="annot"><a href="Music.Score.Dynamics.html#SetDynamic"><span class="hs-identifier hs-var">SetDynamic</span></a></span></span><span> </span><span id="local-6989586621680596816"><span class="annot"><a href="#local-6989586621680596816"><span class="hs-identifier hs-type hs-type">g</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span id="local-6989586621680596815"><span class="annot"><a href="#local-6989586621680596815"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Dynamics.html#SetDynamic"><span class="hs-identifier hs-type">SetDynamic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596816"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596815"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Articulation"><span class="annot"><a href="Music.Score.Articulation.html#Articulation"><span class="hs-identifier hs-var">Articulation</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span id="local-6989586621680596814"><span class="annot"><a href="#local-6989586621680596814"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#Articulation"><span class="hs-identifier hs-type">Articulation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596814"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="SetArticulation"><span class="annot"><a href="Music.Score.Articulation.html#SetArticulation"><span class="hs-identifier hs-var">SetArticulation</span></a></span></span><span> </span><span id="local-6989586621680596812"><span class="annot"><a href="#local-6989586621680596812"><span class="hs-identifier hs-type hs-type">g</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span id="local-6989586621680596811"><span class="annot"><a href="#local-6989586621680596811"><span class="hs-identifier hs-type hs-type">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#SetArticulation"><span class="hs-identifier hs-type">SetArticulation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596812"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596811"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span id="local-6989586621680596809"><span id="local-6989586621680596810"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Pitch.html#HasPitches"><span class="hs-identifier hs-type">HasPitches</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596810"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596809"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html#HasPitches"><span class="hs-identifier hs-type">HasPitches</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596810"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596809"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-149"></span><span>  </span><span id="local-6989586621680596805"><span class="annot"><span class="annottext">pitches :: (Pitch (TremoloT a) -&gt; f (Pitch (TremoloT b)))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+</span><a href="Music.Score.Pitch.html#pitches"><span class="hs-identifier hs-var hs-var hs-var hs-var">pitches</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+ -&gt; TremoloT a -&gt; f (TremoloT b))
+-&gt; ((Pitch a -&gt; f (Pitch b))
+    -&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; (Pitch a -&gt; f (Pitch b))
+-&gt; TremoloT a
+-&gt; f (TremoloT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Pitch a -&gt; f (Pitch b))
+-&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b)
+forall s t. HasPitches s t =&gt; Traversal s t (Pitch s) (Pitch t)
+</span><a href="Music.Score.Pitch.html#pitches"><span class="hs-identifier hs-var">pitches</span></a></span></span></span><span>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span id="local-6989586621680596802"><span id="local-6989586621680596803"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Pitch.html#HasPitch"><span class="hs-identifier hs-type">HasPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596803"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596802"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html#HasPitch"><span class="hs-identifier hs-type">HasPitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596803"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596802"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-152"></span><span>  </span><span id="local-6989586621680596798"><span class="annot"><span class="annottext">pitch :: (Pitch (TremoloT a) -&gt; f (Pitch (TremoloT b)))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+</span><a href="Music.Score.Pitch.html#pitch"><span class="hs-identifier hs-var hs-var hs-var hs-var">pitch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+ -&gt; TremoloT a -&gt; f (TremoloT b))
+-&gt; ((Pitch a -&gt; f (Pitch b))
+    -&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; (Pitch a -&gt; f (Pitch b))
+-&gt; TremoloT a
+-&gt; f (TremoloT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Pitch a -&gt; f (Pitch b))
+-&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b)
+forall s t. HasPitch s t =&gt; Lens s t (Pitch s) (Pitch t)
+</span><a href="Music.Score.Pitch.html#pitch"><span class="hs-identifier hs-var">pitch</span></a></span></span></span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span id="local-6989586621680596795"><span id="local-6989586621680596796"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Dynamics.html#HasDynamics"><span class="hs-identifier hs-type">HasDynamics</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596796"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596795"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#HasDynamics"><span class="hs-identifier hs-type">HasDynamics</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596796"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596795"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-155"></span><span>  </span><span id="local-6989586621680596791"><span class="annot"><span class="annottext">dynamics :: (GetDynamic (TremoloT a) -&gt; f (GetDynamic (TremoloT b)))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+</span><a href="Music.Score.Dynamics.html#dynamics"><span class="hs-identifier hs-var hs-var hs-var hs-var">dynamics</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+ -&gt; TremoloT a -&gt; f (TremoloT b))
+-&gt; ((GetDynamic a -&gt; f (GetDynamic b))
+    -&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; (GetDynamic a -&gt; f (GetDynamic b))
+-&gt; TremoloT a
+-&gt; f (TremoloT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(GetDynamic a -&gt; f (GetDynamic b))
+-&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b)
+forall s t.
+HasDynamics s t =&gt;
+Traversal s t (GetDynamic s) (GetDynamic t)
+</span><a href="Music.Score.Dynamics.html#dynamics"><span class="hs-identifier hs-var">dynamics</span></a></span></span></span><span>
+</span><span id="line-156"></span><span>
+</span><span id="line-157"></span><span id="local-6989586621680596788"><span id="local-6989586621680596789"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Dynamics.html#HasDynamic"><span class="hs-identifier hs-type">HasDynamic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596789"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596788"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#HasDynamic"><span class="hs-identifier hs-type">HasDynamic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596789"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596788"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-158"></span><span>  </span><span id="local-6989586621680596784"><span class="annot"><span class="annottext">dynamic :: (GetDynamic (TremoloT a) -&gt; f (GetDynamic (TremoloT b)))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+</span><a href="Music.Score.Dynamics.html#dynamic"><span class="hs-keyword hs-var hs-var hs-var hs-var">dynamic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+ -&gt; TremoloT a -&gt; f (TremoloT b))
+-&gt; ((GetDynamic a -&gt; f (GetDynamic b))
+    -&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; (GetDynamic a -&gt; f (GetDynamic b))
+-&gt; TremoloT a
+-&gt; f (TremoloT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(GetDynamic a -&gt; f (GetDynamic b))
+-&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b)
+forall s t.
+HasDynamic s t =&gt;
+Lens s t (GetDynamic s) (GetDynamic t)
+</span><a href="Music.Score.Dynamics.html#dynamic"><span class="hs-keyword hs-var">dynamic</span></a></span></span></span><span>
+</span><span id="line-159"></span><span>
+</span><span id="line-160"></span><span id="local-6989586621680596781"><span id="local-6989586621680596782"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#HasArticulations"><span class="hs-identifier hs-type">HasArticulations</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596782"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596781"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#HasArticulations"><span class="hs-identifier hs-type">HasArticulations</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596782"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596781"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-161"></span><span>  </span><span id="local-6989586621680596777"><span class="annot"><span class="annottext">articulations :: (Articulation (TremoloT a) -&gt; f (Articulation (TremoloT b)))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+</span><a href="Music.Score.Articulation.html#articulations"><span class="hs-identifier hs-var hs-var hs-var hs-var">articulations</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+ -&gt; TremoloT a -&gt; f (TremoloT b))
+-&gt; ((Articulation a -&gt; f (Articulation b))
+    -&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; (Articulation a -&gt; f (Articulation b))
+-&gt; TremoloT a
+-&gt; f (TremoloT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Articulation a -&gt; f (Articulation b))
+-&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b)
+forall s t.
+HasArticulations s t =&gt;
+Traversal s t (Articulation s) (Articulation t)
+</span><a href="Music.Score.Articulation.html#articulations"><span class="hs-identifier hs-var">articulations</span></a></span></span></span><span>
+</span><span id="line-162"></span><span>
+</span><span id="line-163"></span><span id="local-6989586621680596774"><span id="local-6989586621680596775"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Articulation.html#HasArticulation"><span class="hs-identifier hs-type">HasArticulation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596775"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596774"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html#HasArticulation"><span class="hs-identifier hs-type">HasArticulation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596775"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596774"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-164"></span><span>  </span><span id="local-6989586621680596770"><span class="annot"><span class="annottext">articulation :: (Articulation (TremoloT a) -&gt; f (Articulation (TremoloT b)))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+</span><a href="Music.Score.Articulation.html#articulation"><span class="hs-identifier hs-var hs-var hs-var hs-var">articulation</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; TremoloT a -&gt; f (TremoloT b)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+ -&gt; TremoloT a -&gt; f (TremoloT b))
+-&gt; ((Articulation a -&gt; f (Articulation b))
+    -&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b))
+-&gt; (Articulation a -&gt; f (Articulation b))
+-&gt; TremoloT a
+-&gt; f (TremoloT b)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Articulation a -&gt; f (Articulation b))
+-&gt; Couple (Max Word) a -&gt; f (Couple (Max Word) b)
+forall s t.
+HasArticulation s t =&gt;
+Lens s t (Articulation s) (Articulation t)
+</span><a href="Music.Score.Articulation.html#articulation"><span class="hs-identifier hs-var">articulation</span></a></span></span></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- Get the number of tremolo divisions.</span><span>
+</span><span id="line-168"></span><span id="local-6989586621680596768"><span class="annot"><a href="Music.Score.Tremolo.html#runTremoloT"><span class="hs-identifier hs-type">runTremoloT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596768"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680596768"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-169"></span><span id="runTremoloT"><span class="annot"><span class="annottext">runTremoloT :: TremoloT a -&gt; (Int, a)
+</span><a href="Music.Score.Tremolo.html#runTremoloT"><span class="hs-identifier hs-var hs-var">runTremoloT</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Tremolo.html#TremoloT"><span class="hs-identifier hs-type">TremoloT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Max</span></a></span><span> </span><span id="local-6989586621680596766"><span class="annot"><span class="annottext">n :: Word
+</span><a href="#local-6989586621680596766"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680596765"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680596765"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Word -&gt; Int
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">Word
+</span><a href="#local-6989586621680596766"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596765"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-170"></span></pre></body></html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveFoldable #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveFunctor #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TupleSections #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-matches
+  -fno-warn-unused-imports #-}</span><span>
+</span><span id="line-14"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wwarn #-}</span><span>
+</span><span id="line-15"></span><span class="hs-pragma">{-# OPTIONS_HADDOCK hide #-}</span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012-2014</span><span>
+</span><span id="line-23"></span><span class="hs-comment">--</span><span>
+</span><span id="line-24"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-25"></span><span class="hs-comment">--</span><span>
+</span><span id="line-26"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- Portability : non-portable (TF,GNTD)</span><span>
+</span><span id="line-29"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Internal.Export</span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-special">(</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Music.Score.Internal.Export.html#extractBars"><span class="hs-identifier">extractBars</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- voiceToBars',</span><span>
+</span><span id="line-36"></span><span class="hs-comment">-- -- separateBars,</span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- spellPitch,</span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- MVoice,</span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- -- toMVoice,</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- unvoice,</span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- openCommand</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Codec.Midi</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Midi</span></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Exception</span></a></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">mapM</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Plus</span></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html"><span class="hs-identifier">Data.AffineSpace.Point</span></a></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Basis</span></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Bifunctor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">second</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Either</span></a></span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Function</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">on</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">List</span></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Ord</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">comparing</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Ratio</span></a></span><span>
+</span><span id="line-61"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.String</span></a></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-65"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.VectorSpace</span></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Articulation.html"><span class="hs-identifier">Music.Score.Articulation</span></a></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html"><span class="hs-identifier">Music.Score.Dynamics</span></a></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Internal.Quantize.html"><span class="hs-identifier">Music.Score.Internal.Quantize</span></a></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Internal.Util.html"><span class="hs-identifier">Music.Score.Internal.Util</span></a></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.html"><span class="hs-identifier">Music.Score.Meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.html#fromMetaReactive"><span class="hs-identifier">fromMetaReactive</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.Key.html"><span class="hs-identifier">Music.Score.Meta.Key</span></a></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.Time.html"><span class="hs-identifier">Music.Score.Meta.Time</span></a></span><span>
+</span><span id="line-75"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-76"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Pitch.html"><span class="hs-identifier">Music.Score.Pitch</span></a></span><span>
+</span><span id="line-77"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Ties.html"><span class="hs-identifier">Music.Score.Ties</span></a></span><span>
+</span><span id="line-78"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-79"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Internal.Convert.html"><span class="hs-identifier">Music.Time.Internal.Convert</span></a></span><span>
+</span><span id="line-80"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Meta.html"><span class="hs-identifier">Music.Time.Meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier">HasMeta</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier">Meta</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">System.IO.Unsafe</span></a></span><span>
+</span><span id="line-82"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">System.Info</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Info</span></span><span>
+</span><span id="line-83"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/process-1.6.8.0/src"><span class="hs-identifier">System.Process</span></a></span><span>
+</span><span id="line-84"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Text.Pretty</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Pretty</span></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Prelude</span></a></span><span> </span><span class="hs-keyword">hiding</span><span>
+</span><span id="line-86"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">concat</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-87"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">concatMap</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-88"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">foldl</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-89"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">foldr</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-90"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">mapM</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-91"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">maximum</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-92"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">minimum</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-93"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">sum</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-94"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="hs-comment">--</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- TODO generalize the below. We can get a Reactive for each meta property</span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- (time sig, key sig etc).</span><span>
+</span><span id="line-99"></span><span class="hs-comment">--</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- Use Applicative instance to merge reactives pointwise then reactiveToVoice'</span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- for the era of the score.</span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="hs-comment">-- | Extract bar-related information from score meta-data.</span><span>
+</span><span id="line-104"></span><span class="hs-comment">--</span><span>
+</span><span id="line-105"></span><span class="hs-comment">-- Returns a list of bars with durations and possibly time signature, key signature</span><span>
+</span><span id="line-106"></span><span class="hs-comment">-- etc. For no change, Nothing is returned.</span><span>
+</span><span id="line-107"></span><span id="local-6989586621680601267"><span class="annot"><a href="Music.Score.Internal.Export.html#extractBars"><span class="hs-identifier hs-type">extractBars</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-108"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601267"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601267"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601267"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-109"></span><span>  </span><span class="annot"><a href="#local-6989586621680601267"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-110"></span><span>  </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Key.html#KeySignature"><span class="hs-identifier hs-type">KeySignature</span></a></span><span> </span><span class="hs-comment">{-, Maybe Barline, Key, Maybe RehearsalMark, Maybe Tempo-}</span><span class="hs-special">)</span><span class="hs-special">]</span></span><span>
+</span><span id="line-111"></span><span id="extractBars"><span class="annot"><span class="annottext">extractBars :: a -&gt; [(Duration, Maybe TimeSignature, Maybe KeySignature)]
+</span><a href="Music.Score.Internal.Export.html#extractBars"><span class="hs-identifier hs-var hs-var">extractBars</span></a></span></span><span> </span><span id="local-6989586621680601265"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680601265"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601265"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-112"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-113"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680601263"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680601263"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Span -&gt; a -&gt; [(Duration, Maybe TimeSignature, Maybe KeySignature)]
+forall a.
+HasMeta a =&gt;
+Span -&gt; a -&gt; [(Duration, Maybe TimeSignature, Maybe KeySignature)]
+</span><a href="Music.Score.Internal.Export.html#extractBarsInEra"><span class="hs-identifier hs-var">extractBarsInEra</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680601263"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601265"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span id="extractBarsInEra"><span class="annot"><span class="annottext">extractBarsInEra :: Span -&gt; a -&gt; [(Duration, Maybe TimeSignature, Maybe KeySignature)]
+</span><a href="Music.Score.Internal.Export.html#extractBarsInEra"><span class="hs-identifier hs-var hs-var">extractBarsInEra</span></a></span></span><span> </span><span id="local-6989586621680601261"><span class="annot"><span class="annottext">era :: Span
+</span><a href="#local-6989586621680601261"><span class="hs-identifier hs-var">era</span></a></span></span><span> </span><span id="local-6989586621680601260"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680601260"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Duration]
+-&gt; [Maybe TimeSignature]
+-&gt; [Maybe KeySignature]
+-&gt; [(Duration, Maybe TimeSignature, Maybe KeySignature)]
+forall a b c. [a] -&gt; [b] -&gt; [c] -&gt; [(a, b, c)]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">zip3</span></a></span><span> </span><span class="annot"><span class="annottext">[Duration]
+</span><a href="#local-6989586621680601258"><span class="hs-identifier hs-var">dss</span></a></span><span> </span><span class="annot"><span class="annottext">[Maybe TimeSignature]
+</span><a href="#local-6989586621680601257"><span class="hs-identifier hs-var">tss</span></a></span><span> </span><span class="annot"><span class="annottext">[Maybe KeySignature]
+</span><a href="#local-6989586621680601256"><span class="hs-identifier hs-var">kss</span></a></span><span>
+</span><span id="line-116"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-117"></span><span>    </span><span class="annot"><a href="#local-6989586621680601258"><span class="hs-identifier hs-type">dss</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-118"></span><span>    </span><span id="local-6989586621680601258"><span class="annot"><span class="annottext">dss :: [Duration]
+</span><a href="#local-6989586621680601258"><span class="hs-identifier hs-var hs-var">dss</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((TimeSignature, KeySignature) -&gt; Duration)
+-&gt; [(TimeSignature, KeySignature)] -&gt; [Duration]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TimeSignature -&gt; Duration
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span> </span><span class="annot"><span class="annottext">(TimeSignature -&gt; Duration)
+-&gt; ((TimeSignature, KeySignature) -&gt; TimeSignature)
+-&gt; (TimeSignature, KeySignature)
+-&gt; Duration
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(TimeSignature, KeySignature) -&gt; TimeSignature
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(TimeSignature, KeySignature)]
+</span><a href="#local-6989586621680601254"><span class="hs-identifier hs-var">foo2</span></a></span><span>
+</span><span id="line-119"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621680601257"><span class="annot"><span class="annottext">tss :: [Maybe TimeSignature]
+</span><a href="#local-6989586621680601257"><span class="hs-identifier hs-var">tss</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601256"><span class="annot"><span class="annottext">kss :: [Maybe KeySignature]
+</span><a href="#local-6989586621680601256"><span class="hs-identifier hs-var">kss</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Maybe TimeSignature, Maybe KeySignature)]
+-&gt; ([Maybe TimeSignature], [Maybe KeySignature])
+forall a b. [(a, b)] -&gt; ([a], [b])
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">unzip</span></a></span><span> </span><span class="annot"><span class="annottext">[(Maybe TimeSignature, Maybe KeySignature)]
+</span><a href="#local-6989586621680601252"><span class="hs-identifier hs-var">foo3</span></a></span><span>
+</span><span id="line-120"></span><span>    </span><span class="annot"><a href="#local-6989586621680601252"><span class="hs-identifier hs-type">foo3</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Key.html#KeySignature"><span class="hs-identifier hs-type">KeySignature</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-121"></span><span>    </span><span id="local-6989586621680601252"><span class="annot"><span class="annottext">foo3 :: [(Maybe TimeSignature, Maybe KeySignature)]
+</span><a href="#local-6989586621680601252"><span class="hs-identifier hs-var hs-var">foo3</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(TimeSignature, KeySignature)]
+-&gt; [(Maybe TimeSignature, Maybe KeySignature)]
+forall a b. (Eq a, Eq b) =&gt; [(a, b)] -&gt; [(Maybe a, Maybe b)]
+</span><a href="Music.Score.Internal.Util.html#retainUpdates2"><span class="hs-identifier hs-var">retainUpdates2</span></a></span><span> </span><span class="annot"><span class="annottext">[(TimeSignature, KeySignature)]
+</span><a href="#local-6989586621680601254"><span class="hs-identifier hs-var">foo2</span></a></span><span>
+</span><span id="line-122"></span><span>    </span><span class="hs-comment">-- The time and key signature of each bar</span><span>
+</span><span id="line-123"></span><span>    </span><span class="annot"><a href="#local-6989586621680601254"><span class="hs-identifier hs-type">foo2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Meta.Key.html#KeySignature"><span class="hs-identifier hs-type">KeySignature</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-124"></span><span>    </span><span id="local-6989586621680601254"><span class="annot"><span class="annottext">foo2 :: [(TimeSignature, KeySignature)]
+</span><a href="#local-6989586621680601254"><span class="hs-identifier hs-var hs-var">foo2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-125"></span><span>      </span><span class="annot"><span class="annottext">[(TimeSignature, KeySignature)] -&gt; [(TimeSignature, KeySignature)]
+forall a. [(TimeSignature, a)] -&gt; [(TimeSignature, a)]
+</span><a href="Music.Score.Internal.Export.html#prolongLastBarIfDifferent"><span class="hs-identifier hs-var">prolongLastBarIfDifferent</span></a></span><span>
+</span><span id="line-126"></span><span>        </span><span class="annot"><span class="annottext">([(TimeSignature, KeySignature)]
+ -&gt; [(TimeSignature, KeySignature)])
+-&gt; [(TimeSignature, KeySignature)]
+-&gt; [(TimeSignature, KeySignature)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[(Duration, (TimeSignature, KeySignature))]
+-&gt; [(TimeSignature, KeySignature)]
+forall a. [(Duration, (TimeSignature, a))] -&gt; [(TimeSignature, a)]
+</span><a href="Music.Score.Internal.Export.html#tsPerBar"><span class="hs-identifier hs-var">tsPerBar</span></a></span><span>
+</span><span id="line-127"></span><span>        </span><span class="annot"><span class="annottext">([(Duration, (TimeSignature, KeySignature))]
+ -&gt; [(TimeSignature, KeySignature)])
+-&gt; [(Duration, (TimeSignature, KeySignature))]
+-&gt; [(TimeSignature, KeySignature)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Note (TimeSignature, KeySignature)
+ -&gt; (Duration, (TimeSignature, KeySignature)))
+-&gt; [Note (TimeSignature, KeySignature)]
+-&gt; [(Duration, (TimeSignature, KeySignature))]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting
+  (Duration, (TimeSignature, KeySignature))
+  (Note (TimeSignature, KeySignature))
+  (Duration, (TimeSignature, KeySignature))
+-&gt; Note (TimeSignature, KeySignature)
+-&gt; (Duration, (TimeSignature, KeySignature))
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">(Getting
+   (Duration, (TimeSignature, KeySignature))
+   (Note (TimeSignature, KeySignature))
+   (Duration, (TimeSignature, KeySignature))
+ -&gt; Note (TimeSignature, KeySignature)
+ -&gt; (Duration, (TimeSignature, KeySignature)))
+-&gt; Getting
+     (Duration, (TimeSignature, KeySignature))
+     (Note (TimeSignature, KeySignature))
+     (Duration, (TimeSignature, KeySignature))
+-&gt; Note (TimeSignature, KeySignature)
+-&gt; (Duration, (TimeSignature, KeySignature))
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">AnIso
+  (Duration, (TimeSignature, KeySignature))
+  (Duration, (TimeSignature, KeySignature))
+  (Note (TimeSignature, KeySignature))
+  (Note (TimeSignature, KeySignature))
+-&gt; Iso
+     (Note (TimeSignature, KeySignature))
+     (Note (TimeSignature, KeySignature))
+     (Duration, (TimeSignature, KeySignature))
+     (Duration, (TimeSignature, KeySignature))
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso
+  (Duration, (TimeSignature, KeySignature))
+  (Duration, (TimeSignature, KeySignature))
+  (Note (TimeSignature, KeySignature))
+  (Note (TimeSignature, KeySignature))
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-128"></span><span>        </span><span class="annot"><span class="annottext">([Note (TimeSignature, KeySignature)]
+ -&gt; [(Duration, (TimeSignature, KeySignature))])
+-&gt; [Note (TimeSignature, KeySignature)]
+-&gt; [(Duration, (TimeSignature, KeySignature))]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Getting
+  [Note (TimeSignature, KeySignature)]
+  (Voice (TimeSignature, KeySignature))
+  [Note (TimeSignature, KeySignature)]
+-&gt; Voice (TimeSignature, KeySignature)
+-&gt; [Note (TimeSignature, KeySignature)]
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting
+  [Note (TimeSignature, KeySignature)]
+  (Voice (TimeSignature, KeySignature))
+  [Note (TimeSignature, KeySignature)]
+forall a b. Iso (Voice a) (Voice b) [Note a] [Note b]
+</span><a href="Music.Time.Voice.html#notes"><span class="hs-identifier hs-var">notes</span></a></span><span> </span><span class="annot"><span class="annottext">Voice (TimeSignature, KeySignature)
+</span><a href="#local-6989586621680601244"><span class="hs-identifier hs-var">foo1</span></a></span><span>
+</span><span id="line-129"></span><span>    </span><span class="hs-comment">-- Each /combination/ of time signature from 0 througout the duration</span><span>
+</span><span id="line-130"></span><span>    </span><span class="hs-comment">-- of the score</span><span>
+</span><span id="line-131"></span><span>    </span><span class="annot"><a href="#local-6989586621680601244"><span class="hs-identifier hs-type">foo1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Voice.html#Voice"><span class="hs-identifier hs-type">Voice</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Meta.Key.html#KeySignature"><span class="hs-identifier hs-type">KeySignature</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-132"></span><span>    </span><span id="local-6989586621680601244"><span class="annot"><span class="annottext">foo1 :: Voice (TimeSignature, KeySignature)
+</span><a href="#local-6989586621680601244"><span class="hs-identifier hs-var hs-var">foo1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Span
+-&gt; Reactive (TimeSignature, KeySignature)
+-&gt; Voice (TimeSignature, KeySignature)
+forall a. Span -&gt; Reactive a -&gt; Voice a
+</span><a href="Music.Time.Internal.Convert.html#reactiveToVoice%27"><span class="hs-identifier hs-var">reactiveToVoice'</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680601261"><span class="hs-identifier hs-var">era</span></a></span><span> </span><span class="annot"><span class="annottext">Reactive (TimeSignature, KeySignature)
+</span><a href="#local-6989586621680601242"><span class="hs-identifier hs-var">foo</span></a></span><span>
+</span><span id="line-133"></span><span>    </span><span class="hs-comment">-- Each /combination/ of time signature, key signature and so on</span><span>
+</span><span id="line-134"></span><span>    </span><span class="annot"><a href="#local-6989586621680601242"><span class="hs-identifier hs-type">foo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html#Reactive"><span class="hs-identifier hs-type">Reactive</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Meta.Key.html#KeySignature"><span class="hs-identifier hs-type">KeySignature</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-135"></span><span>    </span><span id="local-6989586621680601242"><span class="annot"><span class="annottext">foo :: Reactive (TimeSignature, KeySignature)
+</span><a href="#local-6989586621680601242"><span class="hs-identifier hs-var hs-var">foo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-136"></span><span>      </span><span class="hs-special">(</span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(TimeSignature -&gt; KeySignature -&gt; (TimeSignature, KeySignature))
+-&gt; Reactive TimeSignature
+-&gt; Reactive (KeySignature -&gt; (TimeSignature, KeySignature))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">TimeSignature -&gt; a -&gt; Reactive TimeSignature
+forall a. HasMeta a =&gt; TimeSignature -&gt; a -&gt; Reactive TimeSignature
+</span><a href="Music.Score.Internal.Export.html#getTimeSignatures"><span class="hs-identifier hs-var">getTimeSignatures</span></a></span><span> </span><span class="annot"><span class="annottext">TimeSignature
+</span><a href="Music.Score.Internal.Export.html#defaultTimeSignature"><span class="hs-identifier hs-var">defaultTimeSignature</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601260"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-137"></span><span>        </span><span class="annot"><span class="annottext">Reactive (KeySignature -&gt; (TimeSignature, KeySignature))
+-&gt; Reactive KeySignature -&gt; Reactive (TimeSignature, KeySignature)
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Reactive KeySignature
+forall a. HasMeta a =&gt; a -&gt; Reactive KeySignature
+</span><a href="Music.Score.Internal.Export.html#getKeySignatures"><span class="hs-identifier hs-var">getKeySignatures</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601260"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-138"></span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span class="hs-comment">-- | Extract the time signature meta-track, using the given default.</span><span>
+</span><span id="line-141"></span><span id="local-6989586621680601323"><span class="annot"><a href="Music.Score.Internal.Export.html#getTimeSignatures"><span class="hs-identifier hs-type">getTimeSignatures</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601323"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680601323"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html#Reactive"><span class="hs-identifier hs-type">Reactive</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span></span><span>
+</span><span id="line-142"></span><span id="getTimeSignatures"><span class="annot"><span class="annottext">getTimeSignatures :: TimeSignature -&gt; a -&gt; Reactive TimeSignature
+</span><a href="Music.Score.Internal.Export.html#getTimeSignatures"><span class="hs-identifier hs-var hs-var">getTimeSignatures</span></a></span></span><span> </span><span id="local-6989586621680601237"><span class="annot"><span class="annottext">def :: TimeSignature
+</span><a href="#local-6989586621680601237"><span class="hs-identifier hs-var">def</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Option (Last TimeSignature) -&gt; TimeSignature)
+-&gt; Reactive (Option (Last TimeSignature)) -&gt; Reactive TimeSignature
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TimeSignature -&gt; Maybe TimeSignature -&gt; TimeSignature
+forall a. a -&gt; Maybe a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromMaybe</span></a></span><span> </span><span class="annot"><span class="annottext">TimeSignature
+</span><a href="#local-6989586621680601237"><span class="hs-identifier hs-var">def</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe TimeSignature -&gt; TimeSignature)
+-&gt; (Option (Last TimeSignature) -&gt; Maybe TimeSignature)
+-&gt; Option (Last TimeSignature)
+-&gt; TimeSignature
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Last TimeSignature -&gt; TimeSignature)
+-&gt; Maybe (Last TimeSignature) -&gt; Maybe TimeSignature
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Last TimeSignature -&gt; TimeSignature
+forall a. Last a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var">getLast</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Last TimeSignature) -&gt; Maybe TimeSignature)
+-&gt; (Option (Last TimeSignature) -&gt; Maybe (Last TimeSignature))
+-&gt; Option (Last TimeSignature)
+-&gt; Maybe TimeSignature
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Option (Last TimeSignature) -&gt; Maybe (Last TimeSignature)
+forall a. Option a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var">getOption</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Reactive (Option (Last TimeSignature)) -&gt; Reactive TimeSignature)
+-&gt; (a -&gt; Reactive (Option (Last TimeSignature)))
+-&gt; a
+-&gt; Reactive TimeSignature
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Meta -&gt; Reactive (Option (Last TimeSignature))
+forall b. AttributeClass b =&gt; Meta -&gt; Reactive b
+</span><a href="Music.Score.Meta.html#fromMetaReactive"><span class="hs-identifier hs-var">fromMetaReactive</span></a></span><span> </span><span class="annot"><span class="annottext">(Meta -&gt; Reactive (Option (Last TimeSignature)))
+-&gt; (a -&gt; Meta) -&gt; a -&gt; Reactive (Option (Last TimeSignature))
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting Meta a Meta -&gt; a -&gt; Meta
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span class="hs-comment">-- | Extract the key signature meta-track</span><span>
+</span><span id="line-145"></span><span id="local-6989586621680601319"><span class="annot"><a href="Music.Score.Internal.Export.html#getKeySignatures"><span class="hs-identifier hs-type">getKeySignatures</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680601319"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680601319"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Reactive.html#Reactive"><span class="hs-identifier hs-type">Reactive</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Key.html#KeySignature"><span class="hs-identifier hs-type">KeySignature</span></a></span></span><span>
+</span><span id="line-146"></span><span id="getKeySignatures"><span class="annot"><span class="annottext">getKeySignatures :: a -&gt; Reactive KeySignature
+</span><a href="Music.Score.Internal.Export.html#getKeySignatures"><span class="hs-identifier hs-var hs-var">getKeySignatures</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Meta -&gt; Reactive KeySignature
+forall b. AttributeClass b =&gt; Meta -&gt; Reactive b
+</span><a href="Music.Score.Meta.html#fromMetaReactive"><span class="hs-identifier hs-var">fromMetaReactive</span></a></span><span> </span><span class="annot"><span class="annottext">(Meta -&gt; Reactive KeySignature)
+-&gt; (a -&gt; Meta) -&gt; a -&gt; Reactive KeySignature
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta -&gt; a -&gt; Meta
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span class="annot"><a href="Music.Score.Internal.Export.html#defaultTimeSignature"><span class="hs-identifier hs-type">defaultTimeSignature</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span>
+</span><span id="line-149"></span><span id="defaultTimeSignature"><span class="annot"><span class="annottext">defaultTimeSignature :: TimeSignature
+</span><a href="Music.Score.Internal.Export.html#defaultTimeSignature"><span class="hs-identifier hs-var hs-var">defaultTimeSignature</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; TimeSignature
+</span><a href="Music.Score.Meta.Time.html#time"><span class="hs-identifier hs-var">time</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-152"></span><span class="hs-comment">-- If the last value is shorter than the preceding value, change it to</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- the preceding value.</span><span>
+</span><span id="line-154"></span><span class="hs-comment">--</span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- Useful to scores this from having an unexpected time signature change</span><span>
+</span><span id="line-156"></span><span class="hs-comment">-- in the last bar.</span><span>
+</span><span id="line-157"></span><span id="local-6989586621680601352"><span class="annot"><a href="Music.Score.Internal.Export.html#prolongLastBarIfDifferent"><span class="hs-identifier hs-type">prolongLastBarIfDifferent</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680601352"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680601352"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span><span>
+</span><span id="line-158"></span><span id="prolongLastBarIfDifferent"><span class="annot"><span class="annottext">prolongLastBarIfDifferent :: [(TimeSignature, a)] -&gt; [(TimeSignature, a)]
+</span><a href="Music.Score.Internal.Export.html#prolongLastBarIfDifferent"><span class="hs-identifier hs-var hs-var">prolongLastBarIfDifferent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(TimeSignature, a)] -&gt; [(TimeSignature, a)]
+forall a. [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">reverse</span></a></span><span> </span><span class="annot"><span class="annottext">([(TimeSignature, a)] -&gt; [(TimeSignature, a)])
+-&gt; ([(TimeSignature, a)] -&gt; [(TimeSignature, a)])
+-&gt; [(TimeSignature, a)]
+-&gt; [(TimeSignature, a)]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">[(TimeSignature, a)] -&gt; [(TimeSignature, a)]
+forall a b. Ord a =&gt; [(a, b)] -&gt; [(a, b)]
+</span><a href="#local-6989586621680601230"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">([(TimeSignature, a)] -&gt; [(TimeSignature, a)])
+-&gt; ([(TimeSignature, a)] -&gt; [(TimeSignature, a)])
+-&gt; [(TimeSignature, a)]
+-&gt; [(TimeSignature, a)]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">[(TimeSignature, a)] -&gt; [(TimeSignature, a)]
+forall a. [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">reverse</span></a></span><span>
+</span><span id="line-159"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-160"></span><span>    </span><span id="local-6989586621680601230"><span class="annot"><span class="annottext">go :: [(a, b)] -&gt; [(a, b)]
+</span><a href="#local-6989586621680601230"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-161"></span><span>    </span><span class="annot"><a href="#local-6989586621680601230"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">[</span><span id="local-6989586621680601229"><span class="annot"><span class="annottext">x :: (a, b)
+</span><a href="#local-6989586621680601229"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">(a, b)
+</span><a href="#local-6989586621680601229"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-162"></span><span>    </span><span class="annot"><a href="#local-6989586621680601230"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680601228"><span class="annot"><span class="annottext">last :: a
+</span><a href="#local-6989586621680601228"><span class="hs-identifier hs-var">last</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601227"><span class="annot"><span class="annottext">lastX :: b
+</span><a href="#local-6989586621680601227"><span class="hs-identifier hs-var">lastX</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">:</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680601226"><span class="annot"><span class="annottext">penult :: a
+</span><a href="#local-6989586621680601226"><span class="hs-identifier hs-var">penult</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601225"><span class="annot"><span class="annottext">penultX :: b
+</span><a href="#local-6989586621680601225"><span class="hs-identifier hs-var">penultX</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">:</span></a></span><span> </span><span id="local-6989586621680601224"><span class="annot"><span class="annottext">xs :: [(a, b)]
+</span><a href="#local-6989586621680601224"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-163"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601228"><span class="hs-identifier hs-var">last</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&lt;</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601226"><span class="hs-identifier hs-var">penult</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601226"><span class="hs-identifier hs-var">penult</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680601227"><span class="hs-identifier hs-var">lastX</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; [(a, b)] -&gt; [(a, b)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601226"><span class="hs-identifier hs-var">penult</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680601225"><span class="hs-identifier hs-var">penultX</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; [(a, b)] -&gt; [(a, b)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">[(a, b)]
+</span><a href="#local-6989586621680601224"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-164"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">otherwise</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601228"><span class="hs-identifier hs-var">last</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680601227"><span class="hs-identifier hs-var">lastX</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; [(a, b)] -&gt; [(a, b)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601226"><span class="hs-identifier hs-var">penult</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680601225"><span class="hs-identifier hs-var">penultX</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; [(a, b)] -&gt; [(a, b)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">[(a, b)]
+</span><a href="#local-6989586621680601224"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span class="hs-comment">-- | Given a list of time signatures and the duration between them return a</span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- list of appropriate time signatures for each bar.</span><span>
+</span><span id="line-168"></span><span id="local-6989586621680601348"><span class="annot"><a href="Music.Score.Internal.Export.html#tsPerBar"><span class="hs-identifier hs-type">tsPerBar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680601348"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680601348"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span><span>
+</span><span id="line-169"></span><span id="tsPerBar"><span class="annot"><span class="annottext">tsPerBar :: [(Duration, (TimeSignature, a))] -&gt; [(TimeSignature, a)]
+</span><a href="Music.Score.Internal.Export.html#tsPerBar"><span class="hs-identifier hs-var hs-var">tsPerBar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Duration, (TimeSignature, a)) -&gt; [(TimeSignature, a)])
+-&gt; [(Duration, (TimeSignature, a))] -&gt; [(TimeSignature, a)]
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">concatMap</span></a></span><span> </span><span class="annot"><span class="annottext">(((Duration, (TimeSignature, a)) -&gt; [(TimeSignature, a)])
+ -&gt; [(Duration, (TimeSignature, a))] -&gt; [(TimeSignature, a)])
+-&gt; ((Duration, (TimeSignature, a)) -&gt; [(TimeSignature, a)])
+-&gt; [(Duration, (TimeSignature, a))]
+-&gt; [(TimeSignature, a)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration -&gt; (TimeSignature, a) -&gt; [(TimeSignature, a)])
+-&gt; (Duration, (TimeSignature, a)) -&gt; [(TimeSignature, a)]
+forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">uncurry</span></a></span><span> </span><span class="annot"><span class="annottext">((Duration -&gt; (TimeSignature, a) -&gt; [(TimeSignature, a)])
+ -&gt; (Duration, (TimeSignature, a)) -&gt; [(TimeSignature, a)])
+-&gt; (Duration -&gt; (TimeSignature, a) -&gt; [(TimeSignature, a)])
+-&gt; (Duration, (TimeSignature, a))
+-&gt; [(TimeSignature, a)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((TimeSignature -&gt; a -&gt; [(TimeSignature, a)])
+ -&gt; (TimeSignature, a) -&gt; [(TimeSignature, a)])
+-&gt; (Duration -&gt; TimeSignature -&gt; a -&gt; [(TimeSignature, a)])
+-&gt; Duration
+-&gt; (TimeSignature, a)
+-&gt; [(TimeSignature, a)]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(TimeSignature -&gt; a -&gt; [(TimeSignature, a)])
+-&gt; (TimeSignature, a) -&gt; [(TimeSignature, a)]
+forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">uncurry</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; TimeSignature -&gt; a -&gt; [(TimeSignature, a)]
+forall a. Duration -&gt; TimeSignature -&gt; a -&gt; [(TimeSignature, a)]
+</span><a href="#local-6989586621680601221"><span class="hs-identifier hs-var">go</span></a></span><span>
+</span><span id="line-170"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-171"></span><span>    </span><span class="hs-comment">-- (TODO use voice instead of list?),</span><span>
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span>    </span><span id="local-6989586621680601294"><span class="annot"><a href="#local-6989586621680601221"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680601294"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680601294"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span><span>
+</span><span id="line-174"></span><span>    </span><span id="local-6989586621680601221"><span class="annot"><span class="annottext">go :: Duration -&gt; TimeSignature -&gt; a -&gt; [(TimeSignature, a)]
+</span><a href="#local-6989586621680601221"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621680601220"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680601220"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621680601219"><span class="annot"><span class="annottext">ts :: TimeSignature
+</span><a href="#local-6989586621680601219"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621680601218"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680601218"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-175"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680601217"><span class="annot"><span class="annottext">n :: Integer
+</span><a href="#local-6989586621680601217"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680601216"><span class="annot"><span class="annottext">r :: Duration
+</span><a href="#local-6989586621680601216"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeSignature -&gt; Duration -&gt; (Integer, Duration)
+</span><a href="Music.Score.Internal.Export.html#numWholeBars"><span class="hs-identifier hs-var">numWholeBars</span></a></span><span> </span><span class="annot"><span class="annottext">TimeSignature
+</span><a href="#local-6989586621680601219"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680601220"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-176"></span><span>       </span><span class="hs-keyword">in</span><span> </span><span class="hs-comment">-- Repeat the chosen time signature as long as possible</span><span>
+</span><span id="line-177"></span><span>          </span><span class="hs-comment">-- If there is a rest duration, add a bar of that duration choosing an appropriate time signature</span><span>
+</span><span id="line-178"></span><span>          </span><span class="annot"><span class="annottext">Integer -&gt; (TimeSignature, a) -&gt; [(TimeSignature, a)]
+forall a b. Integral a =&gt; a -&gt; b -&gt; [b]
+</span><a href="Music.Score.Internal.Util.html#replic"><span class="hs-identifier hs-var">replic</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621680601217"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TimeSignature
+</span><a href="#local-6989586621680601219"><span class="hs-identifier hs-var">ts</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601218"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-179"></span><span>            </span><span class="annot"><span class="annottext">[(TimeSignature, a)]
+-&gt; [(TimeSignature, a)] -&gt; [(TimeSignature, a)]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680601216"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&gt;</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-180"></span><span>              </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Maybe TimeSignature
+</span><a href="Music.Score.Meta.Time.html#standardTimeSignature"><span class="hs-identifier hs-var">standardTimeSignature</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680601216"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-181"></span><span>                </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680601211"><span class="annot"><span class="annottext">x :: TimeSignature
+</span><a href="#local-6989586621680601211"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">TimeSignature
+</span><a href="#local-6989586621680601211"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601218"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-182"></span><span>                </span><span class="hs-comment">-- Remainder duration is not a power of two</span><span>
+</span><span id="line-183"></span><span>                </span><span class="hs-comment">--</span><span>
+</span><span id="line-184"></span><span>                </span><span class="hs-comment">-- TODO this should fail iff this is not the last &quot;note&quot; in the</span><span>
+</span><span id="line-185"></span><span>                </span><span class="hs-comment">-- voice given to tsPerBar. For the last note it's OK to chose</span><span>
+</span><span id="line-186"></span><span>                </span><span class="hs-comment">-- an arbitrary TS (FIXME as long as it's a power of 2 larger than r!)</span><span>
+</span><span id="line-187"></span><span>                </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; TimeSignature
+</span><a href="Music.Score.Meta.Time.html#time"><span class="hs-identifier hs-var">time</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680601218"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-188"></span><span>              </span><span class="hs-keyword">else</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-189"></span><span>
+</span><span id="line-190"></span><span class="hs-comment">-- | Return the number of whole bars needed to notate the given duration, as well as the remainder duration.</span><span>
+</span><span id="line-191"></span><span class="annot"><a href="Music.Score.Internal.Export.html#numWholeBars"><span class="hs-identifier hs-type">numWholeBars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Meta.Time.html#TimeSignature"><span class="hs-identifier hs-type">TimeSignature</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.2.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-192"></span><span id="numWholeBars"><span class="annot"><span class="annottext">numWholeBars :: TimeSignature -&gt; Duration -&gt; (Integer, Duration)
+</span><a href="Music.Score.Internal.Export.html#numWholeBars"><span class="hs-identifier hs-var hs-var">numWholeBars</span></a></span></span><span> </span><span id="local-6989586621680601210"><span class="annot"><span class="annottext">ts :: TimeSignature
+</span><a href="#local-6989586621680601210"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621680601209"><span class="annot"><span class="annottext">dur :: Duration
+</span><a href="#local-6989586621680601209"><span class="hs-identifier hs-var">dur</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Duration -&gt; Duration)
+-&gt; (Integer, Duration) -&gt; (Integer, Duration)
+forall (p :: * -&gt; * -&gt; *) b c a.
+Bifunctor p =&gt;
+(b -&gt; c) -&gt; p a b -&gt; p a c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">second</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680601207"><span class="hs-identifier hs-var">barDur</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Integer, Duration) -&gt; (Integer, Duration))
+-&gt; (Integer, Duration) -&gt; (Integer, Duration)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; (Integer, Duration)
+forall a b. (RealFrac a, Integral b) =&gt; a -&gt; (b, a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">properFraction</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680601209"><span class="hs-identifier hs-var">dur</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680601207"><span class="hs-identifier hs-var">barDur</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680601207"><span class="annot"><span class="annottext">barDur :: Duration
+</span><a href="#local-6989586621680601207"><span class="hs-identifier hs-var hs-var">barDur</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeSignature -&gt; Duration
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span> </span><span class="annot"><span class="annottext">TimeSignature
+</span><a href="#local-6989586621680601210"><span class="hs-identifier hs-var">ts</span></a></span><span>
+</span><span id="line-193"></span></pre></body></html>

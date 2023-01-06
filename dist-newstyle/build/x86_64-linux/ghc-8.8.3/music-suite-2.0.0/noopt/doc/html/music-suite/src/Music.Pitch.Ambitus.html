@@ -1,0 +1,339 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- | Pitch range or ambitus.</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Pitch.Ambitus</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier">Ambitus</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Music.Pitch.Ambitus.html#ambitusInterval"><span class="hs-identifier">ambitusInterval</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Music.Pitch.Ambitus.html#inAmbitus"><span class="hs-identifier">inAmbitus</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.Offsets.html"><span class="hs-identifier">Data.AffineSpace.Point.Offsets</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.AffineSpace.Point.Offsets.html#AffinePair"><span class="hs-identifier">AffinePair</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Bifoldable</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Bifunctor</span></a></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Bitraversable</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Interval</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Interval</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">interval</span></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.VectorSpace</span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Semitones.html"><span class="hs-identifier">Music.Pitch.Common.Semitones</span></a></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- | A set of pitches between two extremes.</span><span>
+</span><span id="line-30"></span><span class="hs-comment">--</span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- Also known as range, tessitura or (in maths) interval.</span><span>
+</span><span id="line-32"></span><span class="hs-keyword">data</span><span> </span><span id="Ambitus"><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-var">Ambitus</span></a></span></span><span> </span><span id="local-6989586621680574060"><span class="annot"><a href="#local-6989586621680574060"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span id="local-6989586621680574061"><span class="annot"><a href="#local-6989586621680574061"><span class="hs-identifier hs-type">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Ambitus"><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-var">Ambitus</span></a></span></span><span> </span><span class="hs-special">{</span><span id="low"><span class="annot"><span class="annottext">Ambitus v p -&gt; p
+</span><a href="Music.Pitch.Ambitus.html#low"><span class="hs-identifier hs-var hs-var">low</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621680574061"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">,</span><span> </span><span id="high"><span class="annot"><span class="annottext">Ambitus v p -&gt; p
+</span><a href="Music.Pitch.Ambitus.html#high"><span class="hs-identifier hs-var hs-var">high</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621680574061"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680573996"><span id="local-6989586621680573998"><span class="annot"><span class="annottext">a -&gt; Ambitus v b -&gt; Ambitus v a
+(a -&gt; b) -&gt; Ambitus v a -&gt; Ambitus v b
+(forall a b. (a -&gt; b) -&gt; Ambitus v a -&gt; Ambitus v b)
+-&gt; (forall a b. a -&gt; Ambitus v b -&gt; Ambitus v a)
+-&gt; Functor (Ambitus v)
+forall a b. a -&gt; Ambitus v b -&gt; Ambitus v a
+forall a b. (a -&gt; b) -&gt; Ambitus v a -&gt; Ambitus v b
+forall v a b. a -&gt; Ambitus v b -&gt; Ambitus v a
+forall v a b. (a -&gt; b) -&gt; Ambitus v a -&gt; Ambitus v b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; Ambitus v b -&gt; Ambitus v a
+$c&lt;$ :: forall v a b. a -&gt; Ambitus v b -&gt; Ambitus v a
+fmap :: (a -&gt; b) -&gt; Ambitus v a -&gt; Ambitus v b
+$cfmap :: forall v a b. (a -&gt; b) -&gt; Ambitus v a -&gt; Ambitus v b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680573961"><span id="local-6989586621680573963"><span id="local-6989586621680573965"><span id="local-6989586621680573967"><span id="local-6989586621680573969"><span id="local-6989586621680573971"><span id="local-6989586621680573973"><span id="local-6989586621680573975"><span id="local-6989586621680573977"><span id="local-6989586621680573979"><span id="local-6989586621680573981"><span id="local-6989586621680573983"><span id="local-6989586621680573985"><span id="local-6989586621680573987"><span id="local-6989586621680573989"><span id="local-6989586621680573991"><span id="local-6989586621680573993"><span class="annot"><span class="annottext">Ambitus v a -&gt; Bool
+(a -&gt; m) -&gt; Ambitus v a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+(forall m. Monoid m =&gt; Ambitus v m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Ambitus v a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Ambitus v a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Ambitus v a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Ambitus v a -&gt; a)
+-&gt; (forall a. Ambitus v a -&gt; [a])
+-&gt; (forall a. Ambitus v a -&gt; Bool)
+-&gt; (forall a. Ambitus v a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; Ambitus v a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; Ambitus v a -&gt; a)
+-&gt; (forall a. Ord a =&gt; Ambitus v a -&gt; a)
+-&gt; (forall a. Num a =&gt; Ambitus v a -&gt; a)
+-&gt; (forall a. Num a =&gt; Ambitus v a -&gt; a)
+-&gt; Foldable (Ambitus v)
+forall a. Eq a =&gt; a -&gt; Ambitus v a -&gt; Bool
+forall a. Num a =&gt; Ambitus v a -&gt; a
+forall a. Ord a =&gt; Ambitus v a -&gt; a
+forall m. Monoid m =&gt; Ambitus v m -&gt; m
+forall a. Ambitus v a -&gt; Bool
+forall a. Ambitus v a -&gt; Int
+forall a. Ambitus v a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; Ambitus v a -&gt; a
+forall v a. Eq a =&gt; a -&gt; Ambitus v a -&gt; Bool
+forall v a. Num a =&gt; Ambitus v a -&gt; a
+forall v a. Ord a =&gt; Ambitus v a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Ambitus v a -&gt; m
+forall v m. Monoid m =&gt; Ambitus v m -&gt; m
+forall v a. Ambitus v a -&gt; Bool
+forall v a. Ambitus v a -&gt; Int
+forall v a. Ambitus v a -&gt; [a]
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+forall v a. (a -&gt; a -&gt; a) -&gt; Ambitus v a -&gt; a
+forall v m a. Monoid m =&gt; (a -&gt; m) -&gt; Ambitus v a -&gt; m
+forall v b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+forall v a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: Ambitus v a -&gt; a
+$cproduct :: forall v a. Num a =&gt; Ambitus v a -&gt; a
+sum :: Ambitus v a -&gt; a
+$csum :: forall v a. Num a =&gt; Ambitus v a -&gt; a
+minimum :: Ambitus v a -&gt; a
+$cminimum :: forall v a. Ord a =&gt; Ambitus v a -&gt; a
+maximum :: Ambitus v a -&gt; a
+$cmaximum :: forall v a. Ord a =&gt; Ambitus v a -&gt; a
+elem :: a -&gt; Ambitus v a -&gt; Bool
+$celem :: forall v a. Eq a =&gt; a -&gt; Ambitus v a -&gt; Bool
+length :: Ambitus v a -&gt; Int
+$clength :: forall v a. Ambitus v a -&gt; Int
+null :: Ambitus v a -&gt; Bool
+$cnull :: forall v a. Ambitus v a -&gt; Bool
+toList :: Ambitus v a -&gt; [a]
+$ctoList :: forall v a. Ambitus v a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; Ambitus v a -&gt; a
+$cfoldl1 :: forall v a. (a -&gt; a -&gt; a) -&gt; Ambitus v a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; Ambitus v a -&gt; a
+$cfoldr1 :: forall v a. (a -&gt; a -&gt; a) -&gt; Ambitus v a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+$cfoldl' :: forall v b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+$cfoldl :: forall v b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+$cfoldr' :: forall v a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+$cfoldr :: forall v a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Ambitus v a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; Ambitus v a -&gt; m
+$cfoldMap' :: forall v m a. Monoid m =&gt; (a -&gt; m) -&gt; Ambitus v a -&gt; m
+foldMap :: (a -&gt; m) -&gt; Ambitus v a -&gt; m
+$cfoldMap :: forall v m a. Monoid m =&gt; (a -&gt; m) -&gt; Ambitus v a -&gt; m
+fold :: Ambitus v m -&gt; m
+$cfold :: forall v m. Monoid m =&gt; Ambitus v m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680573950"><span id="local-6989586621680573952"><span id="local-6989586621680573954"><span id="local-6989586621680573956"><span class="annot"><span class="annottext">Functor (Ambitus v)
+Foldable (Ambitus v)
+(Functor (Ambitus v), Foldable (Ambitus v)) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; Ambitus v a -&gt; f (Ambitus v b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    Ambitus v (f a) -&gt; f (Ambitus v a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; Ambitus v a -&gt; m (Ambitus v b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    Ambitus v (m a) -&gt; m (Ambitus v a))
+-&gt; Traversable (Ambitus v)
+(a -&gt; f b) -&gt; Ambitus v a -&gt; f (Ambitus v b)
+forall v. Functor (Ambitus v)
+forall v. Foldable (Ambitus v)
+forall v (m :: * -&gt; *) a.
+Monad m =&gt;
+Ambitus v (m a) -&gt; m (Ambitus v a)
+forall v (f :: * -&gt; *) a.
+Applicative f =&gt;
+Ambitus v (f a) -&gt; f (Ambitus v a)
+forall v (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Ambitus v a -&gt; m (Ambitus v b)
+forall v (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Ambitus v a -&gt; f (Ambitus v b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a.
+Monad m =&gt;
+Ambitus v (m a) -&gt; m (Ambitus v a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+Ambitus v (f a) -&gt; f (Ambitus v a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Ambitus v a -&gt; m (Ambitus v b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Ambitus v a -&gt; f (Ambitus v b)
+sequence :: Ambitus v (m a) -&gt; m (Ambitus v a)
+$csequence :: forall v (m :: * -&gt; *) a.
+Monad m =&gt;
+Ambitus v (m a) -&gt; m (Ambitus v a)
+mapM :: (a -&gt; m b) -&gt; Ambitus v a -&gt; m (Ambitus v b)
+$cmapM :: forall v (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Ambitus v a -&gt; m (Ambitus v b)
+sequenceA :: Ambitus v (f a) -&gt; f (Ambitus v a)
+$csequenceA :: forall v (f :: * -&gt; *) a.
+Applicative f =&gt;
+Ambitus v (f a) -&gt; f (Ambitus v a)
+traverse :: (a -&gt; f b) -&gt; Ambitus v a -&gt; f (Ambitus v b)
+$ctraverse :: forall v (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Ambitus v a -&gt; f (Ambitus v b)
+$cp2Traversable :: forall v. Foldable (Ambitus v)
+$cp1Traversable :: forall v. Functor (Ambitus v)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680573943"><span id="local-6989586621680573945"><span id="local-6989586621680573947"><span class="annot"><span class="annottext">Int -&gt; Ambitus v p -&gt; ShowS
+[Ambitus v p] -&gt; ShowS
+Ambitus v p -&gt; String
+(Int -&gt; Ambitus v p -&gt; ShowS)
+-&gt; (Ambitus v p -&gt; String)
+-&gt; ([Ambitus v p] -&gt; ShowS)
+-&gt; Show (Ambitus v p)
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+forall v p. Show p =&gt; Int -&gt; Ambitus v p -&gt; ShowS
+forall v p. Show p =&gt; [Ambitus v p] -&gt; ShowS
+forall v p. Show p =&gt; Ambitus v p -&gt; String
+showList :: [Ambitus v p] -&gt; ShowS
+$cshowList :: forall v p. Show p =&gt; [Ambitus v p] -&gt; ShowS
+show :: Ambitus v p -&gt; String
+$cshow :: forall v p. Show p =&gt; Ambitus v p -&gt; String
+showsPrec :: Int -&gt; Ambitus v p -&gt; ShowS
+$cshowsPrec :: forall v p. Show p =&gt; Int -&gt; Ambitus v p -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680573937"><span id="local-6989586621680573939"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bifunctor</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-type">Ambitus</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-36"></span><span>  </span><span id="local-6989586621680573935"><span class="annot"><span class="annottext">bimap :: (a -&gt; b) -&gt; (c -&gt; d) -&gt; Ambitus a c -&gt; Ambitus b d
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">bimap</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span id="local-6989586621680573933"><span class="annot"><span class="annottext">g :: c -&gt; d
+</span><a href="#local-6989586621680573933"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-type">Ambitus</span></a></span><span> </span><span id="local-6989586621680573932"><span class="annot"><span class="annottext">x :: c
+</span><a href="#local-6989586621680573932"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680573931"><span class="annot"><span class="annottext">y :: c
+</span><a href="#local-6989586621680573931"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">d -&gt; d -&gt; Ambitus b d
+forall v p. p -&gt; p -&gt; Ambitus v p
+</span><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-var">Ambitus</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c -&gt; d
+</span><a href="#local-6989586621680573933"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621680573932"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c -&gt; d
+</span><a href="#local-6989586621680573933"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621680573931"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680573924"><span id="local-6989586621680573926"><span id="local-6989586621680573929"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bifoldable</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-type">Ambitus</span></a></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-39"></span><span>  </span><span id="local-6989586621680573922"><span class="annot"><span class="annottext">bifoldMap :: (a -&gt; m) -&gt; (b -&gt; m) -&gt; Ambitus a b -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">bifoldMap</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span id="local-6989586621680573920"><span class="annot"><span class="annottext">g :: b -&gt; m
+</span><a href="#local-6989586621680573920"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-type">Ambitus</span></a></span><span> </span><span id="local-6989586621680573919"><span class="annot"><span class="annottext">x :: b
+</span><a href="#local-6989586621680573919"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680573918"><span class="annot"><span class="annottext">y :: b
+</span><a href="#local-6989586621680573918"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b -&gt; m
+</span><a href="#local-6989586621680573920"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680573919"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">m -&gt; m -&gt; m
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; m
+</span><a href="#local-6989586621680573920"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680573918"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bitraversable</span></a></span><span> </span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-type">Ambitus</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-42"></span><span>  </span><span id="local-6989586621680573913"><span class="annot"><span class="annottext">bitraverse :: (a -&gt; f c) -&gt; (b -&gt; f d) -&gt; Ambitus a b -&gt; f (Ambitus c d)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">bitraverse</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span id="local-6989586621680573911"><span class="annot"><span class="annottext">g :: b -&gt; f d
+</span><a href="#local-6989586621680573911"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-type">Ambitus</span></a></span><span> </span><span id="local-6989586621680573910"><span class="annot"><span class="annottext">x :: b
+</span><a href="#local-6989586621680573910"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680573909"><span class="annot"><span class="annottext">y :: b
+</span><a href="#local-6989586621680573909"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">d -&gt; d -&gt; Ambitus c d
+forall v p. p -&gt; p -&gt; Ambitus v p
+</span><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-var">Ambitus</span></a></span><span> </span><span class="annot"><span class="annottext">(d -&gt; d -&gt; Ambitus c d) -&gt; f d -&gt; f (d -&gt; Ambitus c d)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;$&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; f d
+</span><a href="#local-6989586621680573911"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680573910"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">f (d -&gt; Ambitus c d) -&gt; f d -&gt; f (Ambitus c d)
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;*&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; f d
+</span><a href="#local-6989586621680573911"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680573909"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span id="local-6989586621680573906"><span id="local-6989586621680573907"><span class="annot"><a href="Music.Pitch.Ambitus.html#ambitusInterval"><span class="hs-identifier hs-type">ambitusInterval</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.AffineSpace.Point.Offsets.html#AffinePair"><span class="hs-identifier hs-type">AffinePair</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573907"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573906"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-type">Ambitus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573907"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573906"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680573907"><span class="hs-identifier hs-type">v</span></a></span></span></span><span>
+</span><span id="line-45"></span><span id="ambitusInterval"><span class="annot"><span class="annottext">ambitusInterval :: Ambitus v p -&gt; v
+</span><a href="Music.Pitch.Ambitus.html#ambitusInterval"><span class="hs-identifier hs-var hs-var">ambitusInterval</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-type">Ambitus</span></a></span><span> </span><span id="local-6989586621680573905"><span class="annot"><span class="annottext">x :: p
+</span><a href="#local-6989586621680573905"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680573904"><span class="annot"><span class="annottext">y :: p
+</span><a href="#local-6989586621680573904"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680573905"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">p -&gt; p -&gt; Diff p
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680573904"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span id="local-6989586621680573901"><span id="local-6989586621680573902"><span class="annot"><a href="Music.Pitch.Ambitus.html#inAmbitus"><span class="hs-identifier hs-type">inAmbitus</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.AffineSpace.Point.Offsets.html#AffinePair"><span class="hs-identifier hs-type">AffinePair</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573902"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573901"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#HasSemitones"><span class="hs-identifier hs-type">HasSemitones</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573902"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-type">Ambitus</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573902"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573901"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680573901"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span></span></span><span>
+</span><span id="line-48"></span><span id="inAmbitus"><span class="annot"><span class="annottext">inAmbitus :: Ambitus v p -&gt; p -&gt; Bool
+</span><a href="Music.Pitch.Ambitus.html#inAmbitus"><span class="hs-identifier hs-var hs-var">inAmbitus</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Ambitus.html#Ambitus"><span class="hs-identifier hs-type">Ambitus</span></a></span><span> </span><span id="local-6989586621680573900"><span class="annot"><span class="annottext">a :: p
+</span><a href="#local-6989586621680573900"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621680573899"><span class="annot"><span class="annottext">c :: p
+</span><a href="#local-6989586621680573899"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680573898"><span class="annot"><span class="annottext">b :: p
+</span><a href="#local-6989586621680573898"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-49"></span><span>  </span><span class="annot"><span class="annottext">v -&gt; Semitones
+forall a. HasSemitones a =&gt; a -&gt; Semitones
+</span><a href="Music.Pitch.Common.Internal.html#semitones"><span class="hs-identifier hs-var">semitones</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680573899"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">p -&gt; p -&gt; Diff p
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680573898"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Semitones -&gt; Semitones -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&gt;=</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">v -&gt; Semitones
+forall a. HasSemitones a =&gt; a -&gt; Semitones
+</span><a href="Music.Pitch.Common.Internal.html#semitones"><span class="hs-identifier hs-var">semitones</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680573898"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">p -&gt; p -&gt; Diff p
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621680573900"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Semitones -&gt; Semitones -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&gt;=</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-50"></span><span class="hs-comment">{-
+Misc stuff from data-interval and friends. What is relevant?
+
+member :: Ord r =&gt; r -&gt; Interval r -&gt; Bool
+isSubsetOf :: Ord r =&gt; Interval r -&gt; Interval r -&gt; Bool
+isProperSubsetOf :: Ord r =&gt; Interval r -&gt; Interval r -&gt; Bool
+-- TODO exact type here depends on what type of interval we use underneath
+lowerBound :: Interval r -&gt; Extended r
+width :: (Num r, Ord r) =&gt; Interval r -&gt; r
+intersection :: Ord a =&gt; Interval a -&gt; Interval a -&gt; Interval a
+hull :: Ord a =&gt; Interval a -&gt; Interval a -&gt; Interval a
+bisect :: Fractional a =&gt; Interval a -&gt; (Interval a, Interval a)
+distance :: (Num a, Ord a) =&gt; Interval a -&gt; Interval a -&gt; a
+(...) :: Ord a =&gt; a -&gt; a -&gt; Interval a infix 3
+(+/-) :: (Num a, Ord a) =&gt; a -&gt; a -&gt; Interval a infixl 6
+null :: Interval a -&gt; Bool
+singleton :: a -&gt; Interval a
+elem :: Ord a =&gt; a -&gt; Interval a -&gt; Bool
+singular :: Ord a =&gt; Interval a -&gt; Bool
+width :: Num a =&gt; Interval a -&gt; a
+midpoint :: Fractional a =&gt; Interval a -&gt; a
+inflate/deflate :: (Num a, Ord a) =&gt; a -&gt; Interval a -&gt; Interval a
+-}</span><span>
+</span><span id="line-73"></span></pre></body></html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE PackageImports #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-matches
+  -fno-warn-unused-imports #-}</span><span>
+</span><span id="line-18"></span><span class="hs-pragma">{-# OPTIONS_HADDOCK hide #-}</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Internal.VoiceSeparation</span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Music.Score.Internal.VoiceSeparation.html#partitionSimplistic"><span class="hs-identifier">partitionSimplistic</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- import Math.Combinat.Partitions.Set ()</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- import BasePrelude</span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Logic</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Logic</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">observe</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">observeAll</span></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Logic.Class</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ifte</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">interleave</span></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Random</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">evalRand</span></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">asum</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Set</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">S</span></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/wxyzhh91cr62mj03s2h8wdj4zsmj3hf8-random-1.1-doc/share/doc/random-1.1/html/src"><span class="hs-identifier">System.Random</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/wxyzhh91cr62mj03s2h8wdj4zsmj3hf8-random-1.1-doc/share/doc/random-1.1/html/src"><span class="hs-identifier">mkStdGen</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="hs-string">&quot;random-shuffle&quot;</span><span> </span><span class="annot"><span class="hs-identifier">System.Random.Shuffle</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">shuffleM</span></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-comment">{-
+      We are looking for a partition of the set of notes *in each bar/staff* such that
+        (voice sep should be post tie split, post chord merge, pre quantization, i.e. as late as possible,
+         as complexity grows so quickly!)
+      - Each subset is a voice (no overlapping notes)
+      - The number of subsets (size of the partition) is as small as possible
+      - The sum of all adjacent steps in each subvoice (its cumulative step size) is as small as possible
+      - The ambitus of each subvoice (max pitch-min pitch) is as small as possible
+    The number of partitions to consider grows quickly, so we really need a heuristic method
+      https://en.wikipedia.org/wiki/Bell_number
+    Type (Score a -&gt; [NooverlapScore a]) or (Score a -&gt; [Voice (Maybe a)])
+
+
+-}</span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="hs-comment">{-
+Returns a set partition of the the given values.
+
+- The first function provides a way to reject a partition as invalid.
+- The first function provides a way to to weight partitions.
+
+A partition with relatively high weight *should* be returned (no guarantees here).
+
+-}</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-comment">{-
+This is probably to general.
+
+It is essentially brute-force at is has to generate all partitions
+(using setPartitionsWithKParts or similar), and then filter.
+
+Yes we have lazy evalutation, but look at the numbers below.
+
+    partitionWeighted :: Set a -&gt; (Set a -&gt; Bool) -&gt; (Set a -&gt; Double) -&gt; Set (Set a)
+-}</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="hs-comment">{-
+When applied to (bar/part-wise) voice sep, k will almost always be in [1..4].
+
+Prelude Math.Combinat.Partitions.Set&gt; countSetPartitionsWithKParts 4 (16*4)
+14178431382758465933500213885109548501
+Prelude Math.Combinat.Partitions.Set&gt; countSetPartitionsWithKParts 4 (16)
+171798901
+Prelude Math.Combinat.Partitions.Set&gt; countSetPartitionsWithKParts 3 (16)
+7141686
+Prelude Math.Combinat.Partitions.Set&gt; countSetPartitionsWithKParts 2 (16)
+32767
+Prelude Math.Combinat.Partitions.Set&gt;
+Prelude Math.Combinat.Partitions.Set&gt; countSetPartitionsWithKParts 1 (16)
+1
+
+Possibly good strategy
+  If k and m are small, use setPartitionsWithKParts/partitionWeighted.
+
+
+-}</span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="hs-comment">{-
+Partition a set such that each subset matches the predicate.
+
+Simplistic implementation:
+  - Pick elements from unchosen elements such that the predicate matches
+  - If we can not pick anymore elements, proceed to next subset
+
+Fast, but unweighted (in terms of voice sep: may generate strange partitions).
+Essentially:
+  Remove elements from a set S until it passes the predicate, this becomes a subset.
+  Repeat until no elements left.
+-}</span><span>
+</span><span id="line-108"></span><span id="local-6989586621680565165"><span class="annot"><a href="Music.Score.Internal.VoiceSeparation.html#partitionSimplistic"><span class="hs-identifier hs-type">partitionSimplistic</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565165"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565165"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565165"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span></span><span>
+</span><span id="line-109"></span><span id="partitionSimplistic"><span class="annot"><span class="annottext">partitionSimplistic :: ([a] -&gt; Bool) -&gt; [a] -&gt; [[a]]
+</span><a href="Music.Score.Internal.VoiceSeparation.html#partitionSimplistic"><span class="hs-identifier hs-var hs-var">partitionSimplistic</span></a></span></span><span> </span><span id="local-6989586621680565164"><span class="annot"><span class="annottext">p :: [a] -&gt; Bool
+</span><a href="#local-6989586621680565164"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[[a]] -&gt; [a] -&gt; [[a]]
+</span><a href="#local-6989586621680565163"><span class="hs-identifier hs-var">recur</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-110"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-111"></span><span>    </span><span id="local-6989586621680565163"><span class="annot"><span class="annottext">recur :: [[a]] -&gt; [a] -&gt; [[a]]
+</span><a href="#local-6989586621680565163"><span class="hs-identifier hs-var hs-var">recur</span></a></span></span><span> </span><span id="local-6989586621680565162"><span class="annot"><span class="annottext">doneSubsets :: [[a]]
+</span><a href="#local-6989586621680565162"><span class="hs-identifier hs-var">doneSubsets</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[[a]]
+</span><a href="#local-6989586621680565162"><span class="hs-identifier hs-var">doneSubsets</span></a></span><span>
+</span><span id="line-112"></span><span>    </span><span class="annot"><a href="#local-6989586621680565163"><span class="hs-identifier hs-var">recur</span></a></span><span> </span><span id="local-6989586621680565161"><span class="annot"><span class="annottext">doneSubsets :: [[a]]
+</span><a href="#local-6989586621680565161"><span class="hs-identifier hs-var">doneSubsets</span></a></span></span><span> </span><span id="local-6989586621680565160"><span class="annot"><span class="annottext">remainingElements :: [a]
+</span><a href="#local-6989586621680565160"><span class="hs-identifier hs-var">remainingElements</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-113"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Logic ([a], [a]) -&gt; ([a], [a])
+forall a. Logic a -&gt; a
+</span><span class="hs-identifier hs-var">observe</span></span><span> </span><span class="annot"><span class="annottext">(Logic ([a], [a]) -&gt; ([a], [a])) -&gt; Logic ([a], [a]) -&gt; ([a], [a])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">([a] -&gt; Bool) -&gt; [a] -&gt; Logic ([a], [a])
+forall a. ([a] -&gt; Bool) -&gt; [a] -&gt; Logic ([a], [a])
+</span><a href="#local-6989586621680565159"><span class="hs-identifier hs-var">pickNewSubset</span></a></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; Bool
+</span><a href="#local-6989586621680565164"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565160"><span class="hs-identifier hs-var">remainingElements</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-114"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621680565158"><span class="annot"><span class="annottext">newSubset :: [a]
+</span><a href="#local-6989586621680565158"><span class="hs-identifier hs-var">newSubset</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680565157"><span class="annot"><span class="annottext">remainingElements :: [a]
+</span><a href="#local-6989586621680565157"><span class="hs-identifier hs-var">remainingElements</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[[a]] -&gt; [a] -&gt; [[a]]
+</span><a href="#local-6989586621680565163"><span class="hs-identifier hs-var">recur</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565158"><span class="hs-identifier hs-var">newSubset</span></a></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [[a]] -&gt; [[a]]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">[[a]]
+</span><a href="#local-6989586621680565161"><span class="hs-identifier hs-var">doneSubsets</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565157"><span class="hs-identifier hs-var">remainingElements</span></a></span><span>
+</span><span id="line-115"></span><span>    </span><span id="local-6989586621680565195"><span class="annot"><a href="#local-6989586621680565156"><span class="hs-identifier hs-type">choose</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565195"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Logic</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680565195"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565195"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span></span><span>
+</span><span id="line-116"></span><span>    </span><span id="local-6989586621680565156"><span class="annot"><span class="annottext">choose :: [a] -&gt; Logic (a, [a])
+</span><a href="#local-6989586621680565156"><span class="hs-identifier hs-var hs-var">choose</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Logic (a, [a])
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">empty</span></a></span><span>
+</span><span id="line-117"></span><span>    </span><span class="annot"><a href="#local-6989586621680565156"><span class="hs-identifier hs-var">choose</span></a></span><span> </span><span id="local-6989586621680565154"><span class="annot"><span class="annottext">xs :: [a]
+</span><a href="#local-6989586621680565154"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Logic (a, [a])] -&gt; Logic (a, [a])
+forall (t :: * -&gt; *) (f :: * -&gt; *) a.
+(Foldable t, Alternative f) =&gt;
+t (f a) -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">asum</span></a></span><span> </span><span class="annot"><span class="annottext">([Logic (a, [a])] -&gt; Logic (a, [a]))
+-&gt; [Logic (a, [a])] -&gt; Logic (a, [a])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Logic (a, [a])) -&gt; [Int] -&gt; [Logic (a, [a])]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Logic (a, [a])
+</span><a href="#local-6989586621680565153"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">length</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565154"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">]</span><span>
+</span><span id="line-118"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-119"></span><span>        </span><span id="local-6989586621680565153"><span class="annot"><span class="annottext">g :: Int -&gt; Logic (a, [a])
+</span><a href="#local-6989586621680565153"><span class="hs-identifier hs-var hs-var">g</span></a></span></span><span> </span><span id="local-6989586621680565151"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621680565151"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a, [a]) -&gt; Logic (a, [a])
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">((a, [a]) -&gt; Logic (a, [a])) -&gt; (a, [a]) -&gt; Logic (a, [a])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [a] -&gt; [a]
+forall a. Int -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621680565150"><span class="hs-identifier hs-var">rotate</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680565151"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565154"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-120"></span><span>          </span><span class="hs-special">(</span><span id="local-6989586621680565149"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680565149"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">:</span></a></span><span> </span><span id="local-6989586621680565148"><span class="annot"><span class="annottext">as :: [a]
+</span><a href="#local-6989586621680565148"><span class="hs-keyword hs-var">as</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680565149"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565148"><span class="hs-keyword hs-var">as</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-121"></span><span>          </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; (a, [a])
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Impossible&quot;</span></span><span>
+</span><span id="line-122"></span><span>        </span><span id="local-6989586621680565150"><span class="annot"><span class="annottext">rotate :: Int -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621680565150"><span class="hs-identifier hs-var hs-var">rotate</span></a></span></span><span> </span><span id="local-6989586621680565146"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621680565146"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621680565145"><span class="annot"><span class="annottext">xs :: [a]
+</span><a href="#local-6989586621680565145"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [a] -&gt; [a]
+forall a. Int -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">drop</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680565146"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565145"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [a] -&gt; [a]
+forall a. Int -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">take</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621680565146"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565145"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-123"></span><span>    </span><span id="local-6989586621680565179"><span class="annot"><a href="#local-6989586621680565142"><span class="hs-identifier hs-type">chooseSuchThat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680565179"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565179"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Logic</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680565179"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565179"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span></span><span>
+</span><span id="line-124"></span><span>    </span><span id="local-6989586621680565142"><span class="annot"><span class="annottext">chooseSuchThat :: (a -&gt; Bool) -&gt; [a] -&gt; Logic (a, [a])
+</span><a href="#local-6989586621680565142"><span class="hs-identifier hs-var hs-var">chooseSuchThat</span></a></span></span><span> </span><span id="local-6989586621680565141"><span class="annot"><span class="annottext">p :: a -&gt; Bool
+</span><a href="#local-6989586621680565141"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680565140"><span class="annot"><span class="annottext">xs :: [a]
+</span><a href="#local-6989586621680565140"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((a, [a]) -&gt; Bool) -&gt; Logic (a, [a]) -&gt; Logic (a, [a])
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; (a -&gt; Bool) -&gt; m a -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mfilter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Bool
+</span><a href="#local-6989586621680565141"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Bool) -&gt; ((a, [a]) -&gt; a) -&gt; (a, [a]) -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a, [a]) -&gt; a
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Logic (a, [a]) -&gt; Logic (a, [a]))
+-&gt; Logic (a, [a]) -&gt; Logic (a, [a])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; Logic (a, [a])
+forall a. [a] -&gt; Logic (a, [a])
+</span><a href="#local-6989586621680565156"><span class="hs-identifier hs-var">choose</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565140"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-125"></span><span>    </span><span id="local-6989586621680565178"><span class="annot"><a href="#local-6989586621680565137"><span class="hs-identifier hs-type">aShuffle</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565178"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565178"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-126"></span><span>    </span><span class="hs-comment">-- Unpredictable shuffle (based on seed)</span><span>
+</span><span id="line-127"></span><span>    </span><span id="local-6989586621680565137"><span class="annot"><span class="annottext">aShuffle :: [a] -&gt; [a]
+</span><a href="#local-6989586621680565137"><span class="hs-identifier hs-var hs-var">aShuffle</span></a></span></span><span> </span><span id="local-6989586621680565136"><span class="annot"><span class="annottext">xs :: [a]
+</span><a href="#local-6989586621680565136"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Rand StdGen [a] -&gt; StdGen -&gt; [a]
+forall g a. Rand g a -&gt; g -&gt; a
+</span><span class="hs-identifier hs-var">evalRand</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[a] -&gt; Rand StdGen [a]
+forall (m :: * -&gt; *) a. MonadRandom m =&gt; [a] -&gt; m [a]
+</span><span class="hs-identifier hs-var">shuffleM</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565136"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; StdGen
+</span><a href="../file:///nix/store/wxyzhh91cr62mj03s2h8wdj4zsmj3hf8-random-1.1-doc/share/doc/random-1.1/html/src"><span class="hs-identifier hs-var">mkStdGen</span></a></span><span> </span><span class="annot"><span class="hs-number">12983</span></span><span class="hs-special">)</span><span>
+</span><span id="line-128"></span><span>    </span><span class="hs-comment">-- aShuffle = id</span><span>
+</span><span id="line-129"></span><span>    </span><span class="hs-comment">-- aShuffle = reverse</span><span>
+</span><span id="line-130"></span><span>    </span><span class="hs-comment">-- aShuffle = rotate 12 where rotate n xs = drop n xs ++ take n xs</span><span>
+</span><span id="line-131"></span><span>
+</span><span id="line-132"></span><span>    </span><span id="local-6989586621680565226"><span class="annot"><a href="#local-6989586621680565159"><span class="hs-identifier hs-type">pickNewSubset</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-133"></span><span>      </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565226"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-134"></span><span>      </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565226"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-135"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Logic</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565226"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680565226"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span></span><span> </span><span class="hs-comment">-- (picked subset, remaining)</span><span>
+</span><span id="line-136"></span><span>    </span><span id="local-6989586621680565159"><span class="annot"><span class="annottext">pickNewSubset :: ([a] -&gt; Bool) -&gt; [a] -&gt; Logic ([a], [a])
+</span><a href="#local-6989586621680565159"><span class="hs-identifier hs-var hs-var">pickNewSubset</span></a></span></span><span> </span><span id="local-6989586621680565135"><span class="annot"><span class="annottext">p :: [a] -&gt; Bool
+</span><a href="#local-6989586621680565135"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680565134"><span class="annot"><span class="annottext">initialSet :: [a]
+</span><a href="#local-6989586621680565134"><span class="hs-identifier hs-var">initialSet</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; Logic ([a], [a])
+</span><a href="#local-6989586621680565133"><span class="hs-identifier hs-var">recur</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565134"><span class="hs-identifier hs-var">initialSet</span></a></span><span>
+</span><span id="line-137"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-138"></span><span>        </span><span id="local-6989586621680565133"><span class="annot"><span class="annottext">recur :: [a] -&gt; [a] -&gt; Logic ([a], [a])
+</span><a href="#local-6989586621680565133"><span class="hs-identifier hs-var hs-var">recur</span></a></span></span><span> </span><span id="local-6989586621680565132"><span class="annot"><span class="annottext">alreadyPicked :: [a]
+</span><a href="#local-6989586621680565132"><span class="hs-identifier hs-var">alreadyPicked</span></a></span></span><span> </span><span id="local-6989586621680565131"><span class="annot"><span class="annottext">toConsider :: [a]
+</span><a href="#local-6989586621680565131"><span class="hs-identifier hs-var">toConsider</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-139"></span><span>          </span><span class="hs-comment">-- NOTE aShuffle must return some partition (the choice affects order,</span><span>
+</span><span id="line-140"></span><span>          </span><span class="hs-comment">-- but not correctness)</span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span>          </span><span class="hs-comment">-- If its first argument succeeds at all, then the results will be fed into the success branch.</span><span>
+</span><span id="line-143"></span><span>          </span><span class="hs-comment">-- Otherwise, the failure branch is taken.</span><span>
+</span><span id="line-144"></span><span>          </span><span class="annot"><span class="annottext">LogicT Identity (a, [a])
+-&gt; ((a, [a]) -&gt; Logic ([a], [a]))
+-&gt; Logic ([a], [a])
+-&gt; Logic ([a], [a])
+forall (m :: * -&gt; *) a b.
+MonadLogic m =&gt;
+m a -&gt; (a -&gt; m b) -&gt; m b -&gt; m b
+</span><span class="hs-identifier hs-var">ifte</span></span><span>
+</span><span id="line-145"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a -&gt; Bool) -&gt; [a] -&gt; LogicT Identity (a, [a])
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; Logic (a, [a])
+</span><a href="#local-6989586621680565142"><span class="hs-identifier hs-var">chooseSuchThat</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680565130"><span class="annot"><span class="annottext">picked :: a
+</span><a href="#local-6989586621680565130"><span class="hs-identifier hs-var">picked</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; Bool
+</span><a href="#local-6989586621680565135"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680565130"><span class="hs-identifier hs-var">picked</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565132"><span class="hs-identifier hs-var">alreadyPicked</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([a] -&gt; LogicT Identity (a, [a]))
+-&gt; [a] -&gt; LogicT Identity (a, [a])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a]
+forall a. [a] -&gt; [a]
+</span><a href="#local-6989586621680565137"><span class="hs-identifier hs-var">aShuffle</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565131"><span class="hs-identifier hs-var">toConsider</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-146"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680565129"><span class="annot"><span class="annottext">picked :: a
+</span><a href="#local-6989586621680565129"><span class="hs-identifier hs-var">picked</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680565128"><span class="annot"><span class="annottext">notPicked :: [a]
+</span><a href="#local-6989586621680565128"><span class="hs-identifier hs-var">notPicked</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; Logic ([a], [a])
+</span><a href="#local-6989586621680565133"><span class="hs-identifier hs-var">recur</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680565129"><span class="hs-identifier hs-var">picked</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565132"><span class="hs-identifier hs-var">alreadyPicked</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565128"><span class="hs-identifier hs-var">notPicked</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-147"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">([a], [a]) -&gt; Logic ([a], [a])
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">return</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565132"><span class="hs-identifier hs-var">alreadyPicked</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680565131"><span class="hs-identifier hs-var">toConsider</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-148"></span><span class="hs-comment">{-
+-- For testing
+
+-- NOTE all predicates used here should satisfy
+--  p xs ==&gt; p (tail xs)
+-- Name of that property?
+
+allEqual :: Eq a =&gt; [a] -&gt; Bool
+allEqual [] = True
+allEqual (x : xs) = all (== x) xs
+
+-- allDistinct
+noDuplicates :: Eq a =&gt; [a] -&gt; Bool
+noDuplicates [] = True
+noDuplicates (x : xs) = all (/= x) xs
+
+testShuffle :: forall a. [a] -&gt; [a]
+testShuffle xs = evalRand (shuffleM xs) (mkStdGen 1828372878)
+-}</span><span>
+</span><span id="line-167"></span><span>
+</span><span id="line-168"></span><span class="hs-comment">{-
+TODO test correctness, i.e. that
+  concat (partitionSimplistic p xs) =:= xs
+    where
+     p = anything
+     x =:= y = sort x == sort y
+
+forM_ [0..50] $ \n -&gt; print $ partitionSimplistic noDuplicates  $ testShuffle $ [1..n] ++ [1..n] ++ [3,66,1,2]
+
+-}</span><span>
+</span><span id="line-178"></span></pre></body></html>

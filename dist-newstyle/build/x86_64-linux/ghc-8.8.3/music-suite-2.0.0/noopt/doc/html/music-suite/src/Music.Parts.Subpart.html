@@ -1,0 +1,361 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- | A type to represent (recursive) subdivisions of a part.</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Parts.Subpart</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier">Subpart</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Music.Parts.Subpart.html#containsSubpart"><span class="hs-identifier">containsSubpart</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Music.Parts.Subpart.html#properlyContainsSubpart"><span class="hs-identifier">properlyContainsSubpart</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Parts.Subpart.html#isSubpartOf"><span class="hs-identifier">isSubpartOf</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Parts.Subpart.html#isProperSubpartOf"><span class="hs-identifier">isProperSubpartOf</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Parts.Subpart.html#BoundIncr"><span class="hs-identifier">BoundIncr</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Music.Parts.Subpart.html#HasSubpart"><span class="hs-identifier">HasSubpart</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Lens'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Rewrapped</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">iso</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">toListOf</span></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">FromJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">ToJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/9y6f8f1i5hwjjrj3cjs7ndnrhc7b2186-data-default-0.7.1.1-doc/share/doc/data-default-0.7.1.1/html/src"><span class="hs-identifier">Data.Default</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List.NonEmpty</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">NonEmpty</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List.NonEmpty</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">NonEmpty</span></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Semigroup.Option.Instances.html"><span class="hs-identifier">Data.Semigroup.Option.Instances</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Set</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Traversable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">traverse</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Parts.Division.html"><span class="hs-identifier">Music.Parts.Division</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Numeral.Roman</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">toRoman</span></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-comment">{-
+    - Note the meaning of maxSubpart for Common.Subpart (~ [Integer]):
+        maxSubpart = pure . maximum . fmap head
+    - In other words, the part component must allow the operations
+        maxSubpart :: Set a -&gt; Subpart a
+        incrSubpart :: Subpart a -&gt; Subpart a
+        subpart :: Lens' a (Subpart a)
+-}</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- TODO laws</span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- TODO rename? (SubpartOf -&gt; Subpart, Subpart -&gt; DivisionList/Voice)</span><span>
+</span><span id="line-50"></span><span class="hs-keyword">class</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#BoundIncr"><span class="hs-identifier hs-type">BoundIncr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Parts.Subpart.html#SubpartOf"><span class="hs-identifier hs-type">SubpartOf</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680564479"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="HasSubpart"><span class="annot"><a href="Music.Parts.Subpart.html#HasSubpart"><span class="hs-identifier hs-var">HasSubpart</span></a></span></span><span> </span><span id="local-6989586621680564479"><span class="annot"><a href="#local-6989586621680564479"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="SubpartOf"><span class="annot"><a href="Music.Parts.Subpart.html#SubpartOf"><span class="hs-identifier hs-var">SubpartOf</span></a></span></span><span> </span><span id="local-6989586621680564479"><span class="annot"><a href="#local-6989586621680564479"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span>  </span><span id="subpart"><span class="annot"><a href="Music.Parts.Subpart.html#subpart"><span class="hs-identifier hs-type">subpart</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="#local-6989586621680564479"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Parts.Subpart.html#SubpartOf"><span class="hs-identifier hs-type">SubpartOf</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680564479"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- TODO name</span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- TODO laws?</span><span>
+</span><span id="line-58"></span><span class="hs-keyword">class</span><span> </span><span id="BoundIncr"><span class="annot"><a href="Music.Parts.Subpart.html#BoundIncr"><span class="hs-identifier hs-var">BoundIncr</span></a></span></span><span> </span><span id="local-6989586621680564540"><span class="annot"><a href="#local-6989586621680564540"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span>  </span><span id="maximum%27"><span class="annot"><a href="Music.Parts.Subpart.html#maximum%27"><span class="hs-identifier hs-type">maximum'</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">NonEmpty</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680564540"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680564540"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span>  </span><span id="increment%27"><span class="annot"><a href="Music.Parts.Subpart.html#increment%27"><span class="hs-identifier hs-type">increment'</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680564540"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680564540"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#BoundIncr"><span class="hs-identifier hs-type">BoundIncr</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/integer-gmp-1.0.2.0/src"><span class="hs-identifier hs-type">Integer</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span>  </span><span id="local-6989586621680564472"><span class="annot"><span class="annottext">maximum' :: NonEmpty Integer -&gt; Integer
+</span><a href="#local-6989586621680564472"><span class="hs-identifier hs-var hs-var hs-var hs-var">maximum'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Integer -&gt; Integer
+forall (t :: * -&gt; *) a. (Foldable t, Ord a) =&gt; t a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">maximum</span></a></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span>  </span><span id="local-6989586621680564470"><span class="annot"><span class="annottext">increment' :: Integer -&gt; Integer
+</span><a href="#local-6989586621680564470"><span class="hs-identifier hs-var hs-var hs-var hs-var">increment'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer
+forall a. Enum a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">succ</span></a></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#BoundIncr"><span class="hs-identifier hs-type">BoundIncr</span></a></span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span>  </span><span id="local-6989586621680564466"><span class="annot"><span class="annottext">maximum' :: NonEmpty Subpart -&gt; Subpart
+</span><a href="#local-6989586621680564466"><span class="hs-identifier hs-var hs-var hs-var hs-var">maximum'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Subpart -&gt; Subpart
+forall (t :: * -&gt; *) a. (Foldable t, Ord a) =&gt; t a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">maximum</span></a></span><span> </span><span class="annot"><span class="annottext">(NonEmpty Subpart -&gt; Subpart)
+-&gt; (NonEmpty Subpart -&gt; NonEmpty Subpart)
+-&gt; NonEmpty Subpart
+-&gt; Subpart
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Subpart -&gt; Subpart) -&gt; NonEmpty Subpart -&gt; NonEmpty Subpart
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Subpart -&gt; Subpart
+</span><a href="Music.Parts.Subpart.html#firstComp"><span class="hs-identifier hs-var">firstComp</span></a></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span>  </span><span id="local-6989586621680564463"><span class="annot"><span class="annottext">increment' :: Subpart -&gt; Subpart
+</span><a href="#local-6989586621680564463"><span class="hs-identifier hs-var hs-var hs-var hs-var">increment'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span id="local-6989586621680564461"><span class="annot"><span class="annottext">xs :: NonEmpty Division
+</span><a href="#local-6989586621680564461"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Division -&gt; Subpart
+</span><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-var">Subpart</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Division -&gt; Division) -&gt; NonEmpty Division -&gt; NonEmpty Division
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Division -&gt; Division
+forall a. Enum a =&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">succ</span></a></span><span> </span><span class="annot"><span class="annottext">NonEmpty Division
+</span><a href="#local-6989586621680564461"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="annot"><a href="Music.Parts.Subpart.html#firstComp"><span class="hs-identifier hs-type">firstComp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span>
+</span><span id="line-77"></span><span id="firstComp"><span class="annot"><span class="annottext">firstComp :: Subpart -&gt; Subpart
+</span><a href="Music.Parts.Subpart.html#firstComp"><span class="hs-identifier hs-var hs-var">firstComp</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span id="local-6989586621680564460"><span class="annot"><span class="annottext">xs :: NonEmpty Division
+</span><a href="#local-6989586621680564460"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Division -&gt; Subpart
+</span><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-var">Subpart</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Division -&gt; NonEmpty Division
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(Division -&gt; NonEmpty Division) -&gt; Division -&gt; NonEmpty Division
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">NonEmpty Division -&gt; Division
+forall a. NonEmpty a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">NonEmpty.head</span></a></span><span> </span><span class="annot"><span class="annottext">NonEmpty Division
+</span><a href="#local-6989586621680564460"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-80"></span><span class="hs-comment">-- A subpart is a potentially infinite sequence of divisions, each typically</span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- designated using a new index type, i.e. @I.1.2@.</span><span>
+</span><span id="line-82"></span><span class="hs-comment">--</span><span>
+</span><span id="line-83"></span><span class="hs-comment">-- The empty subpart (also known as 'mempty') represents all the players of the group,</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- or in the context of 'Part', all players of the given instrument.</span><span>
+</span><span id="line-85"></span><span class="hs-keyword">newtype</span><span> </span><span id="Subpart"><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-var">Subpart</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Subpart"><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-var">Subpart</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">NonEmpty</span></a></span><span> </span><span class="annot"><a href="Music.Parts.Division.html#Division"><span class="hs-identifier hs-type">Division</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680564455"><span id="local-6989586621680564457"><span class="annot"><span class="annottext">Subpart -&gt; Subpart -&gt; Bool
+(Subpart -&gt; Subpart -&gt; Bool)
+-&gt; (Subpart -&gt; Subpart -&gt; Bool) -&gt; Eq Subpart
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Subpart -&gt; Subpart -&gt; Bool
+$c/= :: Subpart -&gt; Subpart -&gt; Bool
+== :: Subpart -&gt; Subpart -&gt; Bool
+$c== :: Subpart -&gt; Subpart -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680564439"><span id="local-6989586621680564441"><span id="local-6989586621680564443"><span id="local-6989586621680564445"><span id="local-6989586621680564447"><span id="local-6989586621680564449"><span id="local-6989586621680564451"><span class="annot"><span class="annottext">Eq Subpart
+Eq Subpart =&gt;
+(Subpart -&gt; Subpart -&gt; Ordering)
+-&gt; (Subpart -&gt; Subpart -&gt; Bool)
+-&gt; (Subpart -&gt; Subpart -&gt; Bool)
+-&gt; (Subpart -&gt; Subpart -&gt; Bool)
+-&gt; (Subpart -&gt; Subpart -&gt; Bool)
+-&gt; (Subpart -&gt; Subpart -&gt; Subpart)
+-&gt; (Subpart -&gt; Subpart -&gt; Subpart)
+-&gt; Ord Subpart
+Subpart -&gt; Subpart -&gt; Bool
+Subpart -&gt; Subpart -&gt; Ordering
+Subpart -&gt; Subpart -&gt; Subpart
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Subpart -&gt; Subpart -&gt; Subpart
+$cmin :: Subpart -&gt; Subpart -&gt; Subpart
+max :: Subpart -&gt; Subpart -&gt; Subpart
+$cmax :: Subpart -&gt; Subpart -&gt; Subpart
+&gt;= :: Subpart -&gt; Subpart -&gt; Bool
+$c&gt;= :: Subpart -&gt; Subpart -&gt; Bool
+&gt; :: Subpart -&gt; Subpart -&gt; Bool
+$c&gt; :: Subpart -&gt; Subpart -&gt; Bool
+&lt;= :: Subpart -&gt; Subpart -&gt; Bool
+$c&lt;= :: Subpart -&gt; Subpart -&gt; Bool
+&lt; :: Subpart -&gt; Subpart -&gt; Bool
+$c&lt; :: Subpart -&gt; Subpart -&gt; Bool
+compare :: Subpart -&gt; Subpart -&gt; Ordering
+$ccompare :: Subpart -&gt; Subpart -&gt; Ordering
+$cp1Ord :: Eq Subpart
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680564432"><span id="local-6989586621680564434"><span id="local-6989586621680564436"><span class="annot"><span class="annottext">b -&gt; Subpart -&gt; Subpart
+NonEmpty Subpart -&gt; Subpart
+Subpart -&gt; Subpart -&gt; Subpart
+(Subpart -&gt; Subpart -&gt; Subpart)
+-&gt; (NonEmpty Subpart -&gt; Subpart)
+-&gt; (forall b. Integral b =&gt; b -&gt; Subpart -&gt; Subpart)
+-&gt; Semigroup Subpart
+forall b. Integral b =&gt; b -&gt; Subpart -&gt; Subpart
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+stimes :: b -&gt; Subpart -&gt; Subpart
+$cstimes :: forall b. Integral b =&gt; b -&gt; Subpart -&gt; Subpart
+sconcat :: NonEmpty Subpart -&gt; Subpart
+$csconcat :: NonEmpty Subpart -&gt; Subpart
+&lt;&gt; :: Subpart -&gt; Subpart -&gt; Subpart
+$c&lt;&gt; :: Subpart -&gt; Subpart -&gt; Subpart
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/h2shl67rmlrlxksvax9273hbzi2dhbch-data-default-class-0.1.2.0-doc/share/doc/data-default-class-0.1.2.0/html/src"><span class="hs-identifier hs-type">Default</span></a></span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621680564428"><span class="annot"><span class="annottext">def :: Subpart
+</span><a href="../file:///nix/store/h2shl67rmlrlxksvax9273hbzi2dhbch-data-default-class-0.1.2.0-doc/share/doc/data-default-class-0.1.2.0/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">def</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Division -&gt; Subpart
+</span><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-var">Subpart</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Division -&gt; NonEmpty Division
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-comment">{-
+instance Wrapped Subpart where
+
+  type Unwrapped Subpart = [Division]
+
+  _Wrapped' = iso getSubpart Subpart
+    where
+      getSubpart (Subpart x) = x
+
+instance Rewrapped Subpart Subpart
+-}</span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680564422"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span>  </span><span id="local-6989586621680564417"><span class="annot"><span class="annottext">fromInteger :: Integer -&gt; Subpart
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromInteger</span></a></span></span><span> </span><span id="local-6989586621680564416"><span class="annot"><span class="annottext">n :: Integer
+</span><a href="#local-6989586621680564416"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Division -&gt; Subpart
+</span><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-var">Subpart</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Division -&gt; NonEmpty Division
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(Division -&gt; NonEmpty Division) -&gt; Division -&gt; NonEmpty Division
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Division
+forall a. Num a =&gt; Integer -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromInteger</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621680564416"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span>  </span><span id="local-6989586621680564415"><span class="annot"><span class="annottext">+ :: Subpart -&gt; Subpart -&gt; Subpart
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(+)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Subpart -&gt; Subpart -&gt; Subpart
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Num Subpart: Not implemented&quot;</span></span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span>  </span><span id="local-6989586621680564412"><span class="annot"><span class="annottext">* :: Subpart -&gt; Subpart -&gt; Subpart
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(*)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Subpart -&gt; Subpart -&gt; Subpart
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Num Subpart: Not implemented&quot;</span></span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span>  </span><span id="local-6989586621680564410"><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="hs-special">)</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Subpart -&gt; Subpart -&gt; Subpart
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Num Subpart: Not implemented&quot;</span></span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span>  </span><span id="local-6989586621680564409"><span class="annot"><span class="annottext">abs :: Subpart -&gt; Subpart
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">abs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Subpart -&gt; Subpart
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Num Subpart: Not implemented&quot;</span></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span>  </span><span id="local-6989586621680564407"><span class="annot"><span class="annottext">signum :: Subpart -&gt; Subpart
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">signum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Subpart -&gt; Subpart
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Num Subpart: Not implemented&quot;</span></span><span>
+</span><span id="line-116"></span><span>
+</span><span id="line-117"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680564399"><span id="local-6989586621680564401"><span id="local-6989586621680564403"><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">ToJSON</span></a></span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-118"></span><span>  </span><span id="local-6989586621680564397"><span class="annot"><span class="annottext">toJSON :: Subpart -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toJSON</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span id="local-6989586621680564395"><span class="annot"><span class="annottext">xs :: NonEmpty Division
+</span><a href="#local-6989586621680564395"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Division -&gt; Value
+forall a. ToJSON a =&gt; a -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">toJSON</span></a></span><span> </span><span class="annot"><span class="annottext">NonEmpty Division
+</span><a href="#local-6989586621680564395"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680564392"><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-121"></span><span>  </span><span id="local-6989586621680564390"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Subpart
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Parser (NonEmpty Division) -&gt; Parser Subpart)
+-&gt; (Value -&gt; Parser (NonEmpty Division)) -&gt; Value -&gt; Parser Subpart
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">((Parser (NonEmpty Division) -&gt; Parser Subpart)
+ -&gt; (Value -&gt; Parser (NonEmpty Division))
+ -&gt; Value
+ -&gt; Parser Subpart)
+-&gt; ((NonEmpty Division -&gt; Subpart)
+    -&gt; Parser (NonEmpty Division) -&gt; Parser Subpart)
+-&gt; (NonEmpty Division -&gt; Subpart)
+-&gt; (Value -&gt; Parser (NonEmpty Division))
+-&gt; Value
+-&gt; Parser Subpart
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(NonEmpty Division -&gt; Subpart)
+-&gt; Parser (NonEmpty Division) -&gt; Parser Subpart
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">NonEmpty Division -&gt; Subpart
+</span><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-var">Subpart</span></a></span><span> </span><span class="annot"><span class="annottext">((Value -&gt; Parser (NonEmpty Division)) -&gt; Value -&gt; Parser Subpart)
+-&gt; (Value -&gt; Parser (NonEmpty Division)) -&gt; Value -&gt; Parser Subpart
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser (NonEmpty Division)
+forall a. FromJSON a =&gt; Value -&gt; Parser a
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">parseJSON</span></a></span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="hs-comment">{-
+TODO hide internals
+
+Expose
+
+divisions :: Traversal' Subpart Division
+
+or similar
+-}</span><span>
+</span><span id="line-132"></span><span>
+</span><span id="line-133"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680564384"><span id="local-6989586621680564387"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-134"></span><span>  </span><span id="local-6989586621680564382"><span class="annot"><span class="annottext">show :: Subpart -&gt; [Char]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span id="local-6989586621680564380"><span class="annot"><span class="annottext">ps :: NonEmpty Division
+</span><a href="#local-6989586621680564380"><span class="hs-identifier hs-var">ps</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [[Char]] -&gt; [Char]
+forall a. [a] -&gt; [[a]] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Data.List.intercalate</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="annot"><span class="annottext">([[Char]] -&gt; [Char]) -&gt; [[Char]] -&gt; [Char]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Division -&gt; [Char])
+-&gt; (Division -&gt; [Char]) -&gt; NonEmpty Division -&gt; [[Char]]
+forall a a. (a -&gt; a) -&gt; (a -&gt; a) -&gt; NonEmpty a -&gt; [a]
+</span><a href="#local-6989586621680564378"><span class="hs-identifier hs-var">mapFR</span></a></span><span> </span><span class="annot"><span class="annottext">Division -&gt; [Char]
+</span><a href="Music.Parts.Division.html#showDivisionR"><span class="hs-identifier hs-var">showDivisionR</span></a></span><span> </span><span class="annot"><span class="annottext">Division -&gt; [Char]
+</span><a href="Music.Parts.Division.html#showDivision"><span class="hs-identifier hs-var">showDivision</span></a></span><span> </span><span class="annot"><span class="annottext">(NonEmpty Division -&gt; [[Char]]) -&gt; NonEmpty Division -&gt; [[Char]]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">NonEmpty Division
+</span><a href="#local-6989586621680564380"><span class="hs-identifier hs-var">ps</span></a></span><span>
+</span><span id="line-135"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-136"></span><span>      </span><span id="local-6989586621680564378"><span class="annot"><span class="annottext">mapFR :: (a -&gt; a) -&gt; (a -&gt; a) -&gt; NonEmpty a -&gt; [a]
+</span><a href="#local-6989586621680564378"><span class="hs-identifier hs-var hs-var">mapFR</span></a></span></span><span> </span><span id="local-6989586621680564375"><span class="annot"><span class="annottext">f :: a -&gt; a
+</span><a href="#local-6989586621680564375"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680564374"><span class="annot"><span class="annottext">g :: a -&gt; a
+</span><a href="#local-6989586621680564374"><span class="hs-identifier hs-var">g</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680564373"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680564373"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-type">NonEmpty.:|</span></a></span><span> </span><span id="local-6989586621680564371"><span class="annot"><span class="annottext">xs :: [a]
+</span><a href="#local-6989586621680564371"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621680564375"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680564373"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; a) -&gt; [a] -&gt; [a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+</span><a href="#local-6989586621680564374"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621680564371"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span class="annot"><a href="Music.Parts.Subpart.html#containsSubpart"><span class="hs-identifier hs-type">containsSubpart</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-139"></span><span id="containsSubpart"><span class="annot"><span class="annottext">containsSubpart :: Subpart -&gt; Subpart -&gt; Bool
+</span><a href="Music.Parts.Subpart.html#containsSubpart"><span class="hs-identifier hs-var hs-var">containsSubpart</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Subpart -&gt; Subpart -&gt; Bool) -&gt; Subpart -&gt; Subpart -&gt; Bool
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">flip</span></a></span><span> </span><span class="annot"><span class="annottext">Subpart -&gt; Subpart -&gt; Bool
+</span><a href="Music.Parts.Subpart.html#isSubpartOf"><span class="hs-identifier hs-var">isSubpartOf</span></a></span><span>
+</span><span id="line-140"></span><span>
+</span><span id="line-141"></span><span class="annot"><a href="Music.Parts.Subpart.html#properlyContainsSubpart"><span class="hs-identifier hs-type">properlyContainsSubpart</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-142"></span><span id="properlyContainsSubpart"><span class="annot"><span class="annottext">properlyContainsSubpart :: Subpart -&gt; Subpart -&gt; Bool
+</span><a href="Music.Parts.Subpart.html#properlyContainsSubpart"><span class="hs-identifier hs-var hs-var">properlyContainsSubpart</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Subpart -&gt; Subpart -&gt; Bool) -&gt; Subpart -&gt; Subpart -&gt; Bool
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">flip</span></a></span><span> </span><span class="annot"><span class="annottext">Subpart -&gt; Subpart -&gt; Bool
+</span><a href="Music.Parts.Subpart.html#isProperSubpartOf"><span class="hs-identifier hs-var">isProperSubpartOf</span></a></span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span class="annot"><a href="Music.Parts.Subpart.html#isSubpartOf"><span class="hs-identifier hs-type">isSubpartOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-145"></span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span id="local-6989586621680564369"><span class="annot"><span class="annottext">x :: NonEmpty Division
+</span><a href="#local-6989586621680564369"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="isSubpartOf"><span class="annot"><span class="annottext">isSubpartOf :: Subpart -&gt; Subpart -&gt; Bool
+</span><a href="Music.Parts.Subpart.html#isSubpartOf"><span class="hs-operator hs-var hs-var">`isSubpartOf`</span></a></span></span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span id="local-6989586621680564368"><span class="annot"><span class="annottext">y :: NonEmpty Division
+</span><a href="#local-6989586621680564368"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">NonEmpty Division -&gt; [Division]
+forall a. NonEmpty a -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">NonEmpty.toList</span></a></span><span> </span><span class="annot"><span class="annottext">NonEmpty Division
+</span><a href="#local-6989586621680564368"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">[Division] -&gt; NonEmpty Division -&gt; Bool
+forall a. Eq a =&gt; [a] -&gt; NonEmpty a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">`NonEmpty.isPrefixOf`</span></a></span><span> </span><span class="annot"><span class="annottext">NonEmpty Division
+</span><a href="#local-6989586621680564369"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-146"></span><span>
+</span><span id="line-147"></span><span class="annot"><a href="Music.Parts.Subpart.html#isProperSubpartOf"><span class="hs-identifier hs-type">isProperSubpartOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Parts.Subpart.html#Subpart"><span class="hs-identifier hs-type">Subpart</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Bool</span></a></span><span>
+</span><span id="line-148"></span><span id="local-6989586621680564365"><span class="annot"><span class="annottext">x :: Subpart
+</span><a href="#local-6989586621680564365"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="isProperSubpartOf"><span class="annot"><span class="annottext">isProperSubpartOf :: Subpart -&gt; Subpart -&gt; Bool
+</span><a href="Music.Parts.Subpart.html#isProperSubpartOf"><span class="hs-operator hs-var hs-var">`isProperSubpartOf`</span></a></span></span><span> </span><span id="local-6989586621680564364"><span class="annot"><span class="annottext">y :: Subpart
+</span><a href="#local-6989586621680564364"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Subpart
+</span><a href="#local-6989586621680564365"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Subpart -&gt; Subpart -&gt; Bool
+</span><a href="Music.Parts.Subpart.html#isSubpartOf"><span class="hs-operator hs-var">`isSubpartOf`</span></a></span><span> </span><span class="annot"><span class="annottext">Subpart
+</span><a href="#local-6989586621680564364"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">Subpart
+</span><a href="#local-6989586621680564365"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Subpart -&gt; Subpart -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">/=</span></a></span><span> </span><span class="annot"><span class="annottext">Subpart
+</span><a href="#local-6989586621680564364"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-149"></span></pre></body></html>

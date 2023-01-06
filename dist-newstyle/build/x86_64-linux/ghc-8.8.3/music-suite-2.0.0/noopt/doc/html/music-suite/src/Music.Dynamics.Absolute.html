@@ -1,0 +1,1045 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012</span><span>
+</span><span id="line-17"></span><span class="hs-comment">--</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-19"></span><span class="hs-comment">--</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- Portability : portable</span><span>
+</span><span id="line-23"></span><span class="hs-comment">--</span><span>
+</span><span id="line-24"></span><span class="hs-comment">-- Absolute representation of loudness, or dynamics.</span><span>
+</span><span id="line-25"></span><span class="hs-comment">--</span><span>
+</span><span id="line-26"></span><span class="hs-comment">-- The canonical loudness representation is 'Amplitude'. For conversion, see 'HasAmplitude'.</span><span>
+</span><span id="line-27"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Dynamics.Absolute</span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Amplitude"><span class="hs-identifier">Amplitude</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Decibel"><span class="hs-identifier">Decibel</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Bel"><span class="hs-identifier">Bel</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Music.Dynamics.Absolute.html#HasAmplitude"><span class="hs-identifier">HasAmplitude</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Music.Dynamics.Absolute.html#decibel"><span class="hs-identifier">decibel</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Music.Dynamics.Absolute.html#bel"><span class="hs-identifier">bel</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Either</span></a></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- Amplitude level, where @0@ is silent and @1@ is peak.</span><span>
+</span><span id="line-45"></span><span class="hs-keyword">newtype</span><span> </span><span id="Amplitude"><span class="annot"><a href="Music.Dynamics.Absolute.html#Amplitude"><span class="hs-identifier hs-var">Amplitude</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Amplitude"><span class="annot"><a href="Music.Dynamics.Absolute.html#Amplitude"><span class="hs-identifier hs-var">Amplitude</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getAmplitude"><span class="annot"><span class="annottext">Amplitude -&gt; Double
+</span><a href="Music.Dynamics.Absolute.html#getAmplitude"><span class="hs-identifier hs-var hs-var">getAmplitude</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680563599"><span id="local-6989586621680563601"><span id="local-6989586621680563603"><span class="annot"><span class="annottext">Int -&gt; Amplitude -&gt; ShowS
+[Amplitude] -&gt; ShowS
+Amplitude -&gt; String
+(Int -&gt; Amplitude -&gt; ShowS)
+-&gt; (Amplitude -&gt; String)
+-&gt; ([Amplitude] -&gt; ShowS)
+-&gt; Show Amplitude
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Amplitude] -&gt; ShowS
+$cshowList :: [Amplitude] -&gt; ShowS
+show :: Amplitude -&gt; String
+$cshow :: Amplitude -&gt; String
+showsPrec :: Int -&gt; Amplitude -&gt; ShowS
+$cshowsPrec :: Int -&gt; Amplitude -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563594"><span id="local-6989586621680563596"><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Bool
+(Amplitude -&gt; Amplitude -&gt; Bool)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Bool) -&gt; Eq Amplitude
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Amplitude -&gt; Amplitude -&gt; Bool
+$c/= :: Amplitude -&gt; Amplitude -&gt; Bool
+== :: Amplitude -&gt; Amplitude -&gt; Bool
+$c== :: Amplitude -&gt; Amplitude -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563577"><span id="local-6989586621680563579"><span id="local-6989586621680563581"><span id="local-6989586621680563583"><span id="local-6989586621680563585"><span id="local-6989586621680563587"><span id="local-6989586621680563589"><span id="local-6989586621680563591"><span class="annot"><span class="annottext">Int -&gt; Amplitude
+Amplitude -&gt; Int
+Amplitude -&gt; [Amplitude]
+Amplitude -&gt; Amplitude
+Amplitude -&gt; Amplitude -&gt; [Amplitude]
+Amplitude -&gt; Amplitude -&gt; Amplitude -&gt; [Amplitude]
+(Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Int -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Int)
+-&gt; (Amplitude -&gt; [Amplitude])
+-&gt; (Amplitude -&gt; Amplitude -&gt; [Amplitude])
+-&gt; (Amplitude -&gt; Amplitude -&gt; [Amplitude])
+-&gt; (Amplitude -&gt; Amplitude -&gt; Amplitude -&gt; [Amplitude])
+-&gt; Enum Amplitude
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+enumFromThenTo :: Amplitude -&gt; Amplitude -&gt; Amplitude -&gt; [Amplitude]
+$cenumFromThenTo :: Amplitude -&gt; Amplitude -&gt; Amplitude -&gt; [Amplitude]
+enumFromTo :: Amplitude -&gt; Amplitude -&gt; [Amplitude]
+$cenumFromTo :: Amplitude -&gt; Amplitude -&gt; [Amplitude]
+enumFromThen :: Amplitude -&gt; Amplitude -&gt; [Amplitude]
+$cenumFromThen :: Amplitude -&gt; Amplitude -&gt; [Amplitude]
+enumFrom :: Amplitude -&gt; [Amplitude]
+$cenumFrom :: Amplitude -&gt; [Amplitude]
+fromEnum :: Amplitude -&gt; Int
+$cfromEnum :: Amplitude -&gt; Int
+toEnum :: Int -&gt; Amplitude
+$ctoEnum :: Int -&gt; Amplitude
+pred :: Amplitude -&gt; Amplitude
+$cpred :: Amplitude -&gt; Amplitude
+succ :: Amplitude -&gt; Amplitude
+$csucc :: Amplitude -&gt; Amplitude
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563562"><span id="local-6989586621680563564"><span id="local-6989586621680563566"><span id="local-6989586621680563568"><span id="local-6989586621680563570"><span id="local-6989586621680563572"><span id="local-6989586621680563574"><span class="annot"><span class="annottext">Integer -&gt; Amplitude
+Amplitude -&gt; Amplitude
+Amplitude -&gt; Amplitude -&gt; Amplitude
+(Amplitude -&gt; Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Integer -&gt; Amplitude)
+-&gt; Num Amplitude
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Integer -&gt; a)
+-&gt; Num a
+fromInteger :: Integer -&gt; Amplitude
+$cfromInteger :: Integer -&gt; Amplitude
+signum :: Amplitude -&gt; Amplitude
+$csignum :: Amplitude -&gt; Amplitude
+abs :: Amplitude -&gt; Amplitude
+$cabs :: Amplitude -&gt; Amplitude
+negate :: Amplitude -&gt; Amplitude
+$cnegate :: Amplitude -&gt; Amplitude
+* :: Amplitude -&gt; Amplitude -&gt; Amplitude
+$c* :: Amplitude -&gt; Amplitude -&gt; Amplitude
+- :: Amplitude -&gt; Amplitude -&gt; Amplitude
+$c- :: Amplitude -&gt; Amplitude -&gt; Amplitude
++ :: Amplitude -&gt; Amplitude -&gt; Amplitude
+$c+ :: Amplitude -&gt; Amplitude -&gt; Amplitude
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563546"><span id="local-6989586621680563548"><span id="local-6989586621680563550"><span id="local-6989586621680563552"><span id="local-6989586621680563554"><span id="local-6989586621680563556"><span id="local-6989586621680563558"><span class="annot"><span class="annottext">Eq Amplitude
+Eq Amplitude =&gt;
+(Amplitude -&gt; Amplitude -&gt; Ordering)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Bool)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Bool)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Bool)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Bool)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Amplitude)
+-&gt; Ord Amplitude
+Amplitude -&gt; Amplitude -&gt; Bool
+Amplitude -&gt; Amplitude -&gt; Ordering
+Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Amplitude -&gt; Amplitude -&gt; Amplitude
+$cmin :: Amplitude -&gt; Amplitude -&gt; Amplitude
+max :: Amplitude -&gt; Amplitude -&gt; Amplitude
+$cmax :: Amplitude -&gt; Amplitude -&gt; Amplitude
+&gt;= :: Amplitude -&gt; Amplitude -&gt; Bool
+$c&gt;= :: Amplitude -&gt; Amplitude -&gt; Bool
+&gt; :: Amplitude -&gt; Amplitude -&gt; Bool
+$c&gt; :: Amplitude -&gt; Amplitude -&gt; Bool
+&lt;= :: Amplitude -&gt; Amplitude -&gt; Bool
+$c&lt;= :: Amplitude -&gt; Amplitude -&gt; Bool
+&lt; :: Amplitude -&gt; Amplitude -&gt; Bool
+$c&lt; :: Amplitude -&gt; Amplitude -&gt; Bool
+compare :: Amplitude -&gt; Amplitude -&gt; Ordering
+$ccompare :: Amplitude -&gt; Amplitude -&gt; Ordering
+$cp1Ord :: Eq Amplitude
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563538"><span id="local-6989586621680563540"><span id="local-6989586621680563542"><span class="annot"><span class="annottext">Num Amplitude
+Num Amplitude =&gt;
+(Amplitude -&gt; Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Rational -&gt; Amplitude)
+-&gt; Fractional Amplitude
+Rational -&gt; Amplitude
+Amplitude -&gt; Amplitude
+Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a.
+Num a =&gt;
+(a -&gt; a -&gt; a) -&gt; (a -&gt; a) -&gt; (Rational -&gt; a) -&gt; Fractional a
+fromRational :: Rational -&gt; Amplitude
+$cfromRational :: Rational -&gt; Amplitude
+recip :: Amplitude -&gt; Amplitude
+$crecip :: Amplitude -&gt; Amplitude
+/ :: Amplitude -&gt; Amplitude -&gt; Amplitude
+$c/ :: Amplitude -&gt; Amplitude -&gt; Amplitude
+$cp1Fractional :: Num Amplitude
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Fractional</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563492"><span id="local-6989586621680563494"><span id="local-6989586621680563496"><span id="local-6989586621680563498"><span id="local-6989586621680563500"><span id="local-6989586621680563502"><span id="local-6989586621680563504"><span id="local-6989586621680563506"><span id="local-6989586621680563508"><span id="local-6989586621680563510"><span id="local-6989586621680563512"><span id="local-6989586621680563514"><span id="local-6989586621680563516"><span id="local-6989586621680563518"><span id="local-6989586621680563520"><span id="local-6989586621680563522"><span id="local-6989586621680563524"><span id="local-6989586621680563526"><span id="local-6989586621680563528"><span id="local-6989586621680563530"><span id="local-6989586621680563532"><span id="local-6989586621680563534"><span class="annot"><span class="annottext">Fractional Amplitude
+Amplitude
+Fractional Amplitude =&gt;
+Amplitude
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; (Amplitude -&gt; Amplitude)
+-&gt; Floating Amplitude
+Amplitude -&gt; Amplitude
+Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a.
+Fractional a =&gt;
+a
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; Floating a
+log1mexp :: Amplitude -&gt; Amplitude
+$clog1mexp :: Amplitude -&gt; Amplitude
+log1pexp :: Amplitude -&gt; Amplitude
+$clog1pexp :: Amplitude -&gt; Amplitude
+expm1 :: Amplitude -&gt; Amplitude
+$cexpm1 :: Amplitude -&gt; Amplitude
+log1p :: Amplitude -&gt; Amplitude
+$clog1p :: Amplitude -&gt; Amplitude
+atanh :: Amplitude -&gt; Amplitude
+$catanh :: Amplitude -&gt; Amplitude
+acosh :: Amplitude -&gt; Amplitude
+$cacosh :: Amplitude -&gt; Amplitude
+asinh :: Amplitude -&gt; Amplitude
+$casinh :: Amplitude -&gt; Amplitude
+tanh :: Amplitude -&gt; Amplitude
+$ctanh :: Amplitude -&gt; Amplitude
+cosh :: Amplitude -&gt; Amplitude
+$ccosh :: Amplitude -&gt; Amplitude
+sinh :: Amplitude -&gt; Amplitude
+$csinh :: Amplitude -&gt; Amplitude
+atan :: Amplitude -&gt; Amplitude
+$catan :: Amplitude -&gt; Amplitude
+acos :: Amplitude -&gt; Amplitude
+$cacos :: Amplitude -&gt; Amplitude
+asin :: Amplitude -&gt; Amplitude
+$casin :: Amplitude -&gt; Amplitude
+tan :: Amplitude -&gt; Amplitude
+$ctan :: Amplitude -&gt; Amplitude
+cos :: Amplitude -&gt; Amplitude
+$ccos :: Amplitude -&gt; Amplitude
+sin :: Amplitude -&gt; Amplitude
+$csin :: Amplitude -&gt; Amplitude
+logBase :: Amplitude -&gt; Amplitude -&gt; Amplitude
+$clogBase :: Amplitude -&gt; Amplitude -&gt; Amplitude
+** :: Amplitude -&gt; Amplitude -&gt; Amplitude
+$c** :: Amplitude -&gt; Amplitude -&gt; Amplitude
+sqrt :: Amplitude -&gt; Amplitude
+$csqrt :: Amplitude -&gt; Amplitude
+log :: Amplitude -&gt; Amplitude
+$clog :: Amplitude -&gt; Amplitude
+exp :: Amplitude -&gt; Amplitude
+$cexp :: Amplitude -&gt; Amplitude
+pi :: Amplitude
+$cpi :: Amplitude
+$cp1Floating :: Fractional Amplitude
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Floating</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563487"><span class="annot"><span class="annottext">Num Amplitude
+Ord Amplitude
+(Num Amplitude, Ord Amplitude) =&gt;
+(Amplitude -&gt; Rational) -&gt; Real Amplitude
+Amplitude -&gt; Rational
+forall a. (Num a, Ord a) =&gt; (a -&gt; Rational) -&gt; Real a
+toRational :: Amplitude -&gt; Rational
+$ctoRational :: Amplitude -&gt; Rational
+$cp2Real :: Ord Amplitude
+$cp1Real :: Num Amplitude
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Real</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563474"><span id="local-6989586621680563476"><span id="local-6989586621680563478"><span id="local-6989586621680563480"><span id="local-6989586621680563482"><span class="annot"><span class="annottext">Fractional Amplitude
+Real Amplitude
+(Real Amplitude, Fractional Amplitude) =&gt;
+(forall b. Integral b =&gt; Amplitude -&gt; (b, Amplitude))
+-&gt; (forall b. Integral b =&gt; Amplitude -&gt; b)
+-&gt; (forall b. Integral b =&gt; Amplitude -&gt; b)
+-&gt; (forall b. Integral b =&gt; Amplitude -&gt; b)
+-&gt; (forall b. Integral b =&gt; Amplitude -&gt; b)
+-&gt; RealFrac Amplitude
+Amplitude -&gt; b
+Amplitude -&gt; b
+Amplitude -&gt; b
+Amplitude -&gt; b
+Amplitude -&gt; (b, Amplitude)
+forall b. Integral b =&gt; Amplitude -&gt; b
+forall b. Integral b =&gt; Amplitude -&gt; (b, Amplitude)
+forall a.
+(Real a, Fractional a) =&gt;
+(forall b. Integral b =&gt; a -&gt; (b, a))
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; RealFrac a
+floor :: Amplitude -&gt; b
+$cfloor :: forall b. Integral b =&gt; Amplitude -&gt; b
+ceiling :: Amplitude -&gt; b
+$cceiling :: forall b. Integral b =&gt; Amplitude -&gt; b
+round :: Amplitude -&gt; b
+$cround :: forall b. Integral b =&gt; Amplitude -&gt; b
+truncate :: Amplitude -&gt; b
+$ctruncate :: forall b. Integral b =&gt; Amplitude -&gt; b
+properFraction :: Amplitude -&gt; (b, Amplitude)
+$cproperFraction :: forall b. Integral b =&gt; Amplitude -&gt; (b, Amplitude)
+$cp2RealFrac :: Fractional Amplitude
+$cp1RealFrac :: Real Amplitude
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">RealFrac</span></a></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- A logarithmic representation of amplitude such that</span><span>
+</span><span id="line-50"></span><span class="hs-comment">--</span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- &gt;</span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- &gt; x * 10 = amplitude (bel x + 1)</span><span>
+</span><span id="line-53"></span><span class="hs-keyword">newtype</span><span> </span><span id="Bel"><span class="annot"><a href="Music.Dynamics.Absolute.html#Bel"><span class="hs-identifier hs-var">Bel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Bel"><span class="annot"><a href="Music.Dynamics.Absolute.html#Bel"><span class="hs-identifier hs-var">Bel</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getBel"><span class="annot"><span class="annottext">Bel -&gt; Amplitude
+</span><a href="Music.Dynamics.Absolute.html#getBel"><span class="hs-identifier hs-var hs-var">getBel</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Amplitude"><span class="hs-identifier hs-type">Amplitude</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680563465"><span id="local-6989586621680563467"><span id="local-6989586621680563469"><span class="annot"><span class="annottext">Int -&gt; Bel -&gt; ShowS
+[Bel] -&gt; ShowS
+Bel -&gt; String
+(Int -&gt; Bel -&gt; ShowS)
+-&gt; (Bel -&gt; String) -&gt; ([Bel] -&gt; ShowS) -&gt; Show Bel
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Bel] -&gt; ShowS
+$cshowList :: [Bel] -&gt; ShowS
+show :: Bel -&gt; String
+$cshow :: Bel -&gt; String
+showsPrec :: Int -&gt; Bel -&gt; ShowS
+$cshowsPrec :: Int -&gt; Bel -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563461"><span id="local-6989586621680563463"><span class="annot"><span class="annottext">Bel -&gt; Bel -&gt; Bool
+(Bel -&gt; Bel -&gt; Bool) -&gt; (Bel -&gt; Bel -&gt; Bool) -&gt; Eq Bel
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Bel -&gt; Bel -&gt; Bool
+$c/= :: Bel -&gt; Bel -&gt; Bool
+== :: Bel -&gt; Bel -&gt; Bool
+$c== :: Bel -&gt; Bel -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563445"><span id="local-6989586621680563447"><span id="local-6989586621680563449"><span id="local-6989586621680563451"><span id="local-6989586621680563453"><span id="local-6989586621680563455"><span id="local-6989586621680563457"><span id="local-6989586621680563459"><span class="annot"><span class="annottext">Int -&gt; Bel
+Bel -&gt; Int
+Bel -&gt; [Bel]
+Bel -&gt; Bel
+Bel -&gt; Bel -&gt; [Bel]
+Bel -&gt; Bel -&gt; Bel -&gt; [Bel]
+(Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Int -&gt; Bel)
+-&gt; (Bel -&gt; Int)
+-&gt; (Bel -&gt; [Bel])
+-&gt; (Bel -&gt; Bel -&gt; [Bel])
+-&gt; (Bel -&gt; Bel -&gt; [Bel])
+-&gt; (Bel -&gt; Bel -&gt; Bel -&gt; [Bel])
+-&gt; Enum Bel
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+enumFromThenTo :: Bel -&gt; Bel -&gt; Bel -&gt; [Bel]
+$cenumFromThenTo :: Bel -&gt; Bel -&gt; Bel -&gt; [Bel]
+enumFromTo :: Bel -&gt; Bel -&gt; [Bel]
+$cenumFromTo :: Bel -&gt; Bel -&gt; [Bel]
+enumFromThen :: Bel -&gt; Bel -&gt; [Bel]
+$cenumFromThen :: Bel -&gt; Bel -&gt; [Bel]
+enumFrom :: Bel -&gt; [Bel]
+$cenumFrom :: Bel -&gt; [Bel]
+fromEnum :: Bel -&gt; Int
+$cfromEnum :: Bel -&gt; Int
+toEnum :: Int -&gt; Bel
+$ctoEnum :: Int -&gt; Bel
+pred :: Bel -&gt; Bel
+$cpred :: Bel -&gt; Bel
+succ :: Bel -&gt; Bel
+$csucc :: Bel -&gt; Bel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563431"><span id="local-6989586621680563433"><span id="local-6989586621680563435"><span id="local-6989586621680563437"><span id="local-6989586621680563439"><span id="local-6989586621680563441"><span id="local-6989586621680563443"><span class="annot"><span class="annottext">Integer -&gt; Bel
+Bel -&gt; Bel
+Bel -&gt; Bel -&gt; Bel
+(Bel -&gt; Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Integer -&gt; Bel)
+-&gt; Num Bel
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Integer -&gt; a)
+-&gt; Num a
+fromInteger :: Integer -&gt; Bel
+$cfromInteger :: Integer -&gt; Bel
+signum :: Bel -&gt; Bel
+$csignum :: Bel -&gt; Bel
+abs :: Bel -&gt; Bel
+$cabs :: Bel -&gt; Bel
+negate :: Bel -&gt; Bel
+$cnegate :: Bel -&gt; Bel
+* :: Bel -&gt; Bel -&gt; Bel
+$c* :: Bel -&gt; Bel -&gt; Bel
+- :: Bel -&gt; Bel -&gt; Bel
+$c- :: Bel -&gt; Bel -&gt; Bel
++ :: Bel -&gt; Bel -&gt; Bel
+$c+ :: Bel -&gt; Bel -&gt; Bel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563416"><span id="local-6989586621680563418"><span id="local-6989586621680563420"><span id="local-6989586621680563422"><span id="local-6989586621680563424"><span id="local-6989586621680563426"><span id="local-6989586621680563428"><span class="annot"><span class="annottext">Eq Bel
+Eq Bel =&gt;
+(Bel -&gt; Bel -&gt; Ordering)
+-&gt; (Bel -&gt; Bel -&gt; Bool)
+-&gt; (Bel -&gt; Bel -&gt; Bool)
+-&gt; (Bel -&gt; Bel -&gt; Bool)
+-&gt; (Bel -&gt; Bel -&gt; Bool)
+-&gt; (Bel -&gt; Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel -&gt; Bel)
+-&gt; Ord Bel
+Bel -&gt; Bel -&gt; Bool
+Bel -&gt; Bel -&gt; Ordering
+Bel -&gt; Bel -&gt; Bel
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Bel -&gt; Bel -&gt; Bel
+$cmin :: Bel -&gt; Bel -&gt; Bel
+max :: Bel -&gt; Bel -&gt; Bel
+$cmax :: Bel -&gt; Bel -&gt; Bel
+&gt;= :: Bel -&gt; Bel -&gt; Bool
+$c&gt;= :: Bel -&gt; Bel -&gt; Bool
+&gt; :: Bel -&gt; Bel -&gt; Bool
+$c&gt; :: Bel -&gt; Bel -&gt; Bool
+&lt;= :: Bel -&gt; Bel -&gt; Bool
+$c&lt;= :: Bel -&gt; Bel -&gt; Bool
+&lt; :: Bel -&gt; Bel -&gt; Bool
+$c&lt; :: Bel -&gt; Bel -&gt; Bool
+compare :: Bel -&gt; Bel -&gt; Ordering
+$ccompare :: Bel -&gt; Bel -&gt; Ordering
+$cp1Ord :: Eq Bel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563409"><span id="local-6989586621680563411"><span id="local-6989586621680563413"><span class="annot"><span class="annottext">Num Bel
+Num Bel =&gt;
+(Bel -&gt; Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel) -&gt; (Rational -&gt; Bel) -&gt; Fractional Bel
+Rational -&gt; Bel
+Bel -&gt; Bel
+Bel -&gt; Bel -&gt; Bel
+forall a.
+Num a =&gt;
+(a -&gt; a -&gt; a) -&gt; (a -&gt; a) -&gt; (Rational -&gt; a) -&gt; Fractional a
+fromRational :: Rational -&gt; Bel
+$cfromRational :: Rational -&gt; Bel
+recip :: Bel -&gt; Bel
+$crecip :: Bel -&gt; Bel
+/ :: Bel -&gt; Bel -&gt; Bel
+$c/ :: Bel -&gt; Bel -&gt; Bel
+$cp1Fractional :: Num Bel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Fractional</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563364"><span id="local-6989586621680563366"><span id="local-6989586621680563368"><span id="local-6989586621680563370"><span id="local-6989586621680563372"><span id="local-6989586621680563374"><span id="local-6989586621680563376"><span id="local-6989586621680563378"><span id="local-6989586621680563380"><span id="local-6989586621680563382"><span id="local-6989586621680563384"><span id="local-6989586621680563386"><span id="local-6989586621680563388"><span id="local-6989586621680563390"><span id="local-6989586621680563392"><span id="local-6989586621680563394"><span id="local-6989586621680563396"><span id="local-6989586621680563398"><span id="local-6989586621680563400"><span id="local-6989586621680563402"><span id="local-6989586621680563404"><span id="local-6989586621680563406"><span class="annot"><span class="annottext">Fractional Bel
+Bel
+Fractional Bel =&gt;
+Bel
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; (Bel -&gt; Bel)
+-&gt; Floating Bel
+Bel -&gt; Bel
+Bel -&gt; Bel -&gt; Bel
+forall a.
+Fractional a =&gt;
+a
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; Floating a
+log1mexp :: Bel -&gt; Bel
+$clog1mexp :: Bel -&gt; Bel
+log1pexp :: Bel -&gt; Bel
+$clog1pexp :: Bel -&gt; Bel
+expm1 :: Bel -&gt; Bel
+$cexpm1 :: Bel -&gt; Bel
+log1p :: Bel -&gt; Bel
+$clog1p :: Bel -&gt; Bel
+atanh :: Bel -&gt; Bel
+$catanh :: Bel -&gt; Bel
+acosh :: Bel -&gt; Bel
+$cacosh :: Bel -&gt; Bel
+asinh :: Bel -&gt; Bel
+$casinh :: Bel -&gt; Bel
+tanh :: Bel -&gt; Bel
+$ctanh :: Bel -&gt; Bel
+cosh :: Bel -&gt; Bel
+$ccosh :: Bel -&gt; Bel
+sinh :: Bel -&gt; Bel
+$csinh :: Bel -&gt; Bel
+atan :: Bel -&gt; Bel
+$catan :: Bel -&gt; Bel
+acos :: Bel -&gt; Bel
+$cacos :: Bel -&gt; Bel
+asin :: Bel -&gt; Bel
+$casin :: Bel -&gt; Bel
+tan :: Bel -&gt; Bel
+$ctan :: Bel -&gt; Bel
+cos :: Bel -&gt; Bel
+$ccos :: Bel -&gt; Bel
+sin :: Bel -&gt; Bel
+$csin :: Bel -&gt; Bel
+logBase :: Bel -&gt; Bel -&gt; Bel
+$clogBase :: Bel -&gt; Bel -&gt; Bel
+** :: Bel -&gt; Bel -&gt; Bel
+$c** :: Bel -&gt; Bel -&gt; Bel
+sqrt :: Bel -&gt; Bel
+$csqrt :: Bel -&gt; Bel
+log :: Bel -&gt; Bel
+$clog :: Bel -&gt; Bel
+exp :: Bel -&gt; Bel
+$cexp :: Bel -&gt; Bel
+pi :: Bel
+$cpi :: Bel
+$cp1Floating :: Fractional Bel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Floating</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563360"><span class="annot"><span class="annottext">Num Bel
+Ord Bel
+(Num Bel, Ord Bel) =&gt; (Bel -&gt; Rational) -&gt; Real Bel
+Bel -&gt; Rational
+forall a. (Num a, Ord a) =&gt; (a -&gt; Rational) -&gt; Real a
+toRational :: Bel -&gt; Rational
+$ctoRational :: Bel -&gt; Rational
+$cp2Real :: Ord Bel
+$cp1Real :: Num Bel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Real</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563348"><span id="local-6989586621680563350"><span id="local-6989586621680563352"><span id="local-6989586621680563354"><span id="local-6989586621680563356"><span class="annot"><span class="annottext">Fractional Bel
+Real Bel
+(Real Bel, Fractional Bel) =&gt;
+(forall b. Integral b =&gt; Bel -&gt; (b, Bel))
+-&gt; (forall b. Integral b =&gt; Bel -&gt; b)
+-&gt; (forall b. Integral b =&gt; Bel -&gt; b)
+-&gt; (forall b. Integral b =&gt; Bel -&gt; b)
+-&gt; (forall b. Integral b =&gt; Bel -&gt; b)
+-&gt; RealFrac Bel
+Bel -&gt; b
+Bel -&gt; b
+Bel -&gt; b
+Bel -&gt; b
+Bel -&gt; (b, Bel)
+forall b. Integral b =&gt; Bel -&gt; b
+forall b. Integral b =&gt; Bel -&gt; (b, Bel)
+forall a.
+(Real a, Fractional a) =&gt;
+(forall b. Integral b =&gt; a -&gt; (b, a))
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; RealFrac a
+floor :: Bel -&gt; b
+$cfloor :: forall b. Integral b =&gt; Bel -&gt; b
+ceiling :: Bel -&gt; b
+$cceiling :: forall b. Integral b =&gt; Bel -&gt; b
+round :: Bel -&gt; b
+$cround :: forall b. Integral b =&gt; Bel -&gt; b
+truncate :: Bel -&gt; b
+$ctruncate :: forall b. Integral b =&gt; Bel -&gt; b
+properFraction :: Bel -&gt; (b, Bel)
+$cproperFraction :: forall b. Integral b =&gt; Bel -&gt; (b, Bel)
+$cp2RealFrac :: Fractional Bel
+$cp1RealFrac :: Real Bel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">RealFrac</span></a></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- A logarithmic representation of amplitude such that</span><span>
+</span><span id="line-58"></span><span class="hs-comment">--</span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- &gt;</span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- &gt; x * 10 = amplitude (decibel x + 10)</span><span>
+</span><span id="line-61"></span><span class="hs-keyword">newtype</span><span> </span><span id="Decibel"><span class="annot"><a href="Music.Dynamics.Absolute.html#Decibel"><span class="hs-identifier hs-var">Decibel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Decibel"><span class="annot"><a href="Music.Dynamics.Absolute.html#Decibel"><span class="hs-identifier hs-var">Decibel</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getDecibel"><span class="annot"><span class="annottext">Decibel -&gt; Amplitude
+</span><a href="Music.Dynamics.Absolute.html#getDecibel"><span class="hs-identifier hs-var hs-var">getDecibel</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Amplitude"><span class="hs-identifier hs-type">Amplitude</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680563340"><span id="local-6989586621680563342"><span id="local-6989586621680563344"><span class="annot"><span class="annottext">Int -&gt; Decibel -&gt; ShowS
+[Decibel] -&gt; ShowS
+Decibel -&gt; String
+(Int -&gt; Decibel -&gt; ShowS)
+-&gt; (Decibel -&gt; String) -&gt; ([Decibel] -&gt; ShowS) -&gt; Show Decibel
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Decibel] -&gt; ShowS
+$cshowList :: [Decibel] -&gt; ShowS
+show :: Decibel -&gt; String
+$cshow :: Decibel -&gt; String
+showsPrec :: Int -&gt; Decibel -&gt; ShowS
+$cshowsPrec :: Int -&gt; Decibel -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563336"><span id="local-6989586621680563338"><span class="annot"><span class="annottext">Decibel -&gt; Decibel -&gt; Bool
+(Decibel -&gt; Decibel -&gt; Bool)
+-&gt; (Decibel -&gt; Decibel -&gt; Bool) -&gt; Eq Decibel
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Decibel -&gt; Decibel -&gt; Bool
+$c/= :: Decibel -&gt; Decibel -&gt; Bool
+== :: Decibel -&gt; Decibel -&gt; Bool
+$c== :: Decibel -&gt; Decibel -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563320"><span id="local-6989586621680563322"><span id="local-6989586621680563324"><span id="local-6989586621680563326"><span id="local-6989586621680563328"><span id="local-6989586621680563330"><span id="local-6989586621680563332"><span id="local-6989586621680563334"><span class="annot"><span class="annottext">Int -&gt; Decibel
+Decibel -&gt; Int
+Decibel -&gt; [Decibel]
+Decibel -&gt; Decibel
+Decibel -&gt; Decibel -&gt; [Decibel]
+Decibel -&gt; Decibel -&gt; Decibel -&gt; [Decibel]
+(Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Int -&gt; Decibel)
+-&gt; (Decibel -&gt; Int)
+-&gt; (Decibel -&gt; [Decibel])
+-&gt; (Decibel -&gt; Decibel -&gt; [Decibel])
+-&gt; (Decibel -&gt; Decibel -&gt; [Decibel])
+-&gt; (Decibel -&gt; Decibel -&gt; Decibel -&gt; [Decibel])
+-&gt; Enum Decibel
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+enumFromThenTo :: Decibel -&gt; Decibel -&gt; Decibel -&gt; [Decibel]
+$cenumFromThenTo :: Decibel -&gt; Decibel -&gt; Decibel -&gt; [Decibel]
+enumFromTo :: Decibel -&gt; Decibel -&gt; [Decibel]
+$cenumFromTo :: Decibel -&gt; Decibel -&gt; [Decibel]
+enumFromThen :: Decibel -&gt; Decibel -&gt; [Decibel]
+$cenumFromThen :: Decibel -&gt; Decibel -&gt; [Decibel]
+enumFrom :: Decibel -&gt; [Decibel]
+$cenumFrom :: Decibel -&gt; [Decibel]
+fromEnum :: Decibel -&gt; Int
+$cfromEnum :: Decibel -&gt; Int
+toEnum :: Int -&gt; Decibel
+$ctoEnum :: Int -&gt; Decibel
+pred :: Decibel -&gt; Decibel
+$cpred :: Decibel -&gt; Decibel
+succ :: Decibel -&gt; Decibel
+$csucc :: Decibel -&gt; Decibel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563306"><span id="local-6989586621680563308"><span id="local-6989586621680563310"><span id="local-6989586621680563312"><span id="local-6989586621680563314"><span id="local-6989586621680563316"><span id="local-6989586621680563318"><span class="annot"><span class="annottext">Integer -&gt; Decibel
+Decibel -&gt; Decibel
+Decibel -&gt; Decibel -&gt; Decibel
+(Decibel -&gt; Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Integer -&gt; Decibel)
+-&gt; Num Decibel
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Integer -&gt; a)
+-&gt; Num a
+fromInteger :: Integer -&gt; Decibel
+$cfromInteger :: Integer -&gt; Decibel
+signum :: Decibel -&gt; Decibel
+$csignum :: Decibel -&gt; Decibel
+abs :: Decibel -&gt; Decibel
+$cabs :: Decibel -&gt; Decibel
+negate :: Decibel -&gt; Decibel
+$cnegate :: Decibel -&gt; Decibel
+* :: Decibel -&gt; Decibel -&gt; Decibel
+$c* :: Decibel -&gt; Decibel -&gt; Decibel
+- :: Decibel -&gt; Decibel -&gt; Decibel
+$c- :: Decibel -&gt; Decibel -&gt; Decibel
++ :: Decibel -&gt; Decibel -&gt; Decibel
+$c+ :: Decibel -&gt; Decibel -&gt; Decibel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563291"><span id="local-6989586621680563293"><span id="local-6989586621680563295"><span id="local-6989586621680563297"><span id="local-6989586621680563299"><span id="local-6989586621680563301"><span id="local-6989586621680563303"><span class="annot"><span class="annottext">Eq Decibel
+Eq Decibel =&gt;
+(Decibel -&gt; Decibel -&gt; Ordering)
+-&gt; (Decibel -&gt; Decibel -&gt; Bool)
+-&gt; (Decibel -&gt; Decibel -&gt; Bool)
+-&gt; (Decibel -&gt; Decibel -&gt; Bool)
+-&gt; (Decibel -&gt; Decibel -&gt; Bool)
+-&gt; (Decibel -&gt; Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel -&gt; Decibel)
+-&gt; Ord Decibel
+Decibel -&gt; Decibel -&gt; Bool
+Decibel -&gt; Decibel -&gt; Ordering
+Decibel -&gt; Decibel -&gt; Decibel
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Decibel -&gt; Decibel -&gt; Decibel
+$cmin :: Decibel -&gt; Decibel -&gt; Decibel
+max :: Decibel -&gt; Decibel -&gt; Decibel
+$cmax :: Decibel -&gt; Decibel -&gt; Decibel
+&gt;= :: Decibel -&gt; Decibel -&gt; Bool
+$c&gt;= :: Decibel -&gt; Decibel -&gt; Bool
+&gt; :: Decibel -&gt; Decibel -&gt; Bool
+$c&gt; :: Decibel -&gt; Decibel -&gt; Bool
+&lt;= :: Decibel -&gt; Decibel -&gt; Bool
+$c&lt;= :: Decibel -&gt; Decibel -&gt; Bool
+&lt; :: Decibel -&gt; Decibel -&gt; Bool
+$c&lt; :: Decibel -&gt; Decibel -&gt; Bool
+compare :: Decibel -&gt; Decibel -&gt; Ordering
+$ccompare :: Decibel -&gt; Decibel -&gt; Ordering
+$cp1Ord :: Eq Decibel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563284"><span id="local-6989586621680563286"><span id="local-6989586621680563288"><span class="annot"><span class="annottext">Num Decibel
+Num Decibel =&gt;
+(Decibel -&gt; Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Rational -&gt; Decibel)
+-&gt; Fractional Decibel
+Rational -&gt; Decibel
+Decibel -&gt; Decibel
+Decibel -&gt; Decibel -&gt; Decibel
+forall a.
+Num a =&gt;
+(a -&gt; a -&gt; a) -&gt; (a -&gt; a) -&gt; (Rational -&gt; a) -&gt; Fractional a
+fromRational :: Rational -&gt; Decibel
+$cfromRational :: Rational -&gt; Decibel
+recip :: Decibel -&gt; Decibel
+$crecip :: Decibel -&gt; Decibel
+/ :: Decibel -&gt; Decibel -&gt; Decibel
+$c/ :: Decibel -&gt; Decibel -&gt; Decibel
+$cp1Fractional :: Num Decibel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Fractional</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563239"><span id="local-6989586621680563241"><span id="local-6989586621680563243"><span id="local-6989586621680563245"><span id="local-6989586621680563247"><span id="local-6989586621680563249"><span id="local-6989586621680563251"><span id="local-6989586621680563253"><span id="local-6989586621680563255"><span id="local-6989586621680563257"><span id="local-6989586621680563259"><span id="local-6989586621680563261"><span id="local-6989586621680563263"><span id="local-6989586621680563265"><span id="local-6989586621680563267"><span id="local-6989586621680563269"><span id="local-6989586621680563271"><span id="local-6989586621680563273"><span id="local-6989586621680563275"><span id="local-6989586621680563277"><span id="local-6989586621680563279"><span id="local-6989586621680563281"><span class="annot"><span class="annottext">Fractional Decibel
+Decibel
+Fractional Decibel =&gt;
+Decibel
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; (Decibel -&gt; Decibel)
+-&gt; Floating Decibel
+Decibel -&gt; Decibel
+Decibel -&gt; Decibel -&gt; Decibel
+forall a.
+Fractional a =&gt;
+a
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; Floating a
+log1mexp :: Decibel -&gt; Decibel
+$clog1mexp :: Decibel -&gt; Decibel
+log1pexp :: Decibel -&gt; Decibel
+$clog1pexp :: Decibel -&gt; Decibel
+expm1 :: Decibel -&gt; Decibel
+$cexpm1 :: Decibel -&gt; Decibel
+log1p :: Decibel -&gt; Decibel
+$clog1p :: Decibel -&gt; Decibel
+atanh :: Decibel -&gt; Decibel
+$catanh :: Decibel -&gt; Decibel
+acosh :: Decibel -&gt; Decibel
+$cacosh :: Decibel -&gt; Decibel
+asinh :: Decibel -&gt; Decibel
+$casinh :: Decibel -&gt; Decibel
+tanh :: Decibel -&gt; Decibel
+$ctanh :: Decibel -&gt; Decibel
+cosh :: Decibel -&gt; Decibel
+$ccosh :: Decibel -&gt; Decibel
+sinh :: Decibel -&gt; Decibel
+$csinh :: Decibel -&gt; Decibel
+atan :: Decibel -&gt; Decibel
+$catan :: Decibel -&gt; Decibel
+acos :: Decibel -&gt; Decibel
+$cacos :: Decibel -&gt; Decibel
+asin :: Decibel -&gt; Decibel
+$casin :: Decibel -&gt; Decibel
+tan :: Decibel -&gt; Decibel
+$ctan :: Decibel -&gt; Decibel
+cos :: Decibel -&gt; Decibel
+$ccos :: Decibel -&gt; Decibel
+sin :: Decibel -&gt; Decibel
+$csin :: Decibel -&gt; Decibel
+logBase :: Decibel -&gt; Decibel -&gt; Decibel
+$clogBase :: Decibel -&gt; Decibel -&gt; Decibel
+** :: Decibel -&gt; Decibel -&gt; Decibel
+$c** :: Decibel -&gt; Decibel -&gt; Decibel
+sqrt :: Decibel -&gt; Decibel
+$csqrt :: Decibel -&gt; Decibel
+log :: Decibel -&gt; Decibel
+$clog :: Decibel -&gt; Decibel
+exp :: Decibel -&gt; Decibel
+$cexp :: Decibel -&gt; Decibel
+pi :: Decibel
+$cpi :: Decibel
+$cp1Floating :: Fractional Decibel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Floating</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563235"><span class="annot"><span class="annottext">Num Decibel
+Ord Decibel
+(Num Decibel, Ord Decibel) =&gt; (Decibel -&gt; Rational) -&gt; Real Decibel
+Decibel -&gt; Rational
+forall a. (Num a, Ord a) =&gt; (a -&gt; Rational) -&gt; Real a
+toRational :: Decibel -&gt; Rational
+$ctoRational :: Decibel -&gt; Rational
+$cp2Real :: Ord Decibel
+$cp1Real :: Num Decibel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Real</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680563223"><span id="local-6989586621680563225"><span id="local-6989586621680563227"><span id="local-6989586621680563229"><span id="local-6989586621680563231"><span class="annot"><span class="annottext">Fractional Decibel
+Real Decibel
+(Real Decibel, Fractional Decibel) =&gt;
+(forall b. Integral b =&gt; Decibel -&gt; (b, Decibel))
+-&gt; (forall b. Integral b =&gt; Decibel -&gt; b)
+-&gt; (forall b. Integral b =&gt; Decibel -&gt; b)
+-&gt; (forall b. Integral b =&gt; Decibel -&gt; b)
+-&gt; (forall b. Integral b =&gt; Decibel -&gt; b)
+-&gt; RealFrac Decibel
+Decibel -&gt; b
+Decibel -&gt; b
+Decibel -&gt; b
+Decibel -&gt; b
+Decibel -&gt; (b, Decibel)
+forall b. Integral b =&gt; Decibel -&gt; b
+forall b. Integral b =&gt; Decibel -&gt; (b, Decibel)
+forall a.
+(Real a, Fractional a) =&gt;
+(forall b. Integral b =&gt; a -&gt; (b, a))
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; RealFrac a
+floor :: Decibel -&gt; b
+$cfloor :: forall b. Integral b =&gt; Decibel -&gt; b
+ceiling :: Decibel -&gt; b
+$cceiling :: forall b. Integral b =&gt; Decibel -&gt; b
+round :: Decibel -&gt; b
+$cround :: forall b. Integral b =&gt; Decibel -&gt; b
+truncate :: Decibel -&gt; b
+$ctruncate :: forall b. Integral b =&gt; Decibel -&gt; b
+properFraction :: Decibel -&gt; (b, Decibel)
+$cproperFraction :: forall b. Integral b =&gt; Decibel -&gt; (b, Decibel)
+$cp2RealFrac :: Fractional Decibel
+$cp1RealFrac :: Real Decibel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">RealFrac</span></a></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680563218"><span id="local-6989586621680563220"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Amplitude"><span class="hs-identifier hs-type">Amplitude</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680563216"><span class="annot"><span class="annottext">&lt;&gt; :: Amplitude -&gt; Amplitude -&gt; Amplitude
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(*)</span></a></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680563210"><span id="local-6989586621680563212"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Decibel"><span class="hs-identifier hs-type">Decibel</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680563209"><span class="annot"><span class="annottext">&lt;&gt; :: Decibel -&gt; Decibel -&gt; Decibel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Decibel -&gt; Decibel -&gt; Decibel
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(+)</span></a></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680563203"><span id="local-6989586621680563205"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Bel"><span class="hs-identifier hs-type">Bel</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680563202"><span class="annot"><span class="annottext">&lt;&gt; :: Bel -&gt; Bel -&gt; Bel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bel -&gt; Bel -&gt; Bel
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(+)</span></a></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680563196"><span id="local-6989586621680563198"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Amplitude"><span class="hs-identifier hs-type">Amplitude</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680563194"><span class="annot"><span class="annottext">mempty :: Amplitude
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680563188"><span id="local-6989586621680563190"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Decibel"><span class="hs-identifier hs-type">Decibel</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680563187"><span class="annot"><span class="annottext">mempty :: Decibel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680563181"><span id="local-6989586621680563183"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Bel"><span class="hs-identifier hs-type">Bel</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621680563180"><span class="annot"><span class="annottext">mempty :: Bel
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="hs-keyword">class</span><span> </span><span id="HasAmplitude"><span class="annot"><a href="Music.Dynamics.Absolute.html#HasAmplitude"><span class="hs-identifier hs-var">HasAmplitude</span></a></span></span><span> </span><span id="local-6989586621680563615"><span class="annot"><a href="#local-6989586621680563615"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-77"></span><span>  </span><span id="amplitude"><span class="annot"><a href="Music.Dynamics.Absolute.html#amplitude"><span class="hs-identifier hs-type">amplitude</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680563615"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Amplitude"><span class="hs-identifier hs-type">Amplitude</span></a></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#HasAmplitude"><span class="hs-identifier hs-type">HasAmplitude</span></a></span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Amplitude"><span class="hs-identifier hs-type">Amplitude</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-80"></span><span>  </span><span id="local-6989586621680563176"><span class="annot"><span class="annottext">amplitude :: Amplitude -&gt; Amplitude
+</span><a href="#local-6989586621680563176"><span class="hs-identifier hs-var hs-var hs-var hs-var">amplitude</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#HasAmplitude"><span class="hs-identifier hs-type">HasAmplitude</span></a></span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Decibel"><span class="hs-identifier hs-type">Decibel</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-83"></span><span>  </span><span id="local-6989586621680563173"><span class="annot"><span class="annottext">amplitude :: Decibel -&gt; Amplitude
+</span><a href="#local-6989586621680563173"><span class="hs-identifier hs-var hs-var hs-var hs-var">amplitude</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Dynamics.Absolute.html#Decibel"><span class="hs-identifier hs-type">Decibel</span></a></span><span> </span><span id="local-6989586621680563172"><span class="annot"><span class="annottext">f :: Amplitude
+</span><a href="#local-6989586621680563172"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">10</span></span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Floating a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">**</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Amplitude
+</span><a href="#local-6989586621680563172"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">10</span></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#HasAmplitude"><span class="hs-identifier hs-type">HasAmplitude</span></a></span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Bel"><span class="hs-identifier hs-type">Bel</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-86"></span><span>  </span><span id="local-6989586621680563168"><span class="annot"><span class="annottext">amplitude :: Bel -&gt; Amplitude
+</span><a href="#local-6989586621680563168"><span class="hs-identifier hs-var hs-var hs-var hs-var">amplitude</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Dynamics.Absolute.html#Bel"><span class="hs-identifier hs-type">Bel</span></a></span><span> </span><span id="local-6989586621680563167"><span class="annot"><span class="annottext">f :: Amplitude
+</span><a href="#local-6989586621680563167"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">10</span></span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Floating a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">**</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Amplitude
+</span><a href="#local-6989586621680563167"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span id="local-6989586621680563166"><span class="annot"><a href="Music.Dynamics.Absolute.html#decibel"><span class="hs-identifier hs-type">decibel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#HasAmplitude"><span class="hs-identifier hs-type">HasAmplitude</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680563166"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680563166"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Decibel"><span class="hs-identifier hs-type">Decibel</span></a></span></span><span>
+</span><span id="line-89"></span><span id="decibel"><span class="annot"><span class="annottext">decibel :: a -&gt; Decibel
+</span><a href="Music.Dynamics.Absolute.html#decibel"><span class="hs-identifier hs-var hs-var">decibel</span></a></span></span><span> </span><span id="local-6989586621680563165"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680563165"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Decibel
+</span><a href="Music.Dynamics.Absolute.html#Decibel"><span class="hs-identifier hs-var">Decibel</span></a></span><span> </span><span class="annot"><span class="annottext">(Amplitude -&gt; Decibel) -&gt; Amplitude -&gt; Decibel
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Floating a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">logBase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">10</span></span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Amplitude
+forall a. HasAmplitude a =&gt; a -&gt; Amplitude
+</span><a href="Music.Dynamics.Absolute.html#amplitude"><span class="hs-identifier hs-var">amplitude</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680563165"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="hs-number">10</span></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span id="local-6989586621680563163"><span class="annot"><a href="Music.Dynamics.Absolute.html#bel"><span class="hs-identifier hs-type">bel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#HasAmplitude"><span class="hs-identifier hs-type">HasAmplitude</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680563163"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680563163"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Dynamics.Absolute.html#Bel"><span class="hs-identifier hs-type">Bel</span></a></span></span><span>
+</span><span id="line-92"></span><span id="bel"><span class="annot"><span class="annottext">bel :: a -&gt; Bel
+</span><a href="Music.Dynamics.Absolute.html#bel"><span class="hs-identifier hs-var hs-var">bel</span></a></span></span><span> </span><span id="local-6989586621680563162"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680563162"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Bel
+</span><a href="Music.Dynamics.Absolute.html#Bel"><span class="hs-identifier hs-var">Bel</span></a></span><span> </span><span class="annot"><span class="annottext">(Amplitude -&gt; Bel) -&gt; Amplitude -&gt; Bel
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Floating a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">logBase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">10</span></span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Amplitude
+forall a. HasAmplitude a =&gt; a -&gt; Amplitude
+</span><a href="Music.Dynamics.Absolute.html#amplitude"><span class="hs-identifier hs-var">amplitude</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680563162"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Amplitude -&gt; Amplitude -&gt; Amplitude
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-93"></span></pre></body></html>

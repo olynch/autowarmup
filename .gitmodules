@@ -1,0 +1,3 @@
+[submodule "music-suite"]
+	path = music-suite
+	url = git@github.com:music-suite/music-suite

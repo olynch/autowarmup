@@ -1,0 +1,562 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-comment">--&#160;|</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Provides a way to query a value for its 'position'.</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Time.Position</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Music.Time.Duration.html"><span class="hs-identifier">Music.Time.Duration</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><span class="hs-comment">-- * The HasPosition class</span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier">HasPosition</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier">HasPosition1</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#_position"><span class="hs-identifier">_position</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#_position1"><span class="hs-identifier">_position1</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Position and Era</span></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#position"><span class="hs-identifier">position</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#era"><span class="hs-identifier">era</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#setEra"><span class="hs-identifier">setEra</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Specific positions</span></span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#onset"><span class="hs-identifier">onset</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#midpoint"><span class="hs-identifier">midpoint</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#offset"><span class="hs-identifier">offset</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#preOnset"><span class="hs-identifier">preOnset</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#postOffset"><span class="hs-identifier">postOffset</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Moving</span></span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#startAt"><span class="hs-identifier">startAt</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#stopAt"><span class="hs-identifier">stopAt</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#placeAt"><span class="hs-identifier">placeAt</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Transforming</span></span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#stretchTo"><span class="hs-identifier">stretchTo</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Transforming relative a position</span></span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#stretchRelative"><span class="hs-identifier">stretchRelative</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#stretchRelativeOnset"><span class="hs-identifier">stretchRelativeOnset</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#stretchRelativeMidpoint"><span class="hs-identifier">stretchRelativeMidpoint</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#stretchRelativeOffset"><span class="hs-identifier">stretchRelativeOffset</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#transformRelative"><span class="hs-identifier">transformRelative</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#transformRelativeOnset"><span class="hs-identifier">transformRelativeOnset</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#transformRelativeMidpoint"><span class="hs-identifier">transformRelativeMidpoint</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><a href="Music.Time.Position.html#transformRelativeOffset"><span class="hs-identifier">transformRelativeOffset</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-operator">(&lt;|)</span></span><span class="hs-special">,</span><span>
+</span><span id="line-55"></span><span>    </span><span class="annot"><span class="hs-identifier">Indexable</span></span><span class="hs-special">,</span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><span class="hs-identifier">Level</span></span><span class="hs-special">,</span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><span class="hs-identifier">below</span></span><span class="hs-special">,</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><span class="hs-identifier">index</span></span><span class="hs-special">,</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><span class="hs-identifier">inside</span></span><span class="hs-special">,</span><span>
+</span><span id="line-60"></span><span>    </span><span class="annot"><span class="hs-identifier">parts</span></span><span class="hs-special">,</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="hs-identifier">reversed</span></span><span class="hs-special">,</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">,</span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><span class="hs-operator">(|&gt;)</span></span><span class="hs-special">,</span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.AffineSpace.Point.html"><span class="hs-identifier">Data.AffineSpace.Point</span></a></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Map</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Set</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.VectorSpace</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Sum</span></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Duration.html"><span class="hs-identifier">Music.Time.Duration</span></a></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Internal.Util.html"><span class="hs-identifier">Music.Time.Internal.Util</span></a></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="hs-comment">-- TODO: resture _position to HasPosition, then restore this comment:</span><span>
+</span><span id="line-77"></span><span class="hs-comment">--</span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- Many values such as notes, envelopes etc can in fact have many positions such as onset,</span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- attack point, offset, decay point time etc. Rather than having separate methods for a</span><span>
+</span><span id="line-80"></span><span class="hs-comment">-- fixed set of cases, this class provides an interpolation from a /local/ position to</span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- a /global/ position. While the local position goes from zero to one, the global position</span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- goes from the 'onset' to the 'offset' of the value.</span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-85"></span><span class="hs-comment">-- Class of values that have a position in time.</span><span>
+</span><span id="line-86"></span><span class="hs-comment">--</span><span>
+</span><span id="line-87"></span><span class="hs-comment">-- ==== Laws</span><span>
+</span><span id="line-88"></span><span class="hs-comment">--</span><span>
+</span><span id="line-89"></span><span class="hs-comment">-- [/duration-position/]</span><span>
+</span><span id="line-90"></span><span class="hs-comment">--</span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- For 'HasDuration' instances:</span><span>
+</span><span id="line-92"></span><span class="hs-comment">--</span><span>
+</span><span id="line-93"></span><span class="hs-comment">--    @fmap '_duration' . '_era' = Just . '_duration'@</span><span>
+</span><span id="line-94"></span><span class="hs-comment">--</span><span>
+</span><span id="line-95"></span><span class="hs-comment">-- [/transform-position/]</span><span>
+</span><span id="line-96"></span><span class="hs-comment">--</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- For 'Transformable' instances:</span><span>
+</span><span id="line-98"></span><span class="hs-comment">--</span><span>
+</span><span id="line-99"></span><span class="hs-comment">--    @'_era' ('transform' s x) = fmap ('transform' s) ('_era' x)@</span><span>
+</span><span id="line-100"></span><span class="hs-keyword">class</span><span> </span><span id="HasPosition"><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-var">HasPosition</span></a></span></span><span> </span><span id="local-6989586621680568319"><span class="annot"><a href="#local-6989586621680568319"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-101"></span><span>  </span><span class="hs-comment">-- | Return the conventional bounds of a value (local time zero and one).</span><span>
+</span><span id="line-102"></span><span>  </span><span id="_era"><span class="annot"><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-type">_era</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680568319"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-105"></span><span>  </span><span id="local-6989586621680568194"><span class="annot"><span class="annottext">_era :: Span -&gt; Maybe Span
+</span><a href="#local-6989586621680568194"><span class="hs-identifier hs-var hs-var hs-var hs-var">_era</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Span -&gt; Maybe Span
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-108"></span><span class="hs-comment">-- Class of values that have a position in time.</span><span>
+</span><span id="line-109"></span><span class="hs-comment">--</span><span>
+</span><span id="line-110"></span><span class="hs-comment">-- ==== Laws</span><span>
+</span><span id="line-111"></span><span class="hs-comment">--</span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- [/duration-position/]</span><span>
+</span><span id="line-113"></span><span class="hs-comment">--</span><span>
+</span><span id="line-114"></span><span class="hs-comment">-- For 'HasDuration' instances:</span><span>
+</span><span id="line-115"></span><span class="hs-comment">--</span><span>
+</span><span id="line-116"></span><span class="hs-comment">--    @'_duration' . '_era1' = '_duration'@</span><span>
+</span><span id="line-117"></span><span class="hs-comment">--</span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- [/transform-position/]</span><span>
+</span><span id="line-119"></span><span class="hs-comment">--</span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- For 'Transformable' instances:</span><span>
+</span><span id="line-121"></span><span class="hs-comment">--</span><span>
+</span><span id="line-122"></span><span class="hs-comment">--    @'_era1' ('transform' s x) = 'transform' s ('_era1' x)@</span><span>
+</span><span id="line-123"></span><span class="hs-keyword">class</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568316"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="HasPosition1"><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-var">HasPosition1</span></a></span></span><span> </span><span id="local-6989586621680568316"><span class="annot"><a href="#local-6989586621680568316"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-124"></span><span>  </span><span id="_era1"><span class="annot"><a href="Music.Time.Position.html#_era1"><span class="hs-identifier hs-type">_era1</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621680568316"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-type">HasPosition1</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-127"></span><span>  </span><span id="local-6989586621680568189"><span class="annot"><span class="annottext">_era1 :: Span -&gt; Span
+</span><a href="#local-6989586621680568189"><span class="hs-identifier hs-var hs-var hs-var hs-var">_era1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Span -&gt; Span
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span class="hs-comment">-- | Map a local time in value to global time.</span><span>
+</span><span id="line-130"></span><span id="local-6989586621680568268"><span class="annot"><a href="Music.Time.Position.html#_position"><span class="hs-identifier hs-type">_position</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568268"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568268"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span></span><span>
+</span><span id="line-131"></span><span id="_position"><span class="annot"><span class="annottext">_position :: a -&gt; Duration -&gt; Maybe Time
+</span><a href="Music.Time.Position.html#_position"><span class="hs-identifier hs-var hs-var">_position</span></a></span></span><span> </span><span id="local-6989586621680568187"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680568187"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680568186"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680568186"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-132"></span><span>  </span><span id="local-6989586621680568185"><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568185"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568187"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-133"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680568184"><span class="annot"><span class="annottext">a :: Time
+</span><a href="#local-6989586621680568184"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680568183"><span class="annot"><span class="annottext">b :: Time
+</span><a href="#local-6989586621680568183"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568185"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Getting (Time, Time) Span (Time, Time) -&gt; (Time, Time)
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Time, Time) Span (Time, Time)
+Iso' Span (Time, Time)
+</span><a href="Music.Time.Types.html#onsetAndOffset"><span class="hs-identifier hs-var">onsetAndOffset</span></a></span><span>
+</span><span id="line-134"></span><span>  </span><span class="annot"><span class="annottext">Time -&gt; Maybe Time
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(Time -&gt; Maybe Time) -&gt; Time -&gt; Maybe Time
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Scalar (Diff Time) -&gt; Time
+forall p.
+(AffineSpace p, VectorSpace (Diff p)) =&gt;
+p -&gt; p -&gt; Scalar (Diff p) -&gt; p
+</span><span class="hs-identifier hs-var">alerp</span></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680568184"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680568183"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Scalar (Diff Time)
+Duration
+</span><a href="#local-6989586621680568186"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-135"></span><span>
+</span><span id="line-136"></span><span class="hs-comment">-- | Map a local time in value to global time.</span><span>
+</span><span id="line-137"></span><span id="local-6989586621680568288"><span class="annot"><a href="Music.Time.Position.html#_position1"><span class="hs-identifier hs-type">_position1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-type">HasPosition1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568288"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568288"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span></span><span>
+</span><span id="line-138"></span><span id="_position1"><span class="annot"><span class="annottext">_position1 :: a -&gt; Duration -&gt; Time
+</span><a href="Music.Time.Position.html#_position1"><span class="hs-identifier hs-var hs-var">_position1</span></a></span></span><span> </span><span id="local-6989586621680568179"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680568179"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680568178"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680568178"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-139"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680568177"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680568177"><span class="hs-identifier hs-var hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Span
+forall a. HasPosition1 a =&gt; a -&gt; Span
+</span><a href="Music.Time.Position.html#_era1"><span class="hs-identifier hs-var">_era1</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568179"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-140"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621680568176"><span class="annot"><span class="annottext">a :: Time
+</span><a href="#local-6989586621680568176"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680568175"><span class="annot"><span class="annottext">b :: Time
+</span><a href="#local-6989586621680568175"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568177"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Getting (Time, Time) Span (Time, Time) -&gt; (Time, Time)
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Time, Time) Span (Time, Time)
+Iso' Span (Time, Time)
+</span><a href="Music.Time.Types.html#onsetAndOffset"><span class="hs-identifier hs-var">onsetAndOffset</span></a></span><span>
+</span><span id="line-141"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Scalar (Diff Time) -&gt; Time
+forall p.
+(AffineSpace p, VectorSpace (Diff p)) =&gt;
+p -&gt; p -&gt; Scalar (Diff p) -&gt; p
+</span><span class="hs-identifier hs-var">alerp</span></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680568176"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680568175"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Scalar (Diff Time)
+Duration
+</span><a href="#local-6989586621680568178"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-142"></span><span>
+</span><span id="line-143"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-144"></span><span class="hs-comment">-- Position of the given value.</span><span>
+</span><span id="line-145"></span><span id="local-6989586621680568280"><span class="annot"><a href="Music.Time.Position.html#position"><span class="hs-identifier hs-type">position</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-type">HasPosition1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568280"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568280"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="#local-6989586621680568280"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span></span><span>
+</span><span id="line-146"></span><span id="position"><span class="annot"><span class="annottext">position :: Duration -&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#position"><span class="hs-identifier hs-var hs-var">position</span></a></span></span><span> </span><span id="local-6989586621680568174"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680568174"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; Time) -&gt; (a -&gt; Time -&gt; a) -&gt; Lens' a Time
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">lens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Duration -&gt; Time
+forall a. HasPosition1 a =&gt; a -&gt; Duration -&gt; Time
+</span><a href="Music.Time.Position.html#_position1"><span class="hs-operator hs-var">`_position1`</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680568174"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Time -&gt; a -&gt; a) -&gt; a -&gt; Time -&gt; a
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">flip</span></a></span><span> </span><span class="annot"><span class="annottext">((Time -&gt; a -&gt; a) -&gt; a -&gt; Time -&gt; a)
+-&gt; (Time -&gt; a -&gt; a) -&gt; a -&gt; Time -&gt; a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Time -&gt; a -&gt; a
+forall a.
+(Transformable a, HasPosition a) =&gt;
+Duration -&gt; Time -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#placeAt"><span class="hs-identifier hs-var">placeAt</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680568174"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-147"></span><span class="hs-pragma">{-# INLINEABLE</span><span> </span><span class="annot"><a href="Music.Time.Position.html#position"><span class="hs-pragma hs-type">position</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-148"></span><span>
+</span><span id="line-149"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-150"></span><span class="hs-comment">-- Onset of the given value, corresponding to alignment @0@.</span><span>
+</span><span id="line-151"></span><span id="local-6989586621680568171"><span class="annot"><a href="Music.Time.Position.html#onset"><span class="hs-identifier hs-type">onset</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-type">HasPosition1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568171"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568171"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="#local-6989586621680568171"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span></span><span>
+</span><span id="line-152"></span><span id="onset"><span class="annot"><span class="annottext">onset :: Lens' a Time
+</span><a href="Music.Time.Position.html#onset"><span class="hs-identifier hs-var hs-var">onset</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Lens' a Time
+forall a.
+(HasPosition1 a, Transformable a) =&gt;
+Duration -&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#position"><span class="hs-identifier hs-var">position</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-153"></span><span class="hs-pragma">{-# INLINEABLE</span><span> </span><span class="annot"><a href="Music.Time.Position.html#onset"><span class="hs-pragma hs-type">onset</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-154"></span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-156"></span><span class="hs-comment">-- Offset of the given value, corresponding to alignment @1@.</span><span>
+</span><span id="line-157"></span><span id="local-6989586621680568170"><span class="annot"><a href="Music.Time.Position.html#offset"><span class="hs-identifier hs-type">offset</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-type">HasPosition1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568170"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568170"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="#local-6989586621680568170"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span></span><span>
+</span><span id="line-158"></span><span id="offset"><span class="annot"><span class="annottext">offset :: Lens' a Time
+</span><a href="Music.Time.Position.html#offset"><span class="hs-identifier hs-var hs-var">offset</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Lens' a Time
+forall a.
+(HasPosition1 a, Transformable a) =&gt;
+Duration -&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#position"><span class="hs-identifier hs-var">position</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-159"></span><span class="hs-pragma">{-# INLINEABLE</span><span> </span><span class="annot"><a href="Music.Time.Position.html#offset"><span class="hs-pragma hs-type">offset</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-160"></span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-162"></span><span class="hs-comment">-- Pre-onset of the given value, or the value right before the attack phase.</span><span>
+</span><span id="line-163"></span><span id="local-6989586621680568169"><span class="annot"><a href="Music.Time.Position.html#preOnset"><span class="hs-identifier hs-type">preOnset</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-type">HasPosition1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568169"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568169"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="#local-6989586621680568169"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span></span><span>
+</span><span id="line-164"></span><span id="preOnset"><span class="annot"><span class="annottext">preOnset :: Lens' a Time
+</span><a href="Music.Time.Position.html#preOnset"><span class="hs-identifier hs-var hs-var">preOnset</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Lens' a Time
+forall a.
+(HasPosition1 a, Transformable a) =&gt;
+Duration -&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#position"><span class="hs-identifier hs-var">position</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="hs-number">0.5</span></span><span class="hs-special">)</span><span>
+</span><span id="line-165"></span><span class="hs-pragma">{-# INLINEABLE</span><span> </span><span class="annot"><a href="Music.Time.Position.html#preOnset"><span class="hs-pragma hs-type">preOnset</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-168"></span><span class="hs-comment">-- Midpoint of the given value, or the value between the decay and sustain phases.</span><span>
+</span><span id="line-169"></span><span id="local-6989586621680568168"><span class="annot"><a href="Music.Time.Position.html#midpoint"><span class="hs-identifier hs-type">midpoint</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-type">HasPosition1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568168"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568168"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="#local-6989586621680568168"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span></span><span>
+</span><span id="line-170"></span><span id="midpoint"><span class="annot"><span class="annottext">midpoint :: Lens' a Time
+</span><a href="Music.Time.Position.html#midpoint"><span class="hs-identifier hs-var hs-var">midpoint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Lens' a Time
+forall a.
+(HasPosition1 a, Transformable a) =&gt;
+Duration -&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#position"><span class="hs-identifier hs-var">position</span></a></span><span> </span><span class="annot"><span class="hs-number">0.5</span></span><span>
+</span><span id="line-171"></span><span class="hs-pragma">{-# INLINEABLE</span><span> </span><span class="annot"><a href="Music.Time.Position.html#midpoint"><span class="hs-pragma hs-type">midpoint</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-174"></span><span class="hs-comment">-- Post-offset of the given value, or the value right after the release phase.</span><span>
+</span><span id="line-175"></span><span id="local-6989586621680568167"><span class="annot"><a href="Music.Time.Position.html#postOffset"><span class="hs-identifier hs-type">postOffset</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-type">HasPosition1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568167"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568167"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="#local-6989586621680568167"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span></span><span>
+</span><span id="line-176"></span><span id="postOffset"><span class="annot"><span class="annottext">postOffset :: Lens' a Time
+</span><a href="Music.Time.Position.html#postOffset"><span class="hs-identifier hs-var hs-var">postOffset</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Lens' a Time
+forall a.
+(HasPosition1 a, Transformable a) =&gt;
+Duration -&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#position"><span class="hs-identifier hs-var">position</span></a></span><span> </span><span class="annot"><span class="hs-number">1.5</span></span><span>
+</span><span id="line-177"></span><span class="hs-pragma">{-# INLINEABLE</span><span> </span><span class="annot"><a href="Music.Time.Position.html#postOffset"><span class="hs-pragma hs-type">postOffset</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-178"></span><span>
+</span><span id="line-179"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-180"></span><span class="hs-comment">-- Move a value forward in time.</span><span>
+</span><span id="line-181"></span><span id="local-6989586621680568166"><span class="annot"><a href="Music.Time.Position.html#startAt"><span class="hs-identifier hs-type">startAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568166"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568166"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568166"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568166"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-182"></span><span id="startAt"><span class="annot"><span class="annottext">startAt :: Time -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#startAt"><span class="hs-identifier hs-var hs-var">startAt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Time -&gt; a -&gt; a
+forall a.
+(Transformable a, HasPosition a) =&gt;
+Duration -&gt; Time -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#placeAt"><span class="hs-identifier hs-var">placeAt</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-183"></span><span>
+</span><span id="line-184"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-185"></span><span class="hs-comment">-- Move a value forward in time.</span><span>
+</span><span id="line-186"></span><span id="local-6989586621680568165"><span class="annot"><a href="Music.Time.Position.html#stopAt"><span class="hs-identifier hs-type">stopAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568165"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568165"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568165"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568165"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-187"></span><span id="stopAt"><span class="annot"><span class="annottext">stopAt :: Time -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#stopAt"><span class="hs-identifier hs-var hs-var">stopAt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Time -&gt; a -&gt; a
+forall a.
+(Transformable a, HasPosition a) =&gt;
+Duration -&gt; Time -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#placeAt"><span class="hs-identifier hs-var">placeAt</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-188"></span><span>
+</span><span id="line-189"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-190"></span><span class="hs-comment">-- Align a value to a given position.</span><span>
+</span><span id="line-191"></span><span class="hs-comment">--</span><span>
+</span><span id="line-192"></span><span class="hs-comment">-- @placeAt p t@ places the given thing so that its position p is at time t</span><span>
+</span><span id="line-193"></span><span class="hs-comment">--</span><span>
+</span><span id="line-194"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-195"></span><span class="hs-comment">-- 'placeAt' 0 = 'startAt'</span><span>
+</span><span id="line-196"></span><span class="hs-comment">-- 'placeAt' 1 = 'stopAt'</span><span>
+</span><span id="line-197"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-198"></span><span id="local-6989586621680568284"><span class="annot"><a href="Music.Time.Position.html#placeAt"><span class="hs-identifier hs-type">placeAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568284"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568284"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Alignment"><span class="hs-identifier hs-type">Alignment</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568284"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568284"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-199"></span><span id="placeAt"><span class="annot"><span class="annottext">placeAt :: Duration -&gt; Time -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#placeAt"><span class="hs-identifier hs-var hs-var">placeAt</span></a></span></span><span> </span><span id="local-6989586621680568163"><span class="annot"><span class="annottext">p :: Duration
+</span><a href="#local-6989586621680568163"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680568162"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680568162"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680568161"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680568161"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568161"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Duration -&gt; Maybe Time
+forall a. HasPosition a =&gt; a -&gt; Duration -&gt; Maybe Time
+</span><a href="Music.Time.Position.html#_position"><span class="hs-operator hs-var">`_position`</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680568163"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-200"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568161"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-201"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680568160"><span class="annot"><span class="annottext">xp :: Time
+</span><a href="#local-6989586621680568160"><span class="hs-identifier hs-var">xp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680568162"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Diff Time
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680568160"><span class="hs-identifier hs-var">xp</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; a -&gt; a
+forall a. Transformable a =&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#delay"><span class="hs-operator hs-var">`delay`</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568161"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-202"></span><span>
+</span><span id="line-203"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-204"></span><span class="hs-comment">-- Stretch a value to have the given duration.</span><span>
+</span><span id="line-205"></span><span id="local-6989586621680568157"><span class="annot"><a href="Music.Time.Position.html#stretchTo"><span class="hs-identifier hs-type">stretchTo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568157"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568157"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568157"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568157"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-206"></span><span id="stretchTo"><span class="annot"><span class="annottext">stretchTo :: Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#stretchTo"><span class="hs-identifier hs-var hs-var">stretchTo</span></a></span></span><span> </span><span id="local-6989586621680568156"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680568156"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621680568155"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680568155"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568155"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-207"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568155"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-208"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680568154"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680568154"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680568156"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall v s.
+(VectorSpace v, s ~ Scalar v, Fractional s) =&gt;
+v -&gt; s -&gt; v
+</span><span class="hs-operator hs-var">^/</span></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Duration
+forall a. HasDuration a =&gt; a -&gt; Duration
+</span><a href="Music.Time.Duration.html#_duration"><span class="hs-identifier hs-var">_duration</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568154"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; a -&gt; a
+forall a. Transformable a =&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#stretch"><span class="hs-operator hs-var">`stretch`</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568155"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-209"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Music.Time.Position.html#stretchTo"><span class="hs-pragma hs-type">stretchTo</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-210"></span><span>
+</span><span id="line-211"></span><span class="hs-comment">{-
+_onset, _offset :: (HasPosition a, Transformable a) =&gt; a -&gt; Time
+_onset = (`_position` 0)
+_offset = (`_position` 1.0)
+
+-}</span><span>
+</span><span id="line-217"></span><span>
+</span><span id="line-218"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-219"></span><span class="hs-comment">-- Place a value over the given span.</span><span>
+</span><span id="line-220"></span><span class="hs-comment">--</span><span>
+</span><span id="line-221"></span><span class="hs-comment">-- @placeAt s t@ places the given thing so that @x^.place = s@</span><span>
+</span><span id="line-222"></span><span id="local-6989586621680568254"><span class="annot"><a href="Music.Time.Position.html#setEra"><span class="hs-identifier hs-type">setEra</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568254"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568254"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568254"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568254"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-223"></span><span id="setEra"><span class="annot"><span class="annottext">setEra :: Span -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#setEra"><span class="hs-identifier hs-var hs-var">setEra</span></a></span></span><span> </span><span id="local-6989586621680568150"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680568150"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621680568149"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680568149"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568149"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-224"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568149"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-225"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680568148"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680568148"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-226"></span><span>    </span><span class="annot"><span class="annottext">Span -&gt; a -&gt; a
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568150"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Span -&gt; Span
+forall v. AdditiveGroup v =&gt; v -&gt; v -&gt; v
+</span><span class="hs-operator hs-var">^-^</span></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568148"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568149"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-227"></span><span>
+</span><span id="line-228"></span><span id="local-6989586621680568145"><span class="annot"><a href="Music.Time.Position.html#era"><span class="hs-identifier hs-type">era</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-type">HasPosition1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568145"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568145"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="#local-6989586621680568145"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span></span><span>
+</span><span id="line-229"></span><span id="era"><span class="annot"><span class="annottext">era :: Lens' a Span
+</span><a href="Music.Time.Position.html#era"><span class="hs-identifier hs-var hs-var">era</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; Span) -&gt; (a -&gt; Span -&gt; a) -&gt; Lens' a Span
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">lens</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Span
+forall a. HasPosition1 a =&gt; a -&gt; Span
+</span><a href="Music.Time.Position.html#_era1"><span class="hs-identifier hs-var">_era1</span></a></span><span> </span><span class="annot"><span class="annottext">((a -&gt; Span -&gt; a) -&gt; (Span -&gt; f Span) -&gt; a -&gt; f a)
+-&gt; (a -&gt; Span -&gt; a) -&gt; (Span -&gt; f Span) -&gt; a -&gt; f a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Span -&gt; a -&gt; a) -&gt; a -&gt; Span -&gt; a
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">flip</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; a -&gt; a
+forall a. (HasPosition a, Transformable a) =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#setEra"><span class="hs-identifier hs-var">setEra</span></a></span><span>
+</span><span id="line-230"></span><span>
+</span><span id="line-231"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-232"></span><span class="hs-comment">-- Stretch a value relative to its local origin.</span><span>
+</span><span id="line-233"></span><span class="hs-comment">--</span><span>
+</span><span id="line-234"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-235"></span><span class="hs-comment">-- stretchRelativeOnset    = stretchRelative 0</span><span>
+</span><span id="line-236"></span><span class="hs-comment">-- stretchRelativeMidpoint = stretchRelative 0.5</span><span>
+</span><span id="line-237"></span><span class="hs-comment">-- stretchRelativeOffset   = stretchRelative 1</span><span>
+</span><span id="line-238"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-239"></span><span id="local-6989586621680568241"><span class="annot"><a href="Music.Time.Position.html#stretchRelative"><span class="hs-identifier hs-type">stretchRelative</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568241"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568241"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Alignment"><span class="hs-identifier hs-type">Alignment</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568241"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568241"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-240"></span><span id="stretchRelative"><span class="annot"><span class="annottext">stretchRelative :: Duration -&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#stretchRelative"><span class="hs-identifier hs-var hs-var">stretchRelative</span></a></span></span><span> </span><span id="local-6989586621680568144"><span class="annot"><span class="annottext">p :: Duration
+</span><a href="#local-6989586621680568144"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680568143"><span class="annot"><span class="annottext">n :: Duration
+</span><a href="#local-6989586621680568143"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621680568142"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680568142"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568142"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-241"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568142"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-242"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680568141"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680568141"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ASetter a a a a -&gt; (a -&gt; a) -&gt; a -&gt; a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; ASetter a a a a
+forall a b.
+(Transformable a, Transformable b) =&gt;
+Span -&gt; Iso a b a b
+</span><a href="Music.Time.Internal.Transform.html#transformed"><span class="hs-identifier hs-var">transformed</span></a></span><span> </span><span class="annot"><span class="annottext">(Span -&gt; ASetter a a a a) -&gt; Span -&gt; ASetter a a a a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Span
+</span><a href="Music.Time.Internal.Transform.html#undelaying"><span class="hs-identifier hs-var">undelaying</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time -&gt; Duration
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span> </span><span class="annot"><span class="annottext">(Time -&gt; Duration) -&gt; Time -&gt; Duration
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568141"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Getting Time Span Time -&gt; Time
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Lens' Span Time
+forall a.
+(HasPosition1 a, Transformable a) =&gt;
+Duration -&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#position"><span class="hs-identifier hs-var">position</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680568144"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration -&gt; a -&gt; a
+forall a. Transformable a =&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#stretch"><span class="hs-identifier hs-var">stretch</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680568143"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568142"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-243"></span><span>
+</span><span id="line-244"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-245"></span><span class="hs-comment">-- Stretch a value relative to its onset.</span><span>
+</span><span id="line-246"></span><span class="hs-comment">--</span><span>
+</span><span id="line-247"></span><span class="hs-comment">-- &gt;&gt;&gt; stretchRelativeOnset 2 (0 &lt;-&gt; 1)</span><span>
+</span><span id="line-248"></span><span class="hs-comment">-- 0 &lt;-&gt; 2</span><span>
+</span><span id="line-249"></span><span id="local-6989586621680568137"><span class="annot"><a href="Music.Time.Position.html#stretchRelativeOnset"><span class="hs-identifier hs-type">stretchRelativeOnset</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568137"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568137"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568137"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568137"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-250"></span><span id="stretchRelativeOnset"><span class="annot"><span class="annottext">stretchRelativeOnset :: Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#stretchRelativeOnset"><span class="hs-identifier hs-var hs-var">stretchRelativeOnset</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; a -&gt; a
+forall a.
+(HasPosition a, Transformable a) =&gt;
+Duration -&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#stretchRelative"><span class="hs-identifier hs-var">stretchRelative</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-251"></span><span>
+</span><span id="line-252"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-253"></span><span class="hs-comment">-- Stretch a value relative to its midpoint.</span><span>
+</span><span id="line-254"></span><span class="hs-comment">--</span><span>
+</span><span id="line-255"></span><span class="hs-comment">-- &gt;&gt;&gt; stretchRelativeMidpoint 2 (1 &lt;-&gt; 3)</span><span>
+</span><span id="line-256"></span><span class="hs-comment">-- 0 &lt;-&gt; 4</span><span>
+</span><span id="line-257"></span><span id="local-6989586621680568136"><span class="annot"><a href="Music.Time.Position.html#stretchRelativeMidpoint"><span class="hs-identifier hs-type">stretchRelativeMidpoint</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568136"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568136"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568136"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568136"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-258"></span><span id="stretchRelativeMidpoint"><span class="annot"><span class="annottext">stretchRelativeMidpoint :: Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#stretchRelativeMidpoint"><span class="hs-identifier hs-var hs-var">stretchRelativeMidpoint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; a -&gt; a
+forall a.
+(HasPosition a, Transformable a) =&gt;
+Duration -&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#stretchRelative"><span class="hs-identifier hs-var">stretchRelative</span></a></span><span> </span><span class="annot"><span class="hs-number">0.5</span></span><span>
+</span><span id="line-259"></span><span>
+</span><span id="line-260"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-261"></span><span class="hs-comment">-- Stretch a value relative to its offset.</span><span>
+</span><span id="line-262"></span><span class="hs-comment">--</span><span>
+</span><span id="line-263"></span><span class="hs-comment">-- &gt;&gt;&gt; stretchRelativeOffset 2 (1 &lt;-&gt; 2)</span><span>
+</span><span id="line-264"></span><span class="hs-comment">-- 0 &lt;-&gt; 2</span><span>
+</span><span id="line-265"></span><span id="local-6989586621680568135"><span class="annot"><a href="Music.Time.Position.html#stretchRelativeOffset"><span class="hs-identifier hs-type">stretchRelativeOffset</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568135"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568135"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568135"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568135"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-266"></span><span id="stretchRelativeOffset"><span class="annot"><span class="annottext">stretchRelativeOffset :: Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#stretchRelativeOffset"><span class="hs-identifier hs-var hs-var">stretchRelativeOffset</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; a -&gt; a
+forall a.
+(HasPosition a, Transformable a) =&gt;
+Duration -&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#stretchRelative"><span class="hs-identifier hs-var">stretchRelative</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-267"></span><span>
+</span><span id="line-268"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-269"></span><span class="hs-comment">-- Transform a value relative to its local origin.</span><span>
+</span><span id="line-270"></span><span class="hs-comment">--</span><span>
+</span><span id="line-271"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-272"></span><span class="hs-comment">-- stretchRelativeOnset    = stretchRelative 0</span><span>
+</span><span id="line-273"></span><span class="hs-comment">-- stretchRelativeMidpoint = stretchRelative 0.5</span><span>
+</span><span id="line-274"></span><span class="hs-comment">-- stretchRelativeOffset   = stretchRelative 1</span><span>
+</span><span id="line-275"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-276"></span><span id="local-6989586621680568236"><span class="annot"><a href="Music.Time.Position.html#transformRelative"><span class="hs-identifier hs-type">transformRelative</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568236"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568236"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Alignment"><span class="hs-identifier hs-type">Alignment</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568236"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568236"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-277"></span><span id="transformRelative"><span class="annot"><span class="annottext">transformRelative :: Duration -&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#transformRelative"><span class="hs-identifier hs-var hs-var">transformRelative</span></a></span></span><span> </span><span id="local-6989586621680568134"><span class="annot"><span class="annottext">p :: Duration
+</span><a href="#local-6989586621680568134"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621680568133"><span class="annot"><span class="annottext">n :: Span
+</span><a href="#local-6989586621680568133"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621680568132"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680568132"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568132"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-278"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568132"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-279"></span><span>  </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680568131"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680568131"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ASetter a a a a -&gt; (a -&gt; a) -&gt; a -&gt; a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; ASetter a a a a
+forall a b.
+(Transformable a, Transformable b) =&gt;
+Span -&gt; Iso a b a b
+</span><a href="Music.Time.Internal.Transform.html#transformed"><span class="hs-identifier hs-var">transformed</span></a></span><span> </span><span class="annot"><span class="annottext">(Span -&gt; ASetter a a a a) -&gt; Span -&gt; ASetter a a a a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Span
+</span><a href="Music.Time.Internal.Transform.html#undelaying"><span class="hs-identifier hs-var">undelaying</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time -&gt; Duration
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span> </span><span class="annot"><span class="annottext">(Time -&gt; Duration) -&gt; Time -&gt; Duration
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568131"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Getting Time Span Time -&gt; Time
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Lens' Span Time
+forall a.
+(HasPosition1 a, Transformable a) =&gt;
+Duration -&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#position"><span class="hs-identifier hs-var">position</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680568134"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; a -&gt; a
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568133"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680568132"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-280"></span><span>
+</span><span id="line-281"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-282"></span><span class="hs-comment">-- Transform a value relative to its onset.</span><span>
+</span><span id="line-283"></span><span id="local-6989586621680568130"><span class="annot"><a href="Music.Time.Position.html#transformRelativeOnset"><span class="hs-identifier hs-type">transformRelativeOnset</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568130"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568130"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568130"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568130"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-284"></span><span id="transformRelativeOnset"><span class="annot"><span class="annottext">transformRelativeOnset :: Span -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#transformRelativeOnset"><span class="hs-identifier hs-var hs-var">transformRelativeOnset</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Span -&gt; a -&gt; a
+forall a.
+(HasPosition a, Transformable a) =&gt;
+Duration -&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#transformRelative"><span class="hs-identifier hs-var">transformRelative</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-285"></span><span>
+</span><span id="line-286"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-287"></span><span class="hs-comment">-- Transform a value relative to its midpoint.</span><span>
+</span><span id="line-288"></span><span id="local-6989586621680568129"><span class="annot"><a href="Music.Time.Position.html#transformRelativeMidpoint"><span class="hs-identifier hs-type">transformRelativeMidpoint</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568129"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568129"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568129"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568129"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-289"></span><span id="transformRelativeMidpoint"><span class="annot"><span class="annottext">transformRelativeMidpoint :: Span -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#transformRelativeMidpoint"><span class="hs-identifier hs-var hs-var">transformRelativeMidpoint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Span -&gt; a -&gt; a
+forall a.
+(HasPosition a, Transformable a) =&gt;
+Duration -&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#transformRelative"><span class="hs-identifier hs-var">transformRelative</span></a></span><span> </span><span class="annot"><span class="hs-number">0.5</span></span><span>
+</span><span id="line-290"></span><span>
+</span><span id="line-291"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-292"></span><span class="hs-comment">-- Transform a value relative to its offset.</span><span>
+</span><span id="line-293"></span><span id="local-6989586621680568128"><span class="annot"><a href="Music.Time.Position.html#transformRelativeOffset"><span class="hs-identifier hs-type">transformRelativeOffset</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568128"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568128"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568128"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680568128"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-294"></span><span id="transformRelativeOffset"><span class="annot"><span class="annottext">transformRelativeOffset :: Span -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#transformRelativeOffset"><span class="hs-identifier hs-var hs-var">transformRelativeOffset</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Span -&gt; a -&gt; a
+forall a.
+(HasPosition a, Transformable a) =&gt;
+Duration -&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#transformRelative"><span class="hs-identifier hs-var">transformRelative</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-295"></span></pre></body></html>

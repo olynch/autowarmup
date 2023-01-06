@@ -1,0 +1,358 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_4MWtz2YmI07E2QdBAIoT5d"><span id="%24maxtag_4MWtz2YmI07E2QdBAIoT5d"><span id="%24tag2con_4MWtz2YmI07E2QdBAIoT5d"><span id="%24con2tag_2c3wPkXziVXIQUgTnCICCP"><span id="%24maxtag_2c3wPkXziVXIQUgTnCICCP"><span id="%24tag2con_2c3wPkXziVXIQUgTnCICCP"><span id="%24con2tag_32Z7MAQrmZi8ogrSJTDtG8"><span id="%24maxtag_32Z7MAQrmZi8ogrSJTDtG8"><span id="%24tag2con_32Z7MAQrmZi8ogrSJTDtG8"></span></span></span></span></span></span></span></span></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TypeSynonymInstances #-}</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012</span><span>
+</span><span id="line-12"></span><span class="hs-comment">--</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-14"></span><span class="hs-comment">--</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- Portability : portable</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Music.MusicXml.Pitch</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Pitch"><span class="hs-identifier">Pitch</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#DisplayPitch"><span class="hs-identifier">DisplayPitch</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#PitchClass"><span class="hs-identifier">PitchClass</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Semitones"><span class="hs-identifier">Semitones</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#noSemitones"><span class="hs-identifier">noSemitones</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier">Octaves</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Fifths"><span class="hs-identifier">Fifths</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Line"><span class="hs-identifier">Line</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Mode"><span class="hs-identifier">Mode</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Accidental"><span class="hs-identifier">Accidental</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-operator">(.-.)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.html"><span class="hs-identifier">Music.Pitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Pitch.Common.Internal.html#accidental"><span class="hs-identifier">accidental</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#name"><span class="hs-identifier">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#octaves"><span class="hs-identifier">octaves</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">type</span><span> </span><span id="Pitch"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Pitch"><span class="hs-identifier hs-var">Pitch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#PitchClass"><span class="hs-identifier hs-type">PitchClass</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Semitones"><span class="hs-identifier hs-type">Semitones</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">type</span><span> </span><span id="DisplayPitch"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#DisplayPitch"><span class="hs-identifier hs-var">DisplayPitch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#PitchClass"><span class="hs-identifier hs-type">PitchClass</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">data</span><span> </span><span id="Mode"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Mode"><span class="hs-identifier hs-var">Mode</span></a></span></span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Major"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Major"><span class="hs-identifier hs-var">Major</span></a></span></span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Minor"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Minor"><span class="hs-identifier hs-var">Minor</span></a></span></span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Dorian"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Dorian"><span class="hs-identifier hs-var">Dorian</span></a></span></span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Phrygian"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Phrygian"><span class="hs-identifier hs-var">Phrygian</span></a></span></span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Lydian"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Lydian"><span class="hs-identifier hs-var">Lydian</span></a></span></span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Mixolydian"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Mixolydian"><span class="hs-identifier hs-var">Mixolydian</span></a></span></span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Aeolian"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Aeolian"><span class="hs-identifier hs-var">Aeolian</span></a></span></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Ionian"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Ionian"><span class="hs-identifier hs-var">Ionian</span></a></span></span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Locrian"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Locrian"><span class="hs-identifier hs-var">Locrian</span></a></span></span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="NoMode"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#NoMode"><span class="hs-identifier hs-var">NoMode</span></a></span></span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680586960"><span id="local-6989586621680586962"><span id="local-6989586621680586964"><span id="local-6989586621680586966"><span class="annot"><span class="annottext">ReadPrec [Mode]
+ReadPrec Mode
+Int -&gt; ReadS Mode
+ReadS [Mode]
+(Int -&gt; ReadS Mode)
+-&gt; ReadS [Mode] -&gt; ReadPrec Mode -&gt; ReadPrec [Mode] -&gt; Read Mode
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Mode]
+$creadListPrec :: ReadPrec [Mode]
+readPrec :: ReadPrec Mode
+$creadPrec :: ReadPrec Mode
+readList :: ReadS [Mode]
+$creadList :: ReadS [Mode]
+readsPrec :: Int -&gt; ReadS Mode
+$creadsPrec :: Int -&gt; ReadS Mode
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></a></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">data</span><span> </span><span id="Accidental"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Accidental"><span class="hs-identifier hs-var">Accidental</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DoubleFlat"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#DoubleFlat"><span class="hs-identifier hs-var">DoubleFlat</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Flat"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Flat"><span class="hs-identifier hs-var">Flat</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Natural"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Natural"><span class="hs-identifier hs-var">Natural</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Sharp"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Sharp"><span class="hs-identifier hs-var">Sharp</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="DoubleSharp"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#DoubleSharp"><span class="hs-identifier hs-var">DoubleSharp</span></a></span></span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621680586948"><span id="local-6989586621680586950"><span id="local-6989586621680586952"><span class="annot"><span class="annottext">Int -&gt; Accidental -&gt; ShowS
+[Accidental] -&gt; ShowS
+Accidental -&gt; String
+(Int -&gt; Accidental -&gt; ShowS)
+-&gt; (Accidental -&gt; String)
+-&gt; ([Accidental] -&gt; ShowS)
+-&gt; Show Accidental
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Accidental] -&gt; ShowS
+$cshowList :: [Accidental] -&gt; ShowS
+show :: Accidental -&gt; String
+$cshow :: Accidental -&gt; String
+showsPrec :: Int -&gt; Accidental -&gt; ShowS
+$cshowsPrec :: Int -&gt; Accidental -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">data</span><span> </span><span id="PitchClass"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#PitchClass"><span class="hs-identifier hs-var">PitchClass</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="C"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#C"><span class="hs-identifier hs-var">C</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="D"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#D"><span class="hs-identifier hs-var">D</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="E"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#E"><span class="hs-identifier hs-var">E</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="F"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#F"><span class="hs-identifier hs-var">F</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="G"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#G"><span class="hs-identifier hs-var">G</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="A"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#A"><span class="hs-identifier hs-var">A</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="B"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#B"><span class="hs-identifier hs-var">B</span></a></span></span><span>
+</span><span id="line-57"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680586932"><span id="local-6989586621680586934"><span id="local-6989586621680586936"><span id="local-6989586621680586938"><span class="annot"><span class="annottext">ReadPrec [PitchClass]
+ReadPrec PitchClass
+Int -&gt; ReadS PitchClass
+ReadS [PitchClass]
+(Int -&gt; ReadS PitchClass)
+-&gt; ReadS [PitchClass]
+-&gt; ReadPrec PitchClass
+-&gt; ReadPrec [PitchClass]
+-&gt; Read PitchClass
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [PitchClass]
+$creadListPrec :: ReadPrec [PitchClass]
+readPrec :: ReadPrec PitchClass
+$creadPrec :: ReadPrec PitchClass
+readList :: ReadS [PitchClass]
+$creadList :: ReadS [PitchClass]
+readsPrec :: Int -&gt; ReadS PitchClass
+$creadsPrec :: Int -&gt; ReadS PitchClass
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></a></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">newtype</span><span> </span><span id="Semitones"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Semitones"><span class="hs-identifier hs-var">Semitones</span></a></span></span><span>
+</span><span id="line-60"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Semitones, i.e 100 cent</span><span>
+</span><span id="line-61"></span><span>    </span><span id="Semitones"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Semitones"><span class="hs-identifier hs-var">Semitones</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getSemitones"><span class="annot"><span class="annottext">Semitones -&gt; Double
+</span><a href="Data.Music.MusicXml.Pitch.html#getSemitones"><span class="hs-identifier hs-var hs-var">getSemitones</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621680586924"><span id="local-6989586621680586926"><span id="local-6989586621680586928"><span class="annot"><span class="annottext">Int -&gt; Semitones -&gt; ShowS
+[Semitones] -&gt; ShowS
+Semitones -&gt; String
+(Int -&gt; Semitones -&gt; ShowS)
+-&gt; (Semitones -&gt; String)
+-&gt; ([Semitones] -&gt; ShowS)
+-&gt; Show Semitones
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Semitones] -&gt; ShowS
+$cshowList :: [Semitones] -&gt; ShowS
+show :: Semitones -&gt; String
+$cshow :: Semitones -&gt; String
+showsPrec :: Int -&gt; Semitones -&gt; ShowS
+$cshowsPrec :: Int -&gt; Semitones -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">newtype</span><span> </span><span id="Octaves"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier hs-var">Octaves</span></a></span></span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Octaves, i.e. 1200 cent</span><span>
+</span><span id="line-66"></span><span>    </span><span id="Octaves"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier hs-var">Octaves</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getOctaves"><span class="annot"><span class="annottext">Octaves -&gt; Int
+</span><a href="Data.Music.MusicXml.Pitch.html#getOctaves"><span class="hs-identifier hs-var hs-var">getOctaves</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-67"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621680586916"><span id="local-6989586621680586918"><span id="local-6989586621680586920"><span class="annot"><span class="annottext">Int -&gt; Octaves -&gt; ShowS
+[Octaves] -&gt; ShowS
+Octaves -&gt; String
+(Int -&gt; Octaves -&gt; ShowS)
+-&gt; (Octaves -&gt; String) -&gt; ([Octaves] -&gt; ShowS) -&gt; Show Octaves
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Octaves] -&gt; ShowS
+$cshowList :: [Octaves] -&gt; ShowS
+show :: Octaves -&gt; String
+$cshow :: Octaves -&gt; String
+showsPrec :: Int -&gt; Octaves -&gt; ShowS
+$cshowsPrec :: Int -&gt; Octaves -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">newtype</span><span> </span><span id="Fifths"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Fifths"><span class="hs-identifier hs-var">Fifths</span></a></span></span><span>
+</span><span id="line-70"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Number of fifths upwards relative to C (i.e. F is -1, G is 1)</span><span>
+</span><span id="line-71"></span><span>    </span><span id="Fifths"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Fifths"><span class="hs-identifier hs-var">Fifths</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getFifths"><span class="annot"><span class="annottext">Fifths -&gt; Int
+</span><a href="Data.Music.MusicXml.Pitch.html#getFifths"><span class="hs-identifier hs-var hs-var">getFifths</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-72"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621680586908"><span id="local-6989586621680586910"><span id="local-6989586621680586912"><span class="annot"><span class="annottext">Int -&gt; Fifths -&gt; ShowS
+[Fifths] -&gt; ShowS
+Fifths -&gt; String
+(Int -&gt; Fifths -&gt; ShowS)
+-&gt; (Fifths -&gt; String) -&gt; ([Fifths] -&gt; ShowS) -&gt; Show Fifths
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Fifths] -&gt; ShowS
+$cshowList :: [Fifths] -&gt; ShowS
+show :: Fifths -&gt; String
+$cshow :: Fifths -&gt; String
+showsPrec :: Int -&gt; Fifths -&gt; ShowS
+$cshowsPrec :: Int -&gt; Fifths -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">newtype</span><span> </span><span id="Line"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Line"><span class="hs-identifier hs-var">Line</span></a></span></span><span>
+</span><span id="line-75"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Line number, from bottom (i.e. 1-5)</span><span>
+</span><span id="line-76"></span><span>    </span><span id="Line"><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Line"><span class="hs-identifier hs-var">Line</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getLine"><span class="annot"><span class="annottext">Line -&gt; Int
+</span><a href="Data.Music.MusicXml.Pitch.html#getLine"><span class="hs-identifier hs-var hs-var">getLine</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Int</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span id="local-6989586621680586900"><span id="local-6989586621680586902"><span id="local-6989586621680586904"><span class="annot"><span class="annottext">Int -&gt; Line -&gt; ShowS
+[Line] -&gt; ShowS
+Line -&gt; String
+(Int -&gt; Line -&gt; ShowS)
+-&gt; (Line -&gt; String) -&gt; ([Line] -&gt; ShowS) -&gt; Show Line
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Line] -&gt; ShowS
+$cshowList :: [Line] -&gt; ShowS
+show :: Line -&gt; String
+$cshow :: Line -&gt; String
+showsPrec :: Int -&gt; Line -&gt; ShowS
+$cshowsPrec :: Int -&gt; Line -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#noSemitones"><span class="hs-identifier hs-type">noSemitones</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Semitones"><span class="hs-identifier hs-type">Semitones</span></a></span><span>
+</span><span id="line-80"></span><span id="noSemitones"><span class="annot"><span class="annottext">noSemitones :: Maybe Semitones
+</span><a href="Data.Music.MusicXml.Pitch.html#noSemitones"><span class="hs-identifier hs-var hs-var">noSemitones</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe Semitones
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span id="local-6989586621680586896"><span id="local-6989586621680586898"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#PitchClass"><span class="hs-identifier hs-type">PitchClass</span></a></span></span></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span id="local-6989586621680586880"><span id="local-6989586621680586882"><span id="local-6989586621680586884"><span id="local-6989586621680586886"><span id="local-6989586621680586888"><span id="local-6989586621680586890"><span id="local-6989586621680586892"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#PitchClass"><span class="hs-identifier hs-type">PitchClass</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span id="local-6989586621680586863"><span id="local-6989586621680586865"><span id="local-6989586621680586867"><span id="local-6989586621680586869"><span id="local-6989586621680586871"><span id="local-6989586621680586873"><span id="local-6989586621680586875"><span id="local-6989586621680586877"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#PitchClass"><span class="hs-identifier hs-type">PitchClass</span></a></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span id="local-6989586621680586856"><span id="local-6989586621680586858"><span id="local-6989586621680586860"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#PitchClass"><span class="hs-identifier hs-type">PitchClass</span></a></span></span></span></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span id="local-6989586621680586852"><span id="local-6989586621680586854"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Accidental"><span class="hs-identifier hs-type">Accidental</span></a></span></span></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span id="local-6989586621680586837"><span id="local-6989586621680586839"><span id="local-6989586621680586841"><span id="local-6989586621680586843"><span id="local-6989586621680586845"><span id="local-6989586621680586847"><span id="local-6989586621680586849"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Accidental"><span class="hs-identifier hs-type">Accidental</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span id="local-6989586621680586821"><span id="local-6989586621680586823"><span id="local-6989586621680586825"><span id="local-6989586621680586827"><span id="local-6989586621680586829"><span id="local-6989586621680586831"><span id="local-6989586621680586833"><span id="local-6989586621680586835"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Accidental"><span class="hs-identifier hs-type">Accidental</span></a></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span id="local-6989586621680586817"><span id="local-6989586621680586819"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Mode"><span class="hs-identifier hs-type">Mode</span></a></span></span></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span id="local-6989586621680586802"><span id="local-6989586621680586804"><span id="local-6989586621680586806"><span id="local-6989586621680586808"><span id="local-6989586621680586810"><span id="local-6989586621680586812"><span id="local-6989586621680586814"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Mode"><span class="hs-identifier hs-type">Mode</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span id="local-6989586621680586786"><span id="local-6989586621680586788"><span id="local-6989586621680586790"><span id="local-6989586621680586792"><span id="local-6989586621680586794"><span id="local-6989586621680586796"><span id="local-6989586621680586798"><span id="local-6989586621680586800"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Mode"><span class="hs-identifier hs-type">Mode</span></a></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span id="local-6989586621680586780"><span id="local-6989586621680586782"><span id="local-6989586621680586784"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Mode"><span class="hs-identifier hs-type">Mode</span></a></span></span></span></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span id="local-6989586621680586776"><span id="local-6989586621680586778"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Semitones"><span class="hs-identifier hs-type">Semitones</span></a></span></span></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span id="local-6989586621680586761"><span id="local-6989586621680586763"><span id="local-6989586621680586765"><span id="local-6989586621680586767"><span id="local-6989586621680586769"><span id="local-6989586621680586771"><span id="local-6989586621680586773"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Semitones"><span class="hs-identifier hs-type">Semitones</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span id="local-6989586621680586747"><span id="local-6989586621680586749"><span id="local-6989586621680586751"><span id="local-6989586621680586753"><span id="local-6989586621680586755"><span id="local-6989586621680586757"><span id="local-6989586621680586759"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Semitones"><span class="hs-identifier hs-type">Semitones</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span id="local-6989586621680586730"><span id="local-6989586621680586732"><span id="local-6989586621680586734"><span id="local-6989586621680586736"><span id="local-6989586621680586738"><span id="local-6989586621680586740"><span id="local-6989586621680586742"><span id="local-6989586621680586744"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Semitones"><span class="hs-identifier hs-type">Semitones</span></a></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span id="local-6989586621680586723"><span id="local-6989586621680586725"><span id="local-6989586621680586727"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Semitones"><span class="hs-identifier hs-type">Semitones</span></a></span></span></span></span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span id="local-6989586621680586718"><span id="local-6989586621680586720"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span></span></span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span id="local-6989586621680586703"><span id="local-6989586621680586705"><span id="local-6989586621680586707"><span id="local-6989586621680586709"><span id="local-6989586621680586711"><span id="local-6989586621680586713"><span id="local-6989586621680586715"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span id="local-6989586621680586689"><span id="local-6989586621680586691"><span id="local-6989586621680586693"><span id="local-6989586621680586695"><span id="local-6989586621680586697"><span id="local-6989586621680586699"><span id="local-6989586621680586701"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span id="local-6989586621680586673"><span id="local-6989586621680586675"><span id="local-6989586621680586677"><span id="local-6989586621680586679"><span id="local-6989586621680586681"><span id="local-6989586621680586683"><span id="local-6989586621680586685"><span id="local-6989586621680586687"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span id="local-6989586621680586669"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span></span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span id="local-6989586621680586652"><span id="local-6989586621680586654"><span id="local-6989586621680586656"><span id="local-6989586621680586658"><span id="local-6989586621680586660"><span id="local-6989586621680586662"><span id="local-6989586621680586664"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Integral</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Octaves"><span class="hs-identifier hs-type">Octaves</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span id="local-6989586621680586647"><span id="local-6989586621680586649"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Fifths"><span class="hs-identifier hs-type">Fifths</span></a></span></span></span><span>
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span id="local-6989586621680586632"><span id="local-6989586621680586634"><span id="local-6989586621680586636"><span id="local-6989586621680586638"><span id="local-6989586621680586640"><span id="local-6989586621680586642"><span id="local-6989586621680586644"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Fifths"><span class="hs-identifier hs-type">Fifths</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span><span id="local-6989586621680586618"><span id="local-6989586621680586620"><span id="local-6989586621680586622"><span id="local-6989586621680586624"><span id="local-6989586621680586626"><span id="local-6989586621680586628"><span id="local-6989586621680586630"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Fifths"><span class="hs-identifier hs-type">Fifths</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-131"></span><span>
+</span><span id="line-132"></span><span id="local-6989586621680586602"><span id="local-6989586621680586604"><span id="local-6989586621680586606"><span id="local-6989586621680586608"><span id="local-6989586621680586610"><span id="local-6989586621680586612"><span id="local-6989586621680586614"><span id="local-6989586621680586616"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Fifths"><span class="hs-identifier hs-type">Fifths</span></a></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span id="local-6989586621680586598"><span id="local-6989586621680586600"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Eq</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Line"><span class="hs-identifier hs-type">Line</span></a></span></span></span><span>
+</span><span id="line-135"></span><span>
+</span><span id="line-136"></span><span id="local-6989586621680586583"><span id="local-6989586621680586585"><span id="local-6989586621680586587"><span id="local-6989586621680586589"><span id="local-6989586621680586591"><span id="local-6989586621680586593"><span id="local-6989586621680586595"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Line"><span class="hs-identifier hs-type">Line</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span id="local-6989586621680586569"><span id="local-6989586621680586571"><span id="local-6989586621680586573"><span id="local-6989586621680586575"><span id="local-6989586621680586577"><span id="local-6989586621680586579"><span id="local-6989586621680586581"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Line"><span class="hs-identifier hs-type">Line</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span id="local-6989586621680586553"><span id="local-6989586621680586555"><span id="local-6989586621680586557"><span id="local-6989586621680586559"><span id="local-6989586621680586561"><span id="local-6989586621680586563"><span id="local-6989586621680586565"><span id="local-6989586621680586567"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Line"><span class="hs-identifier hs-type">Line</span></a></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#Pitch"><span class="hs-identifier hs-type">Pitch</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-143"></span><span>  </span><span id="local-6989586621680586550"><span class="annot"><span class="annottext">fromPitch :: Pitch -&gt; Pitch
+</span><a href="Music.Pitch.Common.Internal.html#fromPitch"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromPitch</span></a></span></span><span> </span><span id="local-6989586621680586548"><span class="annot"><span class="annottext">p :: Pitch
+</span><a href="#local-6989586621680586548"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-144"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680586547"><span class="annot"><span class="annottext">i :: Diff Pitch
+</span><a href="#local-6989586621680586547"><span class="hs-identifier hs-var hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pitch
+</span><a href="#local-6989586621680586548"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; Pitch -&gt; Diff Pitch
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">Pitch
+forall a. IsPitch a =&gt; a
+</span><a href="Music.Pitch.Common.Internal.html#c"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><span id="line-145"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Int -&gt; PitchClass
+forall a. Enum a =&gt; Int -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toEnum</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; PitchClass) -&gt; Int -&gt; PitchClass
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Name -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromEnum</span></a></span><span> </span><span class="annot"><span class="annottext">(Name -&gt; Int) -&gt; Name -&gt; Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; Name
+</span><a href="Music.Pitch.Common.Internal.html#name"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch
+</span><a href="#local-6989586621680586548"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-146"></span><span>          </span><span class="annot"><span class="annottext">Semitones -&gt; Maybe Semitones
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">(Semitones -&gt; Maybe Semitones) -&gt; Semitones -&gt; Maybe Semitones
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Accidental -&gt; Semitones
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">(Accidental -&gt; Semitones) -&gt; Accidental -&gt; Semitones
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; Accidental
+</span><a href="Music.Pitch.Common.Internal.html#accidental"><span class="hs-identifier hs-var">accidental</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch
+</span><a href="#local-6989586621680586548"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-147"></span><span>          </span><span class="annot"><span class="annottext">Octaves -&gt; Octaves
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">(Octaves -&gt; Octaves) -&gt; Octaves -&gt; Octaves
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Interval -&gt; Octaves
+forall a. HasOctaves a =&gt; a -&gt; Octaves
+</span><a href="Music.Pitch.Common.Internal.html#octaves"><span class="hs-identifier hs-var">octaves</span></a></span><span> </span><span class="annot"><span class="annottext">Diff Pitch
+Interval
+</span><a href="#local-6989586621680586547"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Octaves -&gt; Octaves -&gt; Octaves
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span>
+</span><span id="line-148"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span class="hs-comment">-- Add 4 so that c ~ C4, c' ~ C5 etc</span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="annot"><a href="Data.Music.MusicXml.Pitch.html#DisplayPitch"><span class="hs-identifier hs-type">DisplayPitch</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-153"></span><span>  </span><span id="local-6989586621680586541"><span class="annot"><span class="annottext">fromPitch :: Pitch -&gt; DisplayPitch
+</span><a href="#local-6989586621680586541"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromPitch</span></a></span></span><span> </span><span id="local-6989586621680586540"><span class="annot"><span class="annottext">p :: Pitch
+</span><a href="#local-6989586621680586540"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-154"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680586539"><span class="annot"><span class="annottext">i :: Diff Pitch
+</span><a href="#local-6989586621680586539"><span class="hs-identifier hs-var hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pitch
+</span><a href="#local-6989586621680586540"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; Pitch -&gt; Diff Pitch
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">Pitch
+forall a. IsPitch a =&gt; a
+</span><a href="Music.Pitch.Common.Internal.html#c"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><span id="line-155"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Int -&gt; PitchClass
+forall a. Enum a =&gt; Int -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">toEnum</span></a></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; PitchClass) -&gt; Int -&gt; PitchClass
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Name -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromEnum</span></a></span><span> </span><span class="annot"><span class="annottext">(Name -&gt; Int) -&gt; Name -&gt; Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; Name
+</span><a href="Music.Pitch.Common.Internal.html#name"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch
+</span><a href="#local-6989586621680586540"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-156"></span><span>          </span><span class="annot"><span class="annottext">Octaves -&gt; Octaves
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromIntegral</span></a></span><span> </span><span class="annot"><span class="annottext">(Octaves -&gt; Octaves) -&gt; Octaves -&gt; Octaves
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Interval -&gt; Octaves
+forall a. HasOctaves a =&gt; a -&gt; Octaves
+</span><a href="Music.Pitch.Common.Internal.html#octaves"><span class="hs-identifier hs-var">octaves</span></a></span><span> </span><span class="annot"><span class="annottext">Diff Pitch
+Interval
+</span><a href="#local-6989586621680586539"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Octaves -&gt; Octaves -&gt; Octaves
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span>
+</span><span id="line-157"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- Add 4 so that c ~ C4, c' ~ C5 etc</span><span>
+</span><span id="line-159"></span><span>
+</span><span id="line-160"></span><span class="hs-comment">{-
+instance IsPitch Fifths where
+    fromPitch p = let i = p .-. c in
+      pitchToFifths (fromEnum $ name p) (fromIntegral $ accidental p)
+
+pitchToFifths 1 (-1) = (-4)
+pitchToFifths 2 (-1) = (-3)
+pitchToFifths 4 (-1) = (-6)
+pitchToFifths 5 (-1) = (-5)
+pitchToFifths 6 (-1) = (-2)
+pitchToFifths 0 0 = 0
+pitchToFifths 1 0 = 2
+pitchToFifths 2 0 = 4
+pitchToFifths 3 0 = (-1)
+pitchToFifths 4 0 = 1
+pitchToFifths 5 0 = 3
+pitchToFifths 6 0 = 5
+pitchToFifths 3 1 = 6
+-}</span><span>
+</span><span id="line-179"></span></pre></body></html>

@@ -1,0 +1,1365 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE GADTs #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Provides a way to annotate data-types with 'Transformable' meta-data.</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- Inspired by Clojure meta-data and Diagrams styles.</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Time.Meta</span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Attributes</span></span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier">AttributeClass</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#TAttributeClass"><span class="hs-identifier">TAttributeClass</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier">Attribute</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Creating attributes</span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#wrapAttr"><span class="hs-identifier">wrapAttr</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#wrapTAttr"><span class="hs-identifier">wrapTAttr</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#unwrapAttr"><span class="hs-identifier">unwrapAttr</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-comment">-- unwrapTAttr,</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Meta-data</span></span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier">Meta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Creating meta-data</span></span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#wrapMeta"><span class="hs-identifier">wrapMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#wrapTMeta"><span class="hs-identifier">wrapTMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#unwrapMeta"><span class="hs-identifier">unwrapMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** The HasMeta class</span></span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier">HasMeta</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#getMeta"><span class="hs-identifier">getMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#mapMeta"><span class="hs-identifier">mapMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#setMeta"><span class="hs-identifier">setMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#metaTypes"><span class="hs-identifier">metaTypes</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#applyMeta"><span class="hs-identifier">applyMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#setMetaAttr"><span class="hs-identifier">setMetaAttr</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#setMetaTAttr"><span class="hs-identifier">setMetaTAttr</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#preserveMeta"><span class="hs-identifier">preserveMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#preserveMetaF"><span class="hs-identifier">preserveMetaF</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Add meta-data to arbitrary types</span></span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier">AddMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-50"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#annotated"><span class="hs-identifier">annotated</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#unannotated"><span class="hs-identifier">unannotated</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><a href="Music.Time.Meta.html#annotatedIgnoringMeta"><span class="hs-identifier">annotatedIgnoringMeta</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Comonad</span></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Plus</span></span><span>
+</span><span id="line-60"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Foldable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">F</span></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html"><span class="hs-identifier">Data.Functor.Couple</span></a></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.List</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">List</span></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Map</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Map</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Maybe</span></a></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Set</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier">Data.Set</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.String</span></a></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Internal.Util.html"><span class="hs-identifier">Music.Time.Internal.Util</span></a></span><span>
+</span><span id="line-73"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Juxtapose.html"><span class="hs-identifier">Music.Time.Juxtapose</span></a></span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- | Class of values that can be wrapped.</span><span>
+</span><span id="line-76"></span><span class="hs-keyword">type</span><span> </span><span id="AttributeClass"><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-var">AttributeClass</span></a></span></span><span> </span><span id="local-6989586621680569188"><span class="annot"><a href="#local-6989586621680569188"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569188"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569188"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569188"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- | Class of values that can be wrapped and transformed.</span><span>
+</span><span id="line-79"></span><span class="hs-keyword">type</span><span> </span><span id="TAttributeClass"><span class="annot"><a href="Music.Time.Meta.html#TAttributeClass"><span class="hs-identifier hs-var">TAttributeClass</span></a></span></span><span> </span><span id="local-6989586621680569187"><span class="annot"><a href="#local-6989586621680569187"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569187"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569187"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- | An existential wrapper type to hold attributes.</span><span>
+</span><span id="line-82"></span><span class="hs-keyword">data</span><span> </span><span id="Attribute"><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-var">Attribute</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-83"></span><span>  </span><span id="local-6989586621680569186"><span id="Attribute"><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-var">Attribute</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569186"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569186"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span></span><span>
+</span><span id="line-84"></span><span>  </span><span id="local-6989586621680569184"><span id="TAttribute"><span class="annot"><a href="Music.Time.Meta.html#TAttribute"><span class="hs-identifier hs-var">TAttribute</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#TAttributeClass"><span class="hs-identifier hs-type">TAttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569184"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569184"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- | Wrap up an attribute.</span><span>
+</span><span id="line-87"></span><span id="local-6989586621680569182"><span class="annot"><a href="Music.Time.Meta.html#wrapAttr"><span class="hs-identifier hs-type">wrapAttr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569182"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569182"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span></span><span>
+</span><span id="line-88"></span><span id="wrapAttr"><span class="annot"><span class="annottext">wrapAttr :: a -&gt; Attribute
+</span><a href="Music.Time.Meta.html#wrapAttr"><span class="hs-identifier hs-var hs-var">wrapAttr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Attribute
+forall a. AttributeClass a =&gt; a -&gt; Attribute
+</span><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-var">Attribute</span></a></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- | Wrap up a transformable attribute.</span><span>
+</span><span id="line-91"></span><span id="local-6989586621680569181"><span class="annot"><a href="Music.Time.Meta.html#wrapTAttr"><span class="hs-identifier hs-type">wrapTAttr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#TAttributeClass"><span class="hs-identifier hs-type">TAttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569181"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569181"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span></span><span>
+</span><span id="line-92"></span><span id="wrapTAttr"><span class="annot"><span class="annottext">wrapTAttr :: a -&gt; Attribute
+</span><a href="Music.Time.Meta.html#wrapTAttr"><span class="hs-identifier hs-var hs-var">wrapTAttr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Attribute
+forall a. TAttributeClass a =&gt; a -&gt; Attribute
+</span><a href="Music.Time.Meta.html#TAttribute"><span class="hs-identifier hs-var">TAttribute</span></a></span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span class="hs-comment">-- | Convert something from an attribute.</span><span>
+</span><span id="line-95"></span><span class="hs-comment">--   Also works with transformable attributes</span><span>
+</span><span id="line-96"></span><span id="local-6989586621680569519"><span class="annot"><a href="Music.Time.Meta.html#unwrapAttr"><span class="hs-identifier hs-type">unwrapAttr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569519"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569519"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-97"></span><span id="unwrapAttr"><span class="annot"><span class="annottext">unwrapAttr :: Attribute -&gt; Maybe a
+</span><a href="Music.Time.Meta.html#unwrapAttr"><span class="hs-identifier hs-var hs-var">unwrapAttr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span id="local-6989586621680569180"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680569180"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe a
+forall a b. (Typeable a, Typeable b) =&gt; a -&gt; Maybe b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">cast</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569180"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-98"></span><span class="annot"><a href="Music.Time.Meta.html#unwrapAttr"><span class="hs-identifier hs-var">unwrapAttr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#TAttribute"><span class="hs-identifier hs-type">TAttribute</span></a></span><span> </span><span id="local-6989586621680569178"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680569178"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe a
+forall a b. (Typeable a, Typeable b) =&gt; a -&gt; Maybe b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">cast</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569178"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680569173"><span id="local-6989586621680569175"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-101"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span id="local-6989586621680569171"><span class="annot"><span class="annottext">a1 :: a
+</span><a href="#local-6989586621680569171"><span class="hs-identifier hs-var">a1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680569170"><span class="annot"><span class="annottext">&lt;&gt; :: Attribute -&gt; Attribute -&gt; Attribute
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span id="local-6989586621680569169"><span class="annot"><span class="annottext">a2 :: Attribute
+</span><a href="#local-6989586621680569169"><span class="hs-identifier hs-var">a2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Maybe a
+forall a. AttributeClass a =&gt; Attribute -&gt; Maybe a
+</span><a href="Music.Time.Meta.html#unwrapAttr"><span class="hs-identifier hs-var">unwrapAttr</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621680569169"><span class="hs-identifier hs-var">a2</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-102"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Attribute
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Attribute.(&lt;&gt;) mismatch&quot;</span></span><span>
+</span><span id="line-103"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680569167"><span class="annot"><span class="annottext">a2' :: a
+</span><a href="#local-6989586621680569167"><span class="hs-identifier hs-var">a2'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Attribute
+forall a. AttributeClass a =&gt; a -&gt; Attribute
+</span><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-var">Attribute</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569171"><span class="hs-identifier hs-var">a1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569167"><span class="hs-identifier hs-var">a2'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-104"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#TAttribute"><span class="hs-identifier hs-type">TAttribute</span></a></span><span> </span><span id="local-6989586621680569166"><span class="annot"><span class="annottext">a1 :: a
+</span><a href="#local-6989586621680569166"><span class="hs-identifier hs-var">a1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span id="local-6989586621680569165"><span class="annot"><span class="annottext">a2 :: Attribute
+</span><a href="#local-6989586621680569165"><span class="hs-identifier hs-var">a2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Maybe a
+forall a. AttributeClass a =&gt; Attribute -&gt; Maybe a
+</span><a href="Music.Time.Meta.html#unwrapAttr"><span class="hs-identifier hs-var">unwrapAttr</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621680569165"><span class="hs-identifier hs-var">a2</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-105"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Attribute
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;Attribute.(&lt;&gt;) mismatch&quot;</span></span><span>
+</span><span id="line-106"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680569164"><span class="annot"><span class="annottext">a2' :: a
+</span><a href="#local-6989586621680569164"><span class="hs-identifier hs-var">a2'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Attribute
+forall a. TAttributeClass a =&gt; a -&gt; Attribute
+</span><a href="Music.Time.Meta.html#TAttribute"><span class="hs-identifier hs-var">TAttribute</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569166"><span class="hs-identifier hs-var">a1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569164"><span class="hs-identifier hs-var">a2'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-109"></span><span>  </span><span id="local-6989586621680569161"><span class="annot"><span class="annottext">transform :: Span -&gt; Attribute -&gt; Attribute
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span id="local-6989586621680569159"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680569159"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Attribute
+forall a. AttributeClass a =&gt; a -&gt; Attribute
+</span><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-var">Attribute</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569159"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-110"></span><span>  </span><span class="annot"><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span id="local-6989586621680569158"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680569158"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#TAttribute"><span class="hs-identifier hs-type">TAttribute</span></a></span><span> </span><span id="local-6989586621680569157"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680569157"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Attribute
+forall a. TAttributeClass a =&gt; a -&gt; Attribute
+</span><a href="Music.Time.Meta.html#TAttribute"><span class="hs-identifier hs-var">TAttribute</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; a -&gt; a
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680569158"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569157"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- Meta is Transformable because the contents of the map is transformable</span><span>
+</span><span id="line-113"></span><span class="hs-keyword">newtype</span><span> </span><span id="Meta"><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-var">Meta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Meta"><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-var">Meta</span></a></span></span><span> </span><span class="hs-special">{</span><span id="_getMeta"><span class="annot"><span class="annottext">Meta -&gt; Map [Char] Attribute
+</span><a href="Music.Time.Meta.html#_getMeta"><span class="hs-identifier hs-var hs-var">_getMeta</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier hs-type">Map</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-114"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680569152"><span class="annot"><span class="annottext">Span -&gt; Meta -&gt; Meta
+(Span -&gt; Meta -&gt; Meta) -&gt; Transformable Meta
+forall a. (Span -&gt; a -&gt; a) -&gt; Transformable a
+transform :: Span -&gt; Meta -&gt; Meta
+$ctransform :: Span -&gt; Meta -&gt; Meta
+</span><a href="#local-6989586621680569152"><span class="hs-identifier hs-var hs-var hs-var hs-var">Transformable</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680569147"><span id="local-6989586621680569149"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-117"></span><span>  </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span id="local-6989586621680569146"><span class="annot"><span class="annottext">s1 :: Map [Char] Attribute
+</span><a href="#local-6989586621680569146"><span class="hs-identifier hs-var">s1</span></a></span></span><span> </span><span id="local-6989586621680569145"><span class="annot"><span class="annottext">&lt;&gt; :: Meta -&gt; Meta -&gt; Meta
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span id="local-6989586621680569144"><span class="annot"><span class="annottext">s2 :: Map [Char] Attribute
+</span><a href="#local-6989586621680569144"><span class="hs-identifier hs-var">s2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map [Char] Attribute -&gt; Meta
+</span><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-var">Meta</span></a></span><span> </span><span class="annot"><span class="annottext">(Map [Char] Attribute -&gt; Meta) -&gt; Map [Char] Attribute -&gt; Meta
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Attribute -&gt; Attribute)
+-&gt; Map [Char] Attribute
+-&gt; Map [Char] Attribute
+-&gt; Map [Char] Attribute
+forall k a. Ord k =&gt; (a -&gt; a -&gt; a) -&gt; Map k a -&gt; Map k a -&gt; Map k a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier hs-var">Map.unionWith</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Attribute
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(&lt;&gt;)</span></a></span><span> </span><span class="annot"><span class="annottext">Map [Char] Attribute
+</span><a href="#local-6989586621680569146"><span class="hs-identifier hs-var">s1</span></a></span><span> </span><span class="annot"><span class="annottext">Map [Char] Attribute
+</span><a href="#local-6989586621680569144"><span class="hs-identifier hs-var">s2</span></a></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="hs-comment">-- | The empty meta contains no attributes; composition of metas is</span><span>
+</span><span id="line-120"></span><span class="hs-comment">--   a union of attributes; if the two metas have attributes of the</span><span>
+</span><span id="line-121"></span><span class="hs-comment">--   same type they are combined according to their semigroup</span><span>
+</span><span id="line-122"></span><span class="hs-comment">--   structure.</span><span>
+</span><span id="line-123"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680569138"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span>  </span><span id="local-6989586621680569136"><span class="annot"><span class="annottext">mempty :: Meta
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map [Char] Attribute -&gt; Meta
+</span><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-var">Meta</span></a></span><span> </span><span class="annot"><span class="annottext">Map [Char] Attribute
+forall k a. Map k a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier hs-var">Map.empty</span></a></span><span>
+</span><span id="line-126"></span><span>
+</span><span id="line-127"></span><span>  </span><span id="local-6989586621680569134"><span class="annot"><span class="annottext">mappend :: Meta -&gt; Meta -&gt; Meta
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mappend</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Meta -&gt; Meta -&gt; Meta
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(&lt;&gt;)</span></a></span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span class="hs-comment">-- | Convert something to meta-data.</span><span>
+</span><span id="line-130"></span><span class="annot"><a href="Music.Time.Meta.html#wrapTMeta"><span class="hs-identifier hs-type">wrapTMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680569425"><span class="annot"><a href="#local-6989586621680569425"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#TAttributeClass"><span class="hs-identifier hs-type">TAttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569425"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569425"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span>
+</span><span id="line-131"></span><span id="wrapTMeta"><span class="annot"><span class="annottext">wrapTMeta :: a -&gt; Meta
+</span><a href="Music.Time.Meta.html#wrapTMeta"><span class="hs-identifier hs-var hs-var">wrapTMeta</span></a></span></span><span> </span><span id="local-6989586621680569133"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680569133"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map [Char] Attribute -&gt; Meta
+</span><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-var">Meta</span></a></span><span> </span><span class="annot"><span class="annottext">(Map [Char] Attribute -&gt; Meta) -&gt; Map [Char] Attribute -&gt; Meta
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Attribute -&gt; Map [Char] Attribute
+forall k a. k -&gt; a -&gt; Map k a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier hs-var">Map.singleton</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621680569131"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Map [Char] Attribute)
+-&gt; Attribute -&gt; Map [Char] Attribute
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Attribute
+forall a. TAttributeClass a =&gt; a -&gt; Attribute
+</span><a href="Music.Time.Meta.html#wrapTAttr"><span class="hs-identifier hs-var">wrapTAttr</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569133"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-132"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-133"></span><span>    </span><span id="local-6989586621680569131"><span class="annot"><span class="annottext">key :: [Char]
+</span><a href="#local-6989586621680569131"><span class="hs-identifier hs-var hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeRep -&gt; [Char]
+forall a. Show a =&gt; a -&gt; [Char]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">(TypeRep -&gt; [Char]) -&gt; TypeRep -&gt; [Char]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy a -&gt; TypeRep
+forall k (proxy :: k -&gt; *) (a :: k).
+Typeable a =&gt;
+proxy a -&gt; TypeRep
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">typeRep</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy a
+forall k (t :: k). Proxy t
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Proxy</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680569425"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-134"></span><span>
+</span><span id="line-135"></span><span class="hs-comment">-- | Convert something from meta-data.</span><span>
+</span><span id="line-136"></span><span class="annot"><a href="Music.Time.Meta.html#unwrapMeta"><span class="hs-identifier hs-type">unwrapMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680569127"><span class="annot"><a href="#local-6989586621680569127"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569127"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569127"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-137"></span><span id="unwrapMeta"><span class="annot"><span class="annottext">unwrapMeta :: Meta -&gt; Maybe a
+</span><a href="Music.Time.Meta.html#unwrapMeta"><span class="hs-identifier hs-var hs-var">unwrapMeta</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span id="local-6989586621680569126"><span class="annot"><span class="annottext">s :: Map [Char] Attribute
+</span><a href="#local-6989586621680569126"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; Maybe a
+forall a. AttributeClass a =&gt; Attribute -&gt; Maybe a
+</span><a href="Music.Time.Meta.html#unwrapAttr"><span class="hs-identifier hs-var">unwrapAttr</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Maybe a) -&gt; Maybe Attribute -&gt; Maybe a
+forall (m :: * -&gt; *) a b. Monad m =&gt; (a -&gt; m b) -&gt; m a -&gt; m b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">=&lt;&lt;</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe Attribute -&gt; Maybe a) -&gt; Maybe Attribute -&gt; Maybe a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Map [Char] Attribute -&gt; Maybe Attribute
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier hs-var">Map.lookup</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621680569123"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">Map [Char] Attribute
+</span><a href="#local-6989586621680569126"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-138"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-comment">-- Note: unwrapAttr should never fail</span><span>
+</span><span id="line-140"></span><span>
+</span><span id="line-141"></span><span>    </span><span id="local-6989586621680569123"><span class="annot"><span class="annottext">key :: [Char]
+</span><a href="#local-6989586621680569123"><span class="hs-identifier hs-var hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeRep -&gt; [Char]
+forall a. Show a =&gt; a -&gt; [Char]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">(TypeRep -&gt; [Char]) -&gt; TypeRep -&gt; [Char]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy a -&gt; TypeRep
+forall k (proxy :: k -&gt; *) (a :: k).
+Typeable a =&gt;
+proxy a -&gt; TypeRep
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">typeRep</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy a
+forall k (t :: k). Proxy t
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Proxy</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680569127"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-142"></span><span>
+</span><span id="line-143"></span><span class="hs-comment">-- | Convert something from meta-data.</span><span>
+</span><span id="line-144"></span><span class="hs-comment">--   Also works with transformable attributes</span><span>
+</span><span id="line-145"></span><span class="annot"><a href="Music.Time.Meta.html#wrapMeta"><span class="hs-identifier hs-type">wrapMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680569428"><span class="annot"><a href="#local-6989586621680569428"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569428"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569428"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span>
+</span><span id="line-146"></span><span id="wrapMeta"><span class="annot"><span class="annottext">wrapMeta :: a -&gt; Meta
+</span><a href="Music.Time.Meta.html#wrapMeta"><span class="hs-identifier hs-var hs-var">wrapMeta</span></a></span></span><span> </span><span id="local-6989586621680569122"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680569122"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map [Char] Attribute -&gt; Meta
+</span><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-var">Meta</span></a></span><span> </span><span class="annot"><span class="annottext">(Map [Char] Attribute -&gt; Meta) -&gt; Map [Char] Attribute -&gt; Meta
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Attribute -&gt; Map [Char] Attribute
+forall k a. k -&gt; a -&gt; Map k a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier hs-var">Map.singleton</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621680569121"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Map [Char] Attribute)
+-&gt; Attribute -&gt; Map [Char] Attribute
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Attribute
+forall a. AttributeClass a =&gt; a -&gt; Attribute
+</span><a href="Music.Time.Meta.html#wrapAttr"><span class="hs-identifier hs-var">wrapAttr</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569122"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-147"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-148"></span><span>    </span><span id="local-6989586621680569121"><span class="annot"><span class="annottext">key :: [Char]
+</span><a href="#local-6989586621680569121"><span class="hs-identifier hs-var hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeRep -&gt; [Char]
+forall a. Show a =&gt; a -&gt; [Char]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">(TypeRep -&gt; [Char]) -&gt; TypeRep -&gt; [Char]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Proxy a -&gt; TypeRep
+forall k (proxy :: k -&gt; *) (a :: k).
+Typeable a =&gt;
+proxy a -&gt; TypeRep
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">typeRep</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy a
+forall k (t :: k). Proxy t
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Proxy</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621680569428"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span class="hs-comment">-- | Type class for things which have meta-data.</span><span>
+</span><span id="line-151"></span><span class="hs-comment">--</span><span>
+</span><span id="line-152"></span><span class="hs-comment">-- Laws: 'meta' is a lens, e.g.</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-154"></span><span class="hs-comment">-- view meta (set meta v s) &#8801; v</span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- set meta (view meta s) s &#8801; s</span><span>
+</span><span id="line-156"></span><span class="hs-comment">-- set meta v' (set meta v s) &#8801; set meta v' s</span><span>
+</span><span id="line-157"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-158"></span><span class="hs-keyword">class</span><span> </span><span id="HasMeta"><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-var">HasMeta</span></a></span></span><span> </span><span id="local-6989586621680569477"><span class="annot"><a href="#local-6989586621680569477"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-159"></span><span>  </span><span class="hs-comment">-- | Access the meta-data.</span><span>
+</span><span id="line-160"></span><span>  </span><span id="meta"><span class="annot"><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-type">meta</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="#local-6989586621680569477"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span>
+</span><span id="line-161"></span><span>
+</span><span id="line-162"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680569115"><span id="local-6989586621680569118"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-163"></span><span>  </span><span id="local-6989586621680569113"><span class="annot"><span class="annottext">show :: Meta -&gt; [Char]
+</span><a href="#local-6989586621680569113"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;{ meta }&quot;</span></span><span>
+</span><span id="line-164"></span><span>
+</span><span id="line-165"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-166"></span><span>  </span><span id="local-6989586621680569110"><span class="annot"><span class="annottext">meta :: (Meta -&gt; f Meta) -&gt; Meta -&gt; f Meta
+</span><a href="#local-6989586621680569110"><span class="hs-identifier hs-var hs-var hs-var hs-var">meta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Meta -&gt; f Meta) -&gt; Meta -&gt; f Meta
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">($)</span></a></span><span>
+</span><span id="line-167"></span><span>
+</span><span id="line-168"></span><span id="local-6989586621680569108"><span id="local-6989586621680569109"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569109"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680569108"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680569109"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-169"></span><span>  </span><span id="local-6989586621680569106"><span class="annot"><span class="annottext">meta :: (Meta -&gt; f Meta) -&gt; (b, a) -&gt; f (b, a)
+</span><a href="#local-6989586621680569106"><span class="hs-identifier hs-var hs-var hs-var hs-var">meta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; f a) -&gt; (b, a) -&gt; f (b, a)
+forall s t a b. Field2 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_2</span></span><span> </span><span class="annot"><span class="annottext">((a -&gt; f a) -&gt; (b, a) -&gt; f (b, a))
+-&gt; ((Meta -&gt; f Meta) -&gt; a -&gt; f a)
+-&gt; (Meta -&gt; f Meta)
+-&gt; (b, a)
+-&gt; f (b, a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Meta -&gt; f Meta) -&gt; a -&gt; f a
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span></span></span><span>
+</span><span id="line-170"></span><span>
+</span><span id="line-171"></span><span id="local-6989586621680569102"><span id="local-6989586621680569103"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569103"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569102"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569103"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-172"></span><span>  </span><span id="local-6989586621680569100"><span class="annot"><span class="annottext">meta :: (Meta -&gt; f Meta) -&gt; Twain b a -&gt; f (Twain b a)
+</span><a href="#local-6989586621680569100"><span class="hs-identifier hs-var hs-var hs-var hs-var">meta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((b, a) -&gt; f (b, a)) -&gt; Twain b a -&gt; f (Twain b a)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">(((b, a) -&gt; f (b, a)) -&gt; Twain b a -&gt; f (Twain b a))
+-&gt; ((Meta -&gt; f Meta) -&gt; (b, a) -&gt; f (b, a))
+-&gt; (Meta -&gt; f Meta)
+-&gt; Twain b a
+-&gt; f (Twain b a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Meta -&gt; f Meta) -&gt; (b, a) -&gt; f (b, a)
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span></span></span><span>
+</span><span id="line-173"></span><span>
+</span><span id="line-174"></span><span class="hs-comment">-- | Extract meta-data.</span><span>
+</span><span id="line-175"></span><span id="local-6989586621680569098"><span class="annot"><a href="Music.Time.Meta.html#getMeta"><span class="hs-identifier hs-type">getMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569098"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569098"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span></span><span>
+</span><span id="line-176"></span><span id="getMeta"><span class="annot"><span class="annottext">getMeta :: a -&gt; Meta
+</span><a href="Music.Time.Meta.html#getMeta"><span class="hs-identifier hs-var hs-var">getMeta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta -&gt; a -&gt; Meta
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span>
+</span><span id="line-177"></span><span>
+</span><span id="line-178"></span><span class="hs-comment">-- | Update meta-data.</span><span>
+</span><span id="line-179"></span><span id="local-6989586621680569096"><span class="annot"><a href="Music.Time.Meta.html#setMeta"><span class="hs-identifier hs-type">setMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569096"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569096"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569096"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-180"></span><span id="setMeta"><span class="annot"><span class="annottext">setMeta :: Meta -&gt; a -&gt; a
+</span><a href="Music.Time.Meta.html#setMeta"><span class="hs-identifier hs-var hs-var">setMeta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter a a Meta Meta -&gt; Meta -&gt; a -&gt; a
+forall s t a b. ASetter s t a b -&gt; b -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">set</span></span><span> </span><span class="annot"><span class="annottext">ASetter a a Meta Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span>
+</span><span id="line-181"></span><span>
+</span><span id="line-182"></span><span class="hs-comment">-- | Map over meta-data.</span><span>
+</span><span id="line-183"></span><span id="local-6989586621680569094"><span class="annot"><a href="Music.Time.Meta.html#mapMeta"><span class="hs-identifier hs-type">mapMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569094"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569094"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569094"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-184"></span><span id="mapMeta"><span class="annot"><span class="annottext">mapMeta :: (Meta -&gt; Meta) -&gt; a -&gt; a
+</span><a href="Music.Time.Meta.html#mapMeta"><span class="hs-identifier hs-var hs-var">mapMeta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter a a Meta Meta -&gt; (Meta -&gt; Meta) -&gt; a -&gt; a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="annot"><span class="annottext">ASetter a a Meta Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span>
+</span><span id="line-185"></span><span>
+</span><span id="line-186"></span><span class="hs-comment">-- | Show the types of meta-data attachd to this value.</span><span>
+</span><span id="line-187"></span><span class="hs-comment">--   Useful for debugging.</span><span>
+</span><span id="line-188"></span><span id="local-6989586621680569092"><span class="annot"><a href="Music.Time.Meta.html#metaTypes"><span class="hs-identifier hs-type">metaTypes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569092"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569092"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-189"></span><span id="metaTypes"><span class="annot"><span class="annottext">metaTypes :: a -&gt; [[Char]]
+</span><a href="Music.Time.Meta.html#metaTypes"><span class="hs-identifier hs-var hs-var">metaTypes</span></a></span></span><span> </span><span id="local-6989586621680569091"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680569091"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map [Char] Attribute -&gt; [[Char]]
+forall k a. Map k a -&gt; [k]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/containers-0.6.2.1/src"><span class="hs-identifier hs-var">Map.keys</span></a></span><span> </span><span class="annot"><span class="annottext">(Map [Char] Attribute -&gt; [[Char]])
+-&gt; Map [Char] Attribute -&gt; [[Char]]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Meta -&gt; Map [Char] Attribute
+</span><a href="Music.Time.Meta.html#_getMeta"><span class="hs-identifier hs-var hs-var">_getMeta</span></a></span><span> </span><span class="annot"><span class="annottext">(Meta -&gt; Map [Char] Attribute) -&gt; Meta -&gt; Map [Char] Attribute
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569091"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Getting Meta a Meta -&gt; Meta
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span>
+</span><span id="line-190"></span><span>
+</span><span id="line-191"></span><span class="hs-comment">-- | Apply meta-information by combining it with existing meta-information.</span><span>
+</span><span id="line-192"></span><span id="local-6989586621680569429"><span class="annot"><a href="Music.Time.Meta.html#applyMeta"><span class="hs-identifier hs-type">applyMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569429"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569429"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569429"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-193"></span><span id="applyMeta"><span class="annot"><span class="annottext">applyMeta :: Meta -&gt; a -&gt; a
+</span><a href="Music.Time.Meta.html#applyMeta"><span class="hs-identifier hs-var hs-var">applyMeta</span></a></span></span><span> </span><span id="local-6989586621680569088"><span class="annot"><span class="annottext">m :: Meta
+</span><a href="#local-6989586621680569088"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter a a Meta Meta -&gt; (Meta -&gt; Meta) -&gt; a -&gt; a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="annot"><span class="annottext">ASetter a a Meta Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Meta -&gt; Meta -&gt; Meta
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Meta
+</span><a href="#local-6989586621680569088"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-194"></span><span>
+</span><span id="line-195"></span><span class="hs-comment">-- | Update a meta attribute.</span><span>
+</span><span id="line-196"></span><span id="local-6989586621680569086"><span id="local-6989586621680569087"><span class="annot"><a href="Music.Time.Meta.html#setMetaAttr"><span class="hs-identifier hs-type">setMetaAttr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AttributeClass"><span class="hs-identifier hs-type">AttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569087"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569086"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569087"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569086"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569086"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-197"></span><span id="setMetaAttr"><span class="annot"><span class="annottext">setMetaAttr :: b -&gt; a -&gt; a
+</span><a href="Music.Time.Meta.html#setMetaAttr"><span class="hs-identifier hs-var hs-var">setMetaAttr</span></a></span></span><span> </span><span id="local-6989586621680569085"><span class="annot"><span class="annottext">a :: b
+</span><a href="#local-6989586621680569085"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Meta -&gt; a -&gt; a
+forall a. HasMeta a =&gt; Meta -&gt; a -&gt; a
+</span><a href="Music.Time.Meta.html#applyMeta"><span class="hs-identifier hs-var">applyMeta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Meta
+forall a. AttributeClass a =&gt; a -&gt; Meta
+</span><a href="Music.Time.Meta.html#wrapMeta"><span class="hs-identifier hs-var">wrapMeta</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680569085"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-198"></span><span>
+</span><span id="line-199"></span><span class="hs-comment">-- | Update a meta attribute.</span><span>
+</span><span id="line-200"></span><span id="local-6989586621680569083"><span id="local-6989586621680569084"><span class="annot"><a href="Music.Time.Meta.html#setMetaTAttr"><span class="hs-identifier hs-type">setMetaTAttr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#TAttributeClass"><span class="hs-identifier hs-type">TAttributeClass</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569084"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569083"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569084"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569083"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569083"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-201"></span><span id="setMetaTAttr"><span class="annot"><span class="annottext">setMetaTAttr :: b -&gt; a -&gt; a
+</span><a href="Music.Time.Meta.html#setMetaTAttr"><span class="hs-identifier hs-var hs-var">setMetaTAttr</span></a></span></span><span> </span><span id="local-6989586621680569082"><span class="annot"><span class="annottext">a :: b
+</span><a href="#local-6989586621680569082"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Meta -&gt; a -&gt; a
+forall a. HasMeta a =&gt; Meta -&gt; a -&gt; a
+</span><a href="Music.Time.Meta.html#applyMeta"><span class="hs-identifier hs-var">applyMeta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Meta
+forall a. TAttributeClass a =&gt; a -&gt; Meta
+</span><a href="Music.Time.Meta.html#wrapTMeta"><span class="hs-identifier hs-var">wrapTMeta</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621680569082"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-202"></span><span>
+</span><span id="line-203"></span><span class="hs-comment">-- | Apply a function without affecting meta-data.</span><span>
+</span><span id="line-204"></span><span id="local-6989586621680569080"><span id="local-6989586621680569081"><span class="annot"><a href="Music.Time.Meta.html#preserveMeta"><span class="hs-identifier hs-type">preserveMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569081"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569080"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680569081"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569080"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569081"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569080"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-205"></span><span id="preserveMeta"><span class="annot"><span class="annottext">preserveMeta :: (a -&gt; b) -&gt; a -&gt; b
+</span><a href="Music.Time.Meta.html#preserveMeta"><span class="hs-identifier hs-var hs-var">preserveMeta</span></a></span></span><span> </span><span id="local-6989586621680569079"><span class="annot"><span class="annottext">f :: a -&gt; b
+</span><a href="#local-6989586621680569079"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680569078"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680569078"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680569077"><span class="annot"><span class="annottext">m :: Meta
+</span><a href="#local-6989586621680569077"><span class="hs-identifier hs-var hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta -&gt; a -&gt; Meta
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569078"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">ASetter b b Meta Meta -&gt; Meta -&gt; b -&gt; b
+forall s t a b. ASetter s t a b -&gt; b -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">set</span></span><span> </span><span class="annot"><span class="annottext">ASetter b b Meta Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">Meta
+</span><a href="#local-6989586621680569077"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621680569079"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569078"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-206"></span><span>
+</span><span id="line-207"></span><span class="hs-comment">-- | Apply a function without affecting meta-data.</span><span>
+</span><span id="line-208"></span><span id="local-6989586621680569074"><span id="local-6989586621680569075"><span id="local-6989586621680569076"><span class="annot"><a href="Music.Time.Meta.html#preserveMetaF"><span class="hs-identifier hs-type">preserveMetaF</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569076"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569075"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569074"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680569076"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569074"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569075"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569076"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569074"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569075"><span class="hs-identifier hs-type">b</span></a></span></span></span></span><span>
+</span><span id="line-209"></span><span id="preserveMetaF"><span class="annot"><span class="annottext">preserveMetaF :: (a -&gt; f b) -&gt; a -&gt; f b
+</span><a href="Music.Time.Meta.html#preserveMetaF"><span class="hs-identifier hs-var hs-var">preserveMetaF</span></a></span></span><span> </span><span id="local-6989586621680569073"><span class="annot"><span class="annottext">f :: a -&gt; f b
+</span><a href="#local-6989586621680569073"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680569072"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680569072"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680569071"><span class="annot"><span class="annottext">m :: Meta
+</span><a href="#local-6989586621680569071"><span class="hs-identifier hs-var hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta -&gt; a -&gt; Meta
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569072"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(b -&gt; b) -&gt; f b -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ASetter b b Meta Meta -&gt; Meta -&gt; b -&gt; b
+forall s t a b. ASetter s t a b -&gt; b -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">set</span></span><span> </span><span class="annot"><span class="annottext">ASetter b b Meta Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">Meta
+</span><a href="#local-6989586621680569071"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; f b
+</span><a href="#local-6989586621680569073"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680569072"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-210"></span><span>
+</span><span id="line-211"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-212"></span><span class="hs-comment">-- Annotate an arbitrary type with meta-data, preserving instances of</span><span>
+</span><span id="line-213"></span><span class="hs-comment">-- all common type classes. In particular 'Functor' and 'Applicative' is lifted and</span><span>
+</span><span id="line-214"></span><span class="hs-comment">-- @'Compose' 'AddMeta'@ is semantically equivalent to 'Identity'.</span><span>
+</span><span id="line-215"></span><span>
+</span><span id="line-216"></span><span class="hs-comment">-- Meta-data is carried along with the annotated value. It defaults to 'mempty'</span><span>
+</span><span id="line-217"></span><span class="hs-comment">-- in 'pure'. When composing values using '&lt;*&gt;', 'liftA2' etc, meta-data is composed</span><span>
+</span><span id="line-218"></span><span class="hs-comment">-- using 'mappend'.</span><span>
+</span><span id="line-219"></span><span class="hs-comment">--</span><span>
+</span><span id="line-220"></span><span class="hs-comment">-- Similar to the approach taken in Clojure, meta-data does not contribute to ordering,</span><span>
+</span><span id="line-221"></span><span class="hs-comment">-- so both 'Eq' and 'Ord' ignore the meta-data.</span><span>
+</span><span id="line-222"></span><span class="hs-comment">--</span><span>
+</span><span id="line-223"></span><span class="hs-comment">-- You can access the meta-data using 'meta', and the annotated value using 'annotated'.</span><span>
+</span><span id="line-224"></span><span class="hs-comment">--</span><span>
+</span><span id="line-225"></span><span class="hs-keyword">newtype</span><span> </span><span id="AddMeta"><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-var">AddMeta</span></a></span></span><span> </span><span id="local-6989586621680569287"><span class="annot"><a href="#local-6989586621680569287"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="AddMeta"><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-var">AddMeta</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getAddMeta"><span class="annot"><span class="annottext">AddMeta a -&gt; Twain Meta a
+</span><a href="Music.Time.Meta.html#getAddMeta"><span class="hs-identifier hs-var hs-var">getAddMeta</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-operator hs-type">`Twain`</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569287"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-226"></span><span>  </span><span class="hs-keyword">deriving</span><span>
+</span><span id="line-227"></span><span>    </span><span class="hs-special">(</span><span> </span><span id="local-6989586621680569063"><span id="local-6989586621680569065"><span id="local-6989586621680569067"><span class="annot"><span class="annottext">Int -&gt; AddMeta a -&gt; ShowS
+[AddMeta a] -&gt; ShowS
+AddMeta a -&gt; [Char]
+(Int -&gt; AddMeta a -&gt; ShowS)
+-&gt; (AddMeta a -&gt; [Char])
+-&gt; ([AddMeta a] -&gt; ShowS)
+-&gt; Show (AddMeta a)
+forall a. Show a =&gt; Int -&gt; AddMeta a -&gt; ShowS
+forall a. Show a =&gt; [AddMeta a] -&gt; ShowS
+forall a. Show a =&gt; AddMeta a -&gt; [Char]
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; [Char]) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [AddMeta a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [AddMeta a] -&gt; ShowS
+show :: AddMeta a -&gt; [Char]
+$cshow :: forall a. Show a =&gt; AddMeta a -&gt; [Char]
+showsPrec :: Int -&gt; AddMeta a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; AddMeta a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-228"></span><span>      </span><span id="local-6989586621680569059"><span id="local-6989586621680569061"><span class="annot"><span class="annottext">a -&gt; AddMeta b -&gt; AddMeta a
+(a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+(forall a b. (a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b)
+-&gt; (forall a b. a -&gt; AddMeta b -&gt; AddMeta a) -&gt; Functor AddMeta
+forall a b. a -&gt; AddMeta b -&gt; AddMeta a
+forall a b. (a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; AddMeta b -&gt; AddMeta a
+$c&lt;$ :: forall a b. a -&gt; AddMeta b -&gt; AddMeta a
+fmap :: (a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+$cfmap :: forall a b. (a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-229"></span><span>      </span><span id="local-6989586621680569024"><span id="local-6989586621680569026"><span id="local-6989586621680569028"><span id="local-6989586621680569030"><span id="local-6989586621680569032"><span id="local-6989586621680569034"><span id="local-6989586621680569036"><span id="local-6989586621680569038"><span id="local-6989586621680569040"><span id="local-6989586621680569042"><span id="local-6989586621680569044"><span id="local-6989586621680569046"><span id="local-6989586621680569048"><span id="local-6989586621680569050"><span id="local-6989586621680569052"><span id="local-6989586621680569054"><span id="local-6989586621680569056"><span class="annot"><span class="annottext">a -&gt; AddMeta a -&gt; Bool
+AddMeta m -&gt; m
+AddMeta a -&gt; [a]
+AddMeta a -&gt; Bool
+AddMeta a -&gt; Int
+AddMeta a -&gt; a
+AddMeta a -&gt; a
+AddMeta a -&gt; a
+AddMeta a -&gt; a
+(a -&gt; m) -&gt; AddMeta a -&gt; m
+(a -&gt; m) -&gt; AddMeta a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+(a -&gt; a -&gt; a) -&gt; AddMeta a -&gt; a
+(a -&gt; a -&gt; a) -&gt; AddMeta a -&gt; a
+(forall m. Monoid m =&gt; AddMeta m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; AddMeta a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; AddMeta a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; AddMeta a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; AddMeta a -&gt; a)
+-&gt; (forall a. AddMeta a -&gt; [a])
+-&gt; (forall a. AddMeta a -&gt; Bool)
+-&gt; (forall a. AddMeta a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; AddMeta a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; AddMeta a -&gt; a)
+-&gt; (forall a. Ord a =&gt; AddMeta a -&gt; a)
+-&gt; (forall a. Num a =&gt; AddMeta a -&gt; a)
+-&gt; (forall a. Num a =&gt; AddMeta a -&gt; a)
+-&gt; Foldable AddMeta
+forall a. Eq a =&gt; a -&gt; AddMeta a -&gt; Bool
+forall a. Num a =&gt; AddMeta a -&gt; a
+forall a. Ord a =&gt; AddMeta a -&gt; a
+forall m. Monoid m =&gt; AddMeta m -&gt; m
+forall a. AddMeta a -&gt; Bool
+forall a. AddMeta a -&gt; Int
+forall a. AddMeta a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; AddMeta a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; AddMeta a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: AddMeta a -&gt; a
+$cproduct :: forall a. Num a =&gt; AddMeta a -&gt; a
+sum :: AddMeta a -&gt; a
+$csum :: forall a. Num a =&gt; AddMeta a -&gt; a
+minimum :: AddMeta a -&gt; a
+$cminimum :: forall a. Ord a =&gt; AddMeta a -&gt; a
+maximum :: AddMeta a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; AddMeta a -&gt; a
+elem :: a -&gt; AddMeta a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; AddMeta a -&gt; Bool
+length :: AddMeta a -&gt; Int
+$clength :: forall a. AddMeta a -&gt; Int
+null :: AddMeta a -&gt; Bool
+$cnull :: forall a. AddMeta a -&gt; Bool
+toList :: AddMeta a -&gt; [a]
+$ctoList :: forall a. AddMeta a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; AddMeta a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; AddMeta a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; AddMeta a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; AddMeta a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; AddMeta a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; AddMeta a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; AddMeta a -&gt; m
+foldMap :: (a -&gt; m) -&gt; AddMeta a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; AddMeta a -&gt; m
+fold :: AddMeta m -&gt; m
+$cfold :: forall m. Monoid m =&gt; AddMeta m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-230"></span><span>      </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-231"></span><span>      </span><span id="local-6989586621680569012"><span id="local-6989586621680569014"><span id="local-6989586621680569016"><span id="local-6989586621680569018"><span id="local-6989586621680569020"><span class="annot"><span class="annottext">Functor AddMeta
+a -&gt; AddMeta a
+Functor AddMeta =&gt;
+(forall a. a -&gt; AddMeta a)
+-&gt; (forall a b. AddMeta (a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; AddMeta a -&gt; AddMeta b -&gt; AddMeta c)
+-&gt; (forall a b. AddMeta a -&gt; AddMeta b -&gt; AddMeta b)
+-&gt; (forall a b. AddMeta a -&gt; AddMeta b -&gt; AddMeta a)
+-&gt; Applicative AddMeta
+AddMeta a -&gt; AddMeta b -&gt; AddMeta b
+AddMeta a -&gt; AddMeta b -&gt; AddMeta a
+AddMeta (a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+(a -&gt; b -&gt; c) -&gt; AddMeta a -&gt; AddMeta b -&gt; AddMeta c
+forall a. a -&gt; AddMeta a
+forall a b. AddMeta a -&gt; AddMeta b -&gt; AddMeta a
+forall a b. AddMeta a -&gt; AddMeta b -&gt; AddMeta b
+forall a b. AddMeta (a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+forall a b c. (a -&gt; b -&gt; c) -&gt; AddMeta a -&gt; AddMeta b -&gt; AddMeta c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: AddMeta a -&gt; AddMeta b -&gt; AddMeta a
+$c&lt;* :: forall a b. AddMeta a -&gt; AddMeta b -&gt; AddMeta a
+*&gt; :: AddMeta a -&gt; AddMeta b -&gt; AddMeta b
+$c*&gt; :: forall a b. AddMeta a -&gt; AddMeta b -&gt; AddMeta b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; AddMeta a -&gt; AddMeta b -&gt; AddMeta c
+$cliftA2 :: forall a b c. (a -&gt; b -&gt; c) -&gt; AddMeta a -&gt; AddMeta b -&gt; AddMeta c
+&lt;*&gt; :: AddMeta (a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+$c&lt;*&gt; :: forall a b. AddMeta (a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+pure :: a -&gt; AddMeta a
+$cpure :: forall a. a -&gt; AddMeta a
+$cp1Applicative :: Functor AddMeta
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-232"></span><span>      </span><span id="local-6989586621680569004"><span id="local-6989586621680569006"><span id="local-6989586621680569008"><span class="annot"><span class="annottext">Applicative AddMeta
+a -&gt; AddMeta a
+Applicative AddMeta =&gt;
+(forall a b. AddMeta a -&gt; (a -&gt; AddMeta b) -&gt; AddMeta b)
+-&gt; (forall a b. AddMeta a -&gt; AddMeta b -&gt; AddMeta b)
+-&gt; (forall a. a -&gt; AddMeta a)
+-&gt; Monad AddMeta
+AddMeta a -&gt; (a -&gt; AddMeta b) -&gt; AddMeta b
+AddMeta a -&gt; AddMeta b -&gt; AddMeta b
+forall a. a -&gt; AddMeta a
+forall a b. AddMeta a -&gt; AddMeta b -&gt; AddMeta b
+forall a b. AddMeta a -&gt; (a -&gt; AddMeta b) -&gt; AddMeta b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; AddMeta a
+$creturn :: forall a. a -&gt; AddMeta a
+&gt;&gt; :: AddMeta a -&gt; AddMeta b -&gt; AddMeta b
+$c&gt;&gt; :: forall a b. AddMeta a -&gt; AddMeta b -&gt; AddMeta b
+&gt;&gt;= :: AddMeta a -&gt; (a -&gt; AddMeta b) -&gt; AddMeta b
+$c&gt;&gt;= :: forall a b. AddMeta a -&gt; (a -&gt; AddMeta b) -&gt; AddMeta b
+$cp1Monad :: Applicative AddMeta
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-233"></span><span>      </span><span id="local-6989586621680568996"><span id="local-6989586621680568998"><span id="local-6989586621680569000"><span class="annot"><span class="annottext">Functor AddMeta
+Functor AddMeta =&gt;
+(forall a. AddMeta a -&gt; a)
+-&gt; (forall a. AddMeta a -&gt; AddMeta (AddMeta a))
+-&gt; (forall a b. (AddMeta a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b)
+-&gt; Comonad AddMeta
+AddMeta a -&gt; a
+AddMeta a -&gt; AddMeta (AddMeta a)
+(AddMeta a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+forall a. AddMeta a -&gt; a
+forall a. AddMeta a -&gt; AddMeta (AddMeta a)
+forall a b. (AddMeta a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (AddMeta a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+$cextend :: forall a b. (AddMeta a -&gt; b) -&gt; AddMeta a -&gt; AddMeta b
+duplicate :: AddMeta a -&gt; AddMeta (AddMeta a)
+$cduplicate :: forall a. AddMeta a -&gt; AddMeta (AddMeta a)
+extract :: AddMeta a -&gt; a
+$cextract :: forall a. AddMeta a -&gt; a
+$cp1Comonad :: Functor AddMeta
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-234"></span><span>      </span><span id="local-6989586621680568989"><span id="local-6989586621680568991"><span id="local-6989586621680568993"><span class="annot"><span class="annottext">b -&gt; AddMeta a -&gt; AddMeta a
+NonEmpty (AddMeta a) -&gt; AddMeta a
+AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+(AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (NonEmpty (AddMeta a) -&gt; AddMeta a)
+-&gt; (forall b. Integral b =&gt; b -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; Semigroup (AddMeta a)
+forall b. Integral b =&gt; b -&gt; AddMeta a -&gt; AddMeta a
+forall a. Semigroup a =&gt; NonEmpty (AddMeta a) -&gt; AddMeta a
+forall a. Semigroup a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+forall a b.
+(Semigroup a, Integral b) =&gt;
+b -&gt; AddMeta a -&gt; AddMeta a
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+stimes :: b -&gt; AddMeta a -&gt; AddMeta a
+$cstimes :: forall a b.
+(Semigroup a, Integral b) =&gt;
+b -&gt; AddMeta a -&gt; AddMeta a
+sconcat :: NonEmpty (AddMeta a) -&gt; AddMeta a
+$csconcat :: forall a. Semigroup a =&gt; NonEmpty (AddMeta a) -&gt; AddMeta a
+&lt;&gt; :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$c&lt;&gt; :: forall a. Semigroup a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-235"></span><span>      </span><span id="local-6989586621680568982"><span id="local-6989586621680568984"><span id="local-6989586621680568986"><span class="annot"><span class="annottext">Semigroup (AddMeta a)
+AddMeta a
+Semigroup (AddMeta a) =&gt;
+AddMeta a
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; ([AddMeta a] -&gt; AddMeta a)
+-&gt; Monoid (AddMeta a)
+[AddMeta a] -&gt; AddMeta a
+AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+forall a.
+Semigroup a =&gt;
+a -&gt; (a -&gt; a -&gt; a) -&gt; ([a] -&gt; a) -&gt; Monoid a
+forall a. Monoid a =&gt; Semigroup (AddMeta a)
+forall a. Monoid a =&gt; AddMeta a
+forall a. Monoid a =&gt; [AddMeta a] -&gt; AddMeta a
+forall a. Monoid a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+mconcat :: [AddMeta a] -&gt; AddMeta a
+$cmconcat :: forall a. Monoid a =&gt; [AddMeta a] -&gt; AddMeta a
+mappend :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$cmappend :: forall a. Monoid a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+mempty :: AddMeta a
+$cmempty :: forall a. Monoid a =&gt; AddMeta a
+$cp1Monoid :: forall a. Monoid a =&gt; Semigroup (AddMeta a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-236"></span><span>      </span><span id="local-6989586621680568968"><span id="local-6989586621680568970"><span id="local-6989586621680568972"><span id="local-6989586621680568974"><span id="local-6989586621680568976"><span id="local-6989586621680568978"><span id="local-6989586621680568980"><span class="annot"><span class="annottext">Integer -&gt; AddMeta a
+AddMeta a -&gt; AddMeta a
+AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+(AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (Integer -&gt; AddMeta a)
+-&gt; Num (AddMeta a)
+forall a. Num a =&gt; Integer -&gt; AddMeta a
+forall a. Num a =&gt; AddMeta a -&gt; AddMeta a
+forall a. Num a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Integer -&gt; a)
+-&gt; Num a
+fromInteger :: Integer -&gt; AddMeta a
+$cfromInteger :: forall a. Num a =&gt; Integer -&gt; AddMeta a
+signum :: AddMeta a -&gt; AddMeta a
+$csignum :: forall a. Num a =&gt; AddMeta a -&gt; AddMeta a
+abs :: AddMeta a -&gt; AddMeta a
+$cabs :: forall a. Num a =&gt; AddMeta a -&gt; AddMeta a
+negate :: AddMeta a -&gt; AddMeta a
+$cnegate :: forall a. Num a =&gt; AddMeta a -&gt; AddMeta a
+* :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$c* :: forall a. Num a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+- :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$c- :: forall a. Num a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
++ :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$c+ :: forall a. Num a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-237"></span><span>      </span><span id="local-6989586621680568960"><span id="local-6989586621680568962"><span id="local-6989586621680568964"><span class="annot"><span class="annottext">Num (AddMeta a)
+Num (AddMeta a) =&gt;
+(AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (Rational -&gt; AddMeta a)
+-&gt; Fractional (AddMeta a)
+Rational -&gt; AddMeta a
+AddMeta a -&gt; AddMeta a
+AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+forall a. Fractional a =&gt; Num (AddMeta a)
+forall a. Fractional a =&gt; Rational -&gt; AddMeta a
+forall a. Fractional a =&gt; AddMeta a -&gt; AddMeta a
+forall a. Fractional a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+forall a.
+Num a =&gt;
+(a -&gt; a -&gt; a) -&gt; (a -&gt; a) -&gt; (Rational -&gt; a) -&gt; Fractional a
+fromRational :: Rational -&gt; AddMeta a
+$cfromRational :: forall a. Fractional a =&gt; Rational -&gt; AddMeta a
+recip :: AddMeta a -&gt; AddMeta a
+$crecip :: forall a. Fractional a =&gt; AddMeta a -&gt; AddMeta a
+/ :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$c/ :: forall a. Fractional a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$cp1Fractional :: forall a. Fractional a =&gt; Num (AddMeta a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Fractional</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-238"></span><span>      </span><span id="local-6989586621680568914"><span id="local-6989586621680568916"><span id="local-6989586621680568918"><span id="local-6989586621680568920"><span id="local-6989586621680568922"><span id="local-6989586621680568924"><span id="local-6989586621680568926"><span id="local-6989586621680568928"><span id="local-6989586621680568930"><span id="local-6989586621680568932"><span id="local-6989586621680568934"><span id="local-6989586621680568936"><span id="local-6989586621680568938"><span id="local-6989586621680568940"><span id="local-6989586621680568942"><span id="local-6989586621680568944"><span id="local-6989586621680568946"><span id="local-6989586621680568948"><span id="local-6989586621680568950"><span id="local-6989586621680568952"><span id="local-6989586621680568954"><span id="local-6989586621680568956"><span class="annot"><span class="annottext">Fractional (AddMeta a)
+AddMeta a
+Fractional (AddMeta a) =&gt;
+AddMeta a
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; Floating (AddMeta a)
+AddMeta a -&gt; AddMeta a
+AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+forall a. Floating a =&gt; Fractional (AddMeta a)
+forall a. Floating a =&gt; AddMeta a
+forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+forall a.
+Fractional a =&gt;
+a
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; Floating a
+log1mexp :: AddMeta a -&gt; AddMeta a
+$clog1mexp :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+log1pexp :: AddMeta a -&gt; AddMeta a
+$clog1pexp :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+expm1 :: AddMeta a -&gt; AddMeta a
+$cexpm1 :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+log1p :: AddMeta a -&gt; AddMeta a
+$clog1p :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+atanh :: AddMeta a -&gt; AddMeta a
+$catanh :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+acosh :: AddMeta a -&gt; AddMeta a
+$cacosh :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+asinh :: AddMeta a -&gt; AddMeta a
+$casinh :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+tanh :: AddMeta a -&gt; AddMeta a
+$ctanh :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+cosh :: AddMeta a -&gt; AddMeta a
+$ccosh :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+sinh :: AddMeta a -&gt; AddMeta a
+$csinh :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+atan :: AddMeta a -&gt; AddMeta a
+$catan :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+acos :: AddMeta a -&gt; AddMeta a
+$cacos :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+asin :: AddMeta a -&gt; AddMeta a
+$casin :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+tan :: AddMeta a -&gt; AddMeta a
+$ctan :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+cos :: AddMeta a -&gt; AddMeta a
+$ccos :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+sin :: AddMeta a -&gt; AddMeta a
+$csin :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+logBase :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$clogBase :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+** :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$c** :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+sqrt :: AddMeta a -&gt; AddMeta a
+$csqrt :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+log :: AddMeta a -&gt; AddMeta a
+$clog :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+exp :: AddMeta a -&gt; AddMeta a
+$cexp :: forall a. Floating a =&gt; AddMeta a -&gt; AddMeta a
+pi :: AddMeta a
+$cpi :: forall a. Floating a =&gt; AddMeta a
+$cp1Floating :: forall a. Floating a =&gt; Fractional (AddMeta a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Floating</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-239"></span><span>      </span><span id="local-6989586621680568897"><span id="local-6989586621680568899"><span id="local-6989586621680568901"><span id="local-6989586621680568903"><span id="local-6989586621680568905"><span id="local-6989586621680568907"><span id="local-6989586621680568909"><span id="local-6989586621680568911"><span class="annot"><span class="annottext">Int -&gt; AddMeta a
+AddMeta a -&gt; Int
+AddMeta a -&gt; [AddMeta a]
+AddMeta a -&gt; AddMeta a
+AddMeta a -&gt; AddMeta a -&gt; [AddMeta a]
+AddMeta a -&gt; AddMeta a -&gt; AddMeta a -&gt; [AddMeta a]
+(AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a)
+-&gt; (Int -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; Int)
+-&gt; (AddMeta a -&gt; [AddMeta a])
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; [AddMeta a])
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; [AddMeta a])
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a -&gt; [AddMeta a])
+-&gt; Enum (AddMeta a)
+forall a. Enum a =&gt; Int -&gt; AddMeta a
+forall a. Enum a =&gt; AddMeta a -&gt; Int
+forall a. Enum a =&gt; AddMeta a -&gt; [AddMeta a]
+forall a. Enum a =&gt; AddMeta a -&gt; AddMeta a
+forall a. Enum a =&gt; AddMeta a -&gt; AddMeta a -&gt; [AddMeta a]
+forall a.
+Enum a =&gt;
+AddMeta a -&gt; AddMeta a -&gt; AddMeta a -&gt; [AddMeta a]
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+enumFromThenTo :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a -&gt; [AddMeta a]
+$cenumFromThenTo :: forall a.
+Enum a =&gt;
+AddMeta a -&gt; AddMeta a -&gt; AddMeta a -&gt; [AddMeta a]
+enumFromTo :: AddMeta a -&gt; AddMeta a -&gt; [AddMeta a]
+$cenumFromTo :: forall a. Enum a =&gt; AddMeta a -&gt; AddMeta a -&gt; [AddMeta a]
+enumFromThen :: AddMeta a -&gt; AddMeta a -&gt; [AddMeta a]
+$cenumFromThen :: forall a. Enum a =&gt; AddMeta a -&gt; AddMeta a -&gt; [AddMeta a]
+enumFrom :: AddMeta a -&gt; [AddMeta a]
+$cenumFrom :: forall a. Enum a =&gt; AddMeta a -&gt; [AddMeta a]
+fromEnum :: AddMeta a -&gt; Int
+$cfromEnum :: forall a. Enum a =&gt; AddMeta a -&gt; Int
+toEnum :: Int -&gt; AddMeta a
+$ctoEnum :: forall a. Enum a =&gt; Int -&gt; AddMeta a
+pred :: AddMeta a -&gt; AddMeta a
+$cpred :: forall a. Enum a =&gt; AddMeta a -&gt; AddMeta a
+succ :: AddMeta a -&gt; AddMeta a
+$csucc :: forall a. Enum a =&gt; AddMeta a -&gt; AddMeta a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-240"></span><span>      </span><span id="local-6989586621680568892"><span id="local-6989586621680568894"><span class="annot"><span class="annottext">AddMeta a
+AddMeta a -&gt; AddMeta a -&gt; Bounded (AddMeta a)
+forall a. a -&gt; a -&gt; Bounded a
+forall a. Bounded a =&gt; AddMeta a
+maxBound :: AddMeta a
+$cmaxBound :: forall a. Bounded a =&gt; AddMeta a
+minBound :: AddMeta a
+$cminBound :: forall a. Bounded a =&gt; AddMeta a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Bounded</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-241"></span><span>      </span><span id="local-6989586621680568875"><span id="local-6989586621680568877"><span id="local-6989586621680568879"><span id="local-6989586621680568881"><span id="local-6989586621680568883"><span id="local-6989586621680568885"><span id="local-6989586621680568887"><span class="annot"><span class="annottext">Enum (AddMeta a)
+Real (AddMeta a)
+(Real (AddMeta a), Enum (AddMeta a)) =&gt;
+(AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; (AddMeta a, AddMeta a))
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; (AddMeta a, AddMeta a))
+-&gt; (AddMeta a -&gt; Integer)
+-&gt; Integral (AddMeta a)
+AddMeta a -&gt; Integer
+AddMeta a -&gt; AddMeta a -&gt; (AddMeta a, AddMeta a)
+AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+forall a. Integral a =&gt; Enum (AddMeta a)
+forall a. Integral a =&gt; Real (AddMeta a)
+forall a. Integral a =&gt; AddMeta a -&gt; Integer
+forall a.
+Integral a =&gt;
+AddMeta a -&gt; AddMeta a -&gt; (AddMeta a, AddMeta a)
+forall a. Integral a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+forall a.
+(Real a, Enum a) =&gt;
+(a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; (a, a))
+-&gt; (a -&gt; a -&gt; (a, a))
+-&gt; (a -&gt; Integer)
+-&gt; Integral a
+toInteger :: AddMeta a -&gt; Integer
+$ctoInteger :: forall a. Integral a =&gt; AddMeta a -&gt; Integer
+divMod :: AddMeta a -&gt; AddMeta a -&gt; (AddMeta a, AddMeta a)
+$cdivMod :: forall a.
+Integral a =&gt;
+AddMeta a -&gt; AddMeta a -&gt; (AddMeta a, AddMeta a)
+quotRem :: AddMeta a -&gt; AddMeta a -&gt; (AddMeta a, AddMeta a)
+$cquotRem :: forall a.
+Integral a =&gt;
+AddMeta a -&gt; AddMeta a -&gt; (AddMeta a, AddMeta a)
+mod :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$cmod :: forall a. Integral a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+div :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$cdiv :: forall a. Integral a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+rem :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$crem :: forall a. Integral a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+quot :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$cquot :: forall a. Integral a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$cp2Integral :: forall a. Integral a =&gt; Enum (AddMeta a)
+$cp1Integral :: forall a. Integral a =&gt; Real (AddMeta a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Integral</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-242"></span><span>      </span><span id="local-6989586621680568870"><span class="annot"><span class="annottext">Num (AddMeta a)
+Ord (AddMeta a)
+(Num (AddMeta a), Ord (AddMeta a)) =&gt;
+(AddMeta a -&gt; Rational) -&gt; Real (AddMeta a)
+AddMeta a -&gt; Rational
+forall a. (Num a, Ord a) =&gt; (a -&gt; Rational) -&gt; Real a
+forall a. Real a =&gt; Num (AddMeta a)
+forall a. Real a =&gt; Ord (AddMeta a)
+forall a. Real a =&gt; AddMeta a -&gt; Rational
+toRational :: AddMeta a -&gt; Rational
+$ctoRational :: forall a. Real a =&gt; AddMeta a -&gt; Rational
+$cp2Real :: forall a. Real a =&gt; Ord (AddMeta a)
+$cp1Real :: forall a. Real a =&gt; Num (AddMeta a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Real</span></a></span></span><span class="hs-special">,</span><span>
+</span><span id="line-243"></span><span>      </span><span id="local-6989586621680568857"><span id="local-6989586621680568859"><span id="local-6989586621680568861"><span id="local-6989586621680568863"><span id="local-6989586621680568865"><span class="annot"><span class="annottext">Fractional (AddMeta a)
+Real (AddMeta a)
+(Real (AddMeta a), Fractional (AddMeta a)) =&gt;
+(forall b. Integral b =&gt; AddMeta a -&gt; (b, AddMeta a))
+-&gt; (forall b. Integral b =&gt; AddMeta a -&gt; b)
+-&gt; (forall b. Integral b =&gt; AddMeta a -&gt; b)
+-&gt; (forall b. Integral b =&gt; AddMeta a -&gt; b)
+-&gt; (forall b. Integral b =&gt; AddMeta a -&gt; b)
+-&gt; RealFrac (AddMeta a)
+AddMeta a -&gt; b
+AddMeta a -&gt; b
+AddMeta a -&gt; b
+AddMeta a -&gt; b
+AddMeta a -&gt; (b, AddMeta a)
+forall b. Integral b =&gt; AddMeta a -&gt; b
+forall b. Integral b =&gt; AddMeta a -&gt; (b, AddMeta a)
+forall a.
+(Real a, Fractional a) =&gt;
+(forall b. Integral b =&gt; a -&gt; (b, a))
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; RealFrac a
+forall a. RealFrac a =&gt; Fractional (AddMeta a)
+forall a. RealFrac a =&gt; Real (AddMeta a)
+forall a b. (RealFrac a, Integral b) =&gt; AddMeta a -&gt; b
+forall a b. (RealFrac a, Integral b) =&gt; AddMeta a -&gt; (b, AddMeta a)
+floor :: AddMeta a -&gt; b
+$cfloor :: forall a b. (RealFrac a, Integral b) =&gt; AddMeta a -&gt; b
+ceiling :: AddMeta a -&gt; b
+$cceiling :: forall a b. (RealFrac a, Integral b) =&gt; AddMeta a -&gt; b
+round :: AddMeta a -&gt; b
+$cround :: forall a b. (RealFrac a, Integral b) =&gt; AddMeta a -&gt; b
+truncate :: AddMeta a -&gt; b
+$ctruncate :: forall a b. (RealFrac a, Integral b) =&gt; AddMeta a -&gt; b
+properFraction :: AddMeta a -&gt; (b, AddMeta a)
+$cproperFraction :: forall a b. (RealFrac a, Integral b) =&gt; AddMeta a -&gt; (b, AddMeta a)
+$cp2RealFrac :: forall a. RealFrac a =&gt; Fractional (AddMeta a)
+$cp1RealFrac :: forall a. RealFrac a =&gt; Real (AddMeta a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">RealFrac</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-244"></span><span>      </span><span id="local-6989586621680568852"><span id="local-6989586621680568854"><span class="annot"><span class="annottext">AddMeta a -&gt; AddMeta a -&gt; Bool
+(AddMeta a -&gt; AddMeta a -&gt; Bool)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; Bool) -&gt; Eq (AddMeta a)
+forall a. Eq a =&gt; AddMeta a -&gt; AddMeta a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: AddMeta a -&gt; AddMeta a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; AddMeta a -&gt; AddMeta a -&gt; Bool
+== :: AddMeta a -&gt; AddMeta a -&gt; Bool
+$c== :: forall a. Eq a =&gt; AddMeta a -&gt; AddMeta a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-245"></span><span>      </span><span id="local-6989586621680568836"><span id="local-6989586621680568838"><span id="local-6989586621680568840"><span id="local-6989586621680568842"><span id="local-6989586621680568844"><span id="local-6989586621680568846"><span id="local-6989586621680568848"><span class="annot"><span class="annottext">Eq (AddMeta a)
+Eq (AddMeta a) =&gt;
+(AddMeta a -&gt; AddMeta a -&gt; Ordering)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; Bool)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; Bool)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; Bool)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; Bool)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a -&gt; AddMeta a)
+-&gt; Ord (AddMeta a)
+AddMeta a -&gt; AddMeta a -&gt; Bool
+AddMeta a -&gt; AddMeta a -&gt; Ordering
+AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (AddMeta a)
+forall a. Ord a =&gt; AddMeta a -&gt; AddMeta a -&gt; Bool
+forall a. Ord a =&gt; AddMeta a -&gt; AddMeta a -&gt; Ordering
+forall a. Ord a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+min :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$cmin :: forall a. Ord a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+max :: AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+$cmax :: forall a. Ord a =&gt; AddMeta a -&gt; AddMeta a -&gt; AddMeta a
+&gt;= :: AddMeta a -&gt; AddMeta a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; AddMeta a -&gt; AddMeta a -&gt; Bool
+&gt; :: AddMeta a -&gt; AddMeta a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; AddMeta a -&gt; AddMeta a -&gt; Bool
+&lt;= :: AddMeta a -&gt; AddMeta a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; AddMeta a -&gt; AddMeta a -&gt; Bool
+&lt; :: AddMeta a -&gt; AddMeta a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; AddMeta a -&gt; AddMeta a -&gt; Bool
+compare :: AddMeta a -&gt; AddMeta a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; AddMeta a -&gt; AddMeta a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (AddMeta a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span>
+</span><span id="line-246"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-247"></span><span>
+</span><span id="line-248"></span><span id="local-6989586621680568834"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568834"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-249"></span><span>
+</span><span id="line-250"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568834"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Twain"><span class="hs-identifier hs-type">Twain</span></a></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568834"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-251"></span><span>
+</span><span id="line-252"></span><span>  </span><span id="local-6989586621680568831"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (AddMeta a)) (f (Unwrapped (AddMeta a)))
+-&gt; p (AddMeta a) (f (AddMeta a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AddMeta a -&gt; Twain Meta a)
+-&gt; (Twain Meta a -&gt; AddMeta a)
+-&gt; Iso (AddMeta a) (AddMeta a) (Twain Meta a) (Twain Meta a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">AddMeta a -&gt; Twain Meta a
+forall a. AddMeta a -&gt; Twain Meta a
+</span><a href="Music.Time.Meta.html#getAddMeta"><span class="hs-identifier hs-var hs-var">getAddMeta</span></a></span><span> </span><span class="annot"><span class="annottext">Twain Meta a -&gt; AddMeta a
+forall a. Twain Meta a -&gt; AddMeta a
+</span><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-var">AddMeta</span></a></span></span><span>
+</span><span id="line-253"></span><span>
+</span><span id="line-254"></span><span id="local-6989586621680568827"><span id="local-6989586621680568828"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568828"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568827"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-255"></span><span>
+</span><span id="line-256"></span><span id="local-6989586621680568824"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568824"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-257"></span><span>  </span><span class="hs-comment">-- twain, pair, element</span><span>
+</span><span id="line-258"></span><span>  </span><span id="local-6989586621680568822"><span class="annot"><span class="annottext">meta :: (Meta -&gt; f Meta) -&gt; AddMeta a -&gt; f (AddMeta a)
+</span><a href="#local-6989586621680568822"><span class="hs-identifier hs-var hs-var hs-var hs-var">meta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Twain Meta a -&gt; f (Twain Meta a)) -&gt; AddMeta a -&gt; f (AddMeta a)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">((Twain Meta a -&gt; f (Twain Meta a)) -&gt; AddMeta a -&gt; f (AddMeta a))
+-&gt; ((Meta -&gt; f Meta) -&gt; Twain Meta a -&gt; f (Twain Meta a))
+-&gt; (Meta -&gt; f Meta)
+-&gt; AddMeta a
+-&gt; f (AddMeta a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">((Meta, a) -&gt; f (Meta, a)) -&gt; Twain Meta a -&gt; f (Twain Meta a)
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">(((Meta, a) -&gt; f (Meta, a)) -&gt; Twain Meta a -&gt; f (Twain Meta a))
+-&gt; ((Meta -&gt; f Meta) -&gt; (Meta, a) -&gt; f (Meta, a))
+-&gt; (Meta -&gt; f Meta)
+-&gt; Twain Meta a
+-&gt; f (Twain Meta a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Meta -&gt; f Meta) -&gt; (Meta, a) -&gt; f (Meta, a)
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span></span><span>
+</span><span id="line-259"></span><span>
+</span><span id="line-260"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680568812"><span id="local-6989586621680568814"><span id="local-6989586621680568816"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Traversable</span></a></span><span> </span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-261"></span><span>  </span><span id="local-6989586621680568810"><span class="annot"><span class="annottext">traverse :: (a -&gt; f b) -&gt; AddMeta a -&gt; f (AddMeta b)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">traverse</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; f b) -&gt; AddMeta a -&gt; f (AddMeta b)
+forall a b. Lens (AddMeta a) (AddMeta b) a b
+</span><a href="Music.Time.Meta.html#annotated"><span class="hs-identifier hs-var">annotated</span></a></span><span>
+</span><span id="line-262"></span><span>
+</span><span id="line-263"></span><span class="hs-comment">-- instance Eq1 AddMeta where</span><span>
+</span><span id="line-264"></span><span class="hs-comment">--   eq1 = (==)</span><span>
+</span><span id="line-265"></span><span>
+</span><span id="line-266"></span><span class="hs-comment">-- instance FunctorWithIndex i AddMeta where</span><span>
+</span><span id="line-267"></span><span class="hs-comment">-- imap f = over annotated $ imap f</span><span>
+</span><span id="line-268"></span><span class="hs-comment">--</span><span>
+</span><span id="line-269"></span><span class="hs-comment">-- instance FoldableWithIndex Span Score where</span><span>
+</span><span id="line-270"></span><span class="hs-comment">--   ifoldMap f (Score (m,x)) = ifoldMap f x</span><span>
+</span><span id="line-271"></span><span class="hs-comment">--</span><span>
+</span><span id="line-272"></span><span class="hs-comment">-- instance TraversableWithIndex Span Score where</span><span>
+</span><span id="line-273"></span><span class="hs-comment">--   itraverse f (Score (m,x)) = fmap (\x -&gt; Score (m,x)) $ itraverse f x</span><span>
+</span><span id="line-274"></span><span>
+</span><span id="line-275"></span><span id="local-6989586621680568808"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568808"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568808"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-276"></span><span>  </span><span id="local-6989586621680568806"><span class="annot"><span class="annottext">transform :: Span -&gt; AddMeta a -&gt; AddMeta a
+</span><a href="#local-6989586621680568806"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span id="local-6989586621680568805"><span class="annot"><span class="annottext">t :: Span
+</span><a href="#local-6989586621680568805"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter (AddMeta a) (AddMeta a) Meta Meta
+-&gt; (Meta -&gt; Meta) -&gt; AddMeta a -&gt; AddMeta a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="annot"><span class="annottext">ASetter (AddMeta a) (AddMeta a) Meta Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; Meta -&gt; Meta
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568805"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(AddMeta a -&gt; AddMeta a)
+-&gt; (AddMeta a -&gt; AddMeta a) -&gt; AddMeta a -&gt; AddMeta a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">ASetter (AddMeta a) (AddMeta a) a a
+-&gt; (a -&gt; a) -&gt; AddMeta a -&gt; AddMeta a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="annot"><span class="annottext">ASetter (AddMeta a) (AddMeta a) a a
+forall a b. Lens (AddMeta a) (AddMeta b) a b
+</span><a href="Music.Time.Meta.html#annotated"><span class="hs-identifier hs-var">annotated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; a -&gt; a
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680568805"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-277"></span><span>
+</span><span id="line-278"></span><span id="local-6989586621680568804"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680568799"><span id="local-6989586621680568801"><span class="annot"><a href="Music.Time.Split.html#Splittable"><span class="hs-identifier hs-type">Splittable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568804"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Split.html#Splittable"><span class="hs-identifier hs-type">Splittable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568804"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-279"></span><span>  </span><span id="local-6989586621680568797"><span class="annot"><span class="annottext">split :: Duration -&gt; AddMeta a -&gt; (AddMeta a, AddMeta a)
+</span><a href="Music.Time.Split.html#split"><span class="hs-identifier hs-var hs-var hs-var hs-var">split</span></a></span></span><span> </span><span id="local-6989586621680568795"><span class="annot"><span class="annottext">t :: Duration
+</span><a href="#local-6989586621680568795"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AddMeta (a, a) -&gt; (AddMeta a, AddMeta a)
+forall (f :: * -&gt; *) b. Functor f =&gt; f (a, b) -&gt; (f a, f b)
+</span><a href="#local-6989586621680568794"><span class="hs-identifier hs-var">unzipR</span></a></span><span> </span><span class="annot"><span class="annottext">(AddMeta (a, a) -&gt; (AddMeta a, AddMeta a))
+-&gt; (AddMeta a -&gt; AddMeta (a, a))
+-&gt; AddMeta a
+-&gt; (AddMeta a, AddMeta a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, a)) -&gt; AddMeta a -&gt; AddMeta (a, a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration -&gt; a -&gt; (a, a)
+forall a. Splittable a =&gt; Duration -&gt; a -&gt; (a, a)
+</span><a href="Music.Time.Split.html#split"><span class="hs-identifier hs-var">split</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680568795"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-280"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-281"></span><span>      </span><span id="local-6989586621680569245"><span id="local-6989586621680569246"><span class="annot"><a href="#local-6989586621680568794"><span class="hs-identifier hs-type">unzipR</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569246"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680569246"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680568804"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680569245"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680569246"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568804"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680569246"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569245"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-282"></span><span>      </span><span id="local-6989586621680568794"><span class="annot"><span class="annottext">unzipR :: f (a, b) -&gt; (f a, f b)
+</span><a href="#local-6989586621680568794"><span class="hs-identifier hs-var hs-var">unzipR</span></a></span></span><span> </span><span id="local-6989586621680568793"><span class="annot"><span class="annottext">x :: f (a, b)
+</span><a href="#local-6989586621680568793"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((a, b) -&gt; a) -&gt; f (a, b) -&gt; f a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; a
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span> </span><span class="annot"><span class="annottext">f (a, b)
+</span><a href="#local-6989586621680568793"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">((a, b) -&gt; b) -&gt; f (a, b) -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">(a, b) -&gt; b
+forall a b. (a, b) -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">snd</span></a></span><span> </span><span class="annot"><span class="annottext">f (a, b)
+</span><a href="#local-6989586621680568793"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-283"></span><span>
+</span><span id="line-284"></span><span id="local-6989586621680568792"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568792"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568792"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-285"></span><span>  </span><span id="local-6989586621680568789"><span class="annot"><span class="annottext">_era :: AddMeta a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var hs-var hs-var hs-var">_era</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe Span
+forall a. HasPosition a =&gt; a -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var">_era</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Maybe Span) -&gt; (AddMeta a -&gt; a) -&gt; AddMeta a -&gt; Maybe Span
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">AddMeta a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span><span>
+</span><span id="line-286"></span><span>
+</span><span id="line-287"></span><span id="local-6989586621680568786"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568786"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568786"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-288"></span><span>  </span><span id="local-6989586621680568783"><span class="annot"><span class="annottext">_duration :: AddMeta a -&gt; Duration
+</span><a href="Music.Time.Duration.html#_duration"><span class="hs-identifier hs-var hs-var hs-var hs-var">_duration</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Duration
+forall a. HasDuration a =&gt; a -&gt; Duration
+</span><a href="Music.Time.Duration.html#_duration"><span class="hs-identifier hs-var">_duration</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Duration) -&gt; (AddMeta a -&gt; a) -&gt; AddMeta a -&gt; Duration
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">AddMeta a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span></span><span>
+</span><span id="line-289"></span><span>
+</span><span id="line-290"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-291"></span><span class="hs-comment">-- Access the annotated value.</span><span>
+</span><span id="line-292"></span><span class="hs-comment">--</span><span>
+</span><span id="line-293"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-294"></span><span class="hs-comment">-- over annotated = fmap</span><span>
+</span><span id="line-295"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-296"></span><span id="local-6989586621680569252"><span id="local-6989586621680569253"><span class="annot"><a href="Music.Time.Meta.html#annotated"><span class="hs-identifier hs-type">annotated</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569253"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569252"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680569253"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569252"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-297"></span><span id="annotated"><span class="annot"><span class="annottext">annotated :: (a -&gt; f b) -&gt; AddMeta a -&gt; f (AddMeta b)
+</span><a href="Music.Time.Meta.html#annotated"><span class="hs-identifier hs-var hs-var">annotated</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; f b) -&gt; AddMeta a -&gt; f (AddMeta b)
+forall a b. Iso (AddMeta a) (AddMeta b) a b
+</span><a href="Music.Time.Meta.html#annotatedIgnoringMeta"><span class="hs-identifier hs-var">annotatedIgnoringMeta</span></a></span><span>
+</span><span id="line-298"></span><span>
+</span><span id="line-299"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-300"></span><span class="hs-comment">-- Access the annotated value.</span><span>
+</span><span id="line-301"></span><span class="hs-comment">--</span><span>
+</span><span id="line-302"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-303"></span><span class="hs-comment">-- view fromAnnotated = pure</span><span>
+</span><span id="line-304"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-305"></span><span id="local-6989586621680568781"><span class="annot"><a href="Music.Time.Meta.html#unannotated"><span class="hs-identifier hs-type">unannotated</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Getter</span></span><span> </span><span class="annot"><a href="#local-6989586621680568781"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680568781"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-306"></span><span id="unannotated"><span class="annot"><span class="annottext">unannotated :: (AddMeta a -&gt; f (AddMeta a)) -&gt; a -&gt; f a
+</span><a href="Music.Time.Meta.html#unannotated"><span class="hs-identifier hs-var hs-var">unannotated</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AnIso (AddMeta a) (AddMeta a) a a
+-&gt; Iso a a (AddMeta a) (AddMeta a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (AddMeta a) (AddMeta a) a a
+forall a b. Iso (AddMeta a) (AddMeta b) a b
+</span><a href="Music.Time.Meta.html#annotatedIgnoringMeta"><span class="hs-identifier hs-var">annotatedIgnoringMeta</span></a></span><span>
+</span><span id="line-307"></span><span>
+</span><span id="line-308"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-309"></span><span class="hs-comment">-- Access the annotated value. This is only an isomorphism up to meta-data</span><span>
+</span><span id="line-310"></span><span class="hs-comment">-- equivalence. In particular @under annotatedIgnoringMeta@ leads to meta-data being</span><span>
+</span><span id="line-311"></span><span class="hs-comment">-- thrown away. See 'annotated' and 'unannotated' for safe (but less general)</span><span>
+</span><span id="line-312"></span><span class="hs-comment">-- definitions.</span><span>
+</span><span id="line-313"></span><span class="hs-comment">--</span><span>
+</span><span id="line-314"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-315"></span><span class="hs-comment">-- over annotated = fmap</span><span>
+</span><span id="line-316"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-317"></span><span id="local-6989586621680569228"><span id="local-6989586621680569229"><span class="annot"><a href="Music.Time.Meta.html#annotatedIgnoringMeta"><span class="hs-identifier hs-type">annotatedIgnoringMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569229"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Meta.html#AddMeta"><span class="hs-identifier hs-type">AddMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569228"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680569229"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569228"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-318"></span><span id="annotatedIgnoringMeta"><span class="annot"><span class="annottext">annotatedIgnoringMeta :: p a (f b) -&gt; p (AddMeta a) (f (AddMeta b))
+</span><a href="Music.Time.Meta.html#annotatedIgnoringMeta"><span class="hs-identifier hs-var hs-var">annotatedIgnoringMeta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p (Twain Meta a) (f (Twain Meta b))
+-&gt; p (AddMeta a) (f (AddMeta b))
+forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">(p (Twain Meta a) (f (Twain Meta b))
+ -&gt; p (AddMeta a) (f (AddMeta b)))
+-&gt; (p a (f b) -&gt; p (Twain Meta a) (f (Twain Meta b)))
+-&gt; p a (f b)
+-&gt; p (AddMeta a) (f (AddMeta b))
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">p a (f b) -&gt; p (Twain Meta a) (f (Twain Meta b))
+forall (m :: * -&gt; *) a b.
+(Applicative m, Comonad m) =&gt;
+Iso (m a) (m b) a b
+</span><a href="Music.Time.Meta.html#extracted"><span class="hs-identifier hs-var">extracted</span></a></span><span>
+</span><span id="line-319"></span><span>
+</span><span id="line-320"></span><span class="hs-comment">-- Nice generalizations</span><span>
+</span><span id="line-321"></span><span class="hs-comment">-- TODO move</span><span>
+</span><span id="line-322"></span><span>
+</span><span id="line-323"></span><span id="local-6989586621680569214"><span id="local-6989586621680569215"><span id="local-6989586621680569216"><span class="annot"><a href="Music.Time.Meta.html#extracted"><span class="hs-identifier hs-type">extracted</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Applicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569216"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Comonad</span></span><span> </span><span class="annot"><a href="#local-6989586621680569216"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680569216"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569215"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680569216"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569214"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680569215"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680569214"><span class="hs-identifier hs-type">b</span></a></span></span></span></span><span>
+</span><span id="line-324"></span><span id="extracted"><span class="annot"><span class="annottext">extracted :: Iso (m a) (m b) a b
+</span><a href="Music.Time.Meta.html#extracted"><span class="hs-identifier hs-var hs-var">extracted</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(m a -&gt; a) -&gt; (b -&gt; m b) -&gt; Iso (m a) (m b) a b
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">m a -&gt; a
+forall (w :: * -&gt; *) a. Comonad w =&gt; w a -&gt; a
+</span><span class="hs-identifier hs-var">extract</span></span><span> </span><span class="annot"><span class="annottext">b -&gt; m b
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span>
+</span><span id="line-325"></span><span class="hs-comment">-- extractedRep :: (Representable m, w ~ Rep m, Monoid w) =&gt; Iso (m a) (m b) a b</span><span>
+</span><span id="line-326"></span><span class="hs-comment">-- extractedRep = iso extractRep pureRep</span><span>
+</span><span id="line-327"></span></pre></body></html>

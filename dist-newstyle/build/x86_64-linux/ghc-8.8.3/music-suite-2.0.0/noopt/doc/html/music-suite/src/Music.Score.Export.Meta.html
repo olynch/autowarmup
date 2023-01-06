@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Utility to extract meta-data at a specific point in time.</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Export.Meta</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Monad</span></a></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.Attribution.html"><span class="hs-identifier">Music.Score.Meta.Attribution</span></a></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.Key.html"><span class="hs-identifier">Music.Score.Meta.Key</span></a></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.Tempo.html"><span class="hs-identifier">Music.Score.Meta.Tempo</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.Time.html"><span class="hs-identifier">Music.Score.Meta.Time</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Meta.Title.html"><span class="hs-identifier">Music.Score.Meta.Title</span></a></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Meta.html"><span class="hs-identifier">Music.Time.Meta</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- TODO merge this module with Score.Meta or similar</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span id="local-6989586621680596474"><span class="annot"><a href="Music.Score.Export.Meta.html#attributionAt"><span class="hs-identifier hs-type">attributionAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596474"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680596474"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span></span><span>
+</span><span id="line-28"></span><span id="attributionAt"><span class="annot"><span class="annottext">attributionAt :: Time -&gt; String -&gt; a -&gt; Maybe String
+</span><a href="Music.Score.Export.Meta.html#attributionAt"><span class="hs-identifier hs-var hs-var">attributionAt</span></a></span></span><span> </span><span id="local-6989586621680596453"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680596453"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680596452"><span class="annot"><span class="annottext">n :: String
+</span><a href="#local-6989586621680596452"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621680596451"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680596451"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-29"></span><span>  </span><span class="annot"><span class="annottext">Maybe (Maybe String) -&gt; Maybe String
+forall (m :: * -&gt; *) a. Monad m =&gt; m (m a) -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">join</span></a></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="annottext">(Maybe (Maybe String) -&gt; Maybe String)
+-&gt; Maybe (Maybe String) -&gt; Maybe String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribution -&gt; Maybe String)
+-&gt; Maybe Attribution -&gt; Maybe (Maybe String)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribution -&gt; String -&gt; Maybe String
+</span><a href="Music.Score.Meta.Attribution.html#getAttribution"><span class="hs-operator hs-var">`getAttribution`</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621680596452"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="annottext">(Maybe Attribution -&gt; Maybe (Maybe String))
+-&gt; Maybe Attribution -&gt; Maybe (Maybe String)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Reactive Attribution -&gt; Attribution)
+-&gt; Maybe (Reactive Attribution) -&gt; Maybe Attribution
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Reactive Attribution -&gt; Time -&gt; Attribution
+forall a. Reactive a -&gt; Time -&gt; a
+</span><a href="Music.Time.Reactive.html#atTime"><span class="hs-operator hs-var">`atTime`</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680596453"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="annottext">(Maybe (Reactive Attribution) -&gt; Maybe Attribution)
+-&gt; Maybe (Reactive Attribution) -&gt; Maybe Attribution
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Meta -&gt; Maybe (Reactive Attribution)
+forall a. AttributeClass a =&gt; Meta -&gt; Maybe a
+</span><a href="Music.Time.Meta.html#unwrapMeta"><span class="hs-identifier hs-var">unwrapMeta</span></a></span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="annottext">(Meta -&gt; Maybe (Reactive Attribution))
+-&gt; Meta -&gt; Maybe (Reactive Attribution)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596451"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Getting Meta a Meta -&gt; Meta
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Meta a Meta
+forall a. HasMeta a =&gt; Lens' a Meta
+</span><a href="Music.Time.Meta.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- TODO get all *set* attributions</span><span>
+</span><span id="line-36"></span><span id="local-6989586621680596455"><span class="annot"><a href="Music.Score.Export.Meta.html#attributionsAt"><span class="hs-identifier hs-type">attributionsAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596455"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680596455"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span><span>
+</span><span id="line-37"></span><span id="attributionsAt"><span class="annot"><span class="annottext">attributionsAt :: Time -&gt; a -&gt; [(String, Maybe String)]
+</span><a href="Music.Score.Export.Meta.html#attributionsAt"><span class="hs-identifier hs-var hs-var">attributionsAt</span></a></span></span><span> </span><span id="local-6989586621680596444"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680596444"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680596443"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680596443"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-string">&quot;composer&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Time -&gt; String -&gt; a -&gt; Maybe String
+forall a. HasMeta a =&gt; Time -&gt; String -&gt; a -&gt; Maybe String
+</span><a href="Music.Score.Export.Meta.html#attributionAt"><span class="hs-identifier hs-var">attributionAt</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680596444"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;composer&quot;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596443"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="hs-string">&quot;lyricist&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Time -&gt; String -&gt; a -&gt; Maybe String
+forall a. HasMeta a =&gt; Time -&gt; String -&gt; a -&gt; Maybe String
+</span><a href="Music.Score.Export.Meta.html#attributionAt"><span class="hs-identifier hs-var">attributionAt</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680596444"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;lyricist&quot;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596443"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>    </span><span class="hs-comment">-- TODO etc</span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-special">]</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- TODO rename getTitleAt etc in Meta.Title to prevent confunsion</span><span>
+</span><span id="line-44"></span><span id="local-6989586621680596456"><span class="annot"><a href="Music.Score.Export.Meta.html#titleAt"><span class="hs-identifier hs-type">titleAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596456"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680596456"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Music.Score.Meta.Title.html#Title"><span class="hs-identifier hs-type">Title</span></a></span></span><span>
+</span><span id="line-45"></span><span id="titleAt"><span class="annot"><span class="annottext">titleAt :: Time -&gt; a -&gt; Maybe Title
+</span><a href="Music.Score.Export.Meta.html#titleAt"><span class="hs-identifier hs-var hs-var">titleAt</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe Title
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- TODO key</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- TODO time</span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- TODO tempo</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span id="local-6989586621680596441"><span class="annot"><a href="Music.Score.Export.Meta.html#partNames"><span class="hs-identifier hs-type">partNames</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Part.html#HasParts%27"><span class="hs-identifier hs-type">HasParts'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596441"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Part.html#Part"><span class="hs-identifier hs-type">Part</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596441"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680596441"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-54"></span><span id="partNames"><span class="annot"><span class="annottext">partNames :: a -&gt; [String]
+</span><a href="Music.Score.Export.Meta.html#partNames"><span class="hs-identifier hs-var hs-var">partNames</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Part a -&gt; String) -&gt; [Part a] -&gt; [String]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Part a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">([Part a] -&gt; [String]) -&gt; (a -&gt; [Part a]) -&gt; a -&gt; [String]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting (Endo [Part a]) a (Part a) -&gt; a -&gt; [Part a]
+forall a s. Getting (Endo [a]) s a -&gt; s -&gt; [a]
+</span><span class="hs-identifier hs-var">toListOf</span></span><span> </span><span class="annot"><span class="annottext">Getting (Endo [Part a]) a (Part a)
+forall s t. (HasParts s t, s ~ t) =&gt; Traversal' s (Part s)
+</span><a href="Music.Score.Part.html#parts%27"><span class="hs-identifier hs-var">parts'</span></a></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span id="local-6989586621680596434"><span class="annot"><a href="Music.Score.Export.Meta.html#commonMetaAt"><span class="hs-identifier hs-type">commonMetaAt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Meta.html#HasMeta"><span class="hs-identifier hs-type">HasMeta</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596434"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680596434"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">String</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span><span>
+</span><span id="line-57"></span><span id="commonMetaAt"><span class="annot"><span class="annottext">commonMetaAt :: Time -&gt; a -&gt; [(String, Maybe String)]
+</span><a href="Music.Score.Export.Meta.html#commonMetaAt"><span class="hs-identifier hs-var hs-var">commonMetaAt</span></a></span></span><span> </span><span id="local-6989586621680596432"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680596432"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680596431"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680596431"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-string">&quot;title&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe (Maybe String) -&gt; Maybe String
+forall (m :: * -&gt; *) a. Monad m =&gt; m (m a) -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">join</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Maybe String) -&gt; Maybe String)
+-&gt; Maybe (Maybe String) -&gt; Maybe String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Title -&gt; Maybe String) -&gt; Maybe Title -&gt; Maybe (Maybe String)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Title -&gt; Maybe String
+</span><a href="#local-6989586621680596430"><span class="hs-identifier hs-var">getTitle1</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Title -&gt; Maybe (Maybe String))
+-&gt; Maybe Title -&gt; Maybe (Maybe String)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; a -&gt; Maybe Title
+forall a. HasMeta a =&gt; Time -&gt; a -&gt; Maybe Title
+</span><a href="Music.Score.Export.Meta.html#titleAt"><span class="hs-identifier hs-var">titleAt</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680596432"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596431"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><span class="annottext">(String, Maybe String)
+-&gt; [(String, Maybe String)] -&gt; [(String, Maybe String)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-string">&quot;subtitle&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe (Maybe String) -&gt; Maybe String
+forall (m :: * -&gt; *) a. Monad m =&gt; m (m a) -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">join</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Maybe String) -&gt; Maybe String)
+-&gt; Maybe (Maybe String) -&gt; Maybe String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Title -&gt; Maybe String) -&gt; Maybe Title -&gt; Maybe (Maybe String)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Title -&gt; Maybe String
+</span><a href="#local-6989586621680596429"><span class="hs-identifier hs-var">getTitle2</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Title -&gt; Maybe (Maybe String))
+-&gt; Maybe Title -&gt; Maybe (Maybe String)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; a -&gt; Maybe Title
+forall a. HasMeta a =&gt; Time -&gt; a -&gt; Maybe Title
+</span><a href="Music.Score.Export.Meta.html#titleAt"><span class="hs-identifier hs-var">titleAt</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680596432"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596431"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span>    </span><span class="annot"><span class="annottext">(String, Maybe String)
+-&gt; [(String, Maybe String)] -&gt; [(String, Maybe String)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-string">&quot;subsubtitle&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe (Maybe String) -&gt; Maybe String
+forall (m :: * -&gt; *) a. Monad m =&gt; m (m a) -&gt; m a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">join</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Maybe String) -&gt; Maybe String)
+-&gt; Maybe (Maybe String) -&gt; Maybe String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Title -&gt; Maybe String) -&gt; Maybe Title -&gt; Maybe (Maybe String)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">Title -&gt; Maybe String
+</span><a href="#local-6989586621680596428"><span class="hs-identifier hs-var">getTitle3</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Title -&gt; Maybe (Maybe String))
+-&gt; Maybe Title -&gt; Maybe (Maybe String)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; a -&gt; Maybe Title
+forall a. HasMeta a =&gt; Time -&gt; a -&gt; Maybe Title
+</span><a href="Music.Score.Export.Meta.html#titleAt"><span class="hs-identifier hs-var">titleAt</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680596432"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596431"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="annottext">(String, Maybe String)
+-&gt; [(String, Maybe String)] -&gt; [(String, Maybe String)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-var">:</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; a -&gt; [(String, Maybe String)]
+forall a. HasMeta a =&gt; Time -&gt; a -&gt; [(String, Maybe String)]
+</span><a href="Music.Score.Export.Meta.html#attributionsAt"><span class="hs-identifier hs-var">attributionsAt</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680596432"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596431"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>    </span><span id="local-6989586621680596430"><span class="annot"><span class="annottext">getTitle1 :: Title -&gt; Maybe String
+</span><a href="#local-6989586621680596430"><span class="hs-identifier hs-var hs-var">getTitle1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Title -&gt; Int -&gt; Maybe String
+</span><a href="Music.Score.Meta.Title.html#getTitleAt"><span class="hs-operator hs-var">`getTitleAt`</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>    </span><span id="local-6989586621680596429"><span class="annot"><span class="annottext">getTitle2 :: Title -&gt; Maybe String
+</span><a href="#local-6989586621680596429"><span class="hs-identifier hs-var hs-var">getTitle2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Title -&gt; Int -&gt; Maybe String
+</span><a href="Music.Score.Meta.Title.html#getTitleAt"><span class="hs-operator hs-var">`getTitleAt`</span></a></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span>    </span><span id="local-6989586621680596428"><span class="annot"><span class="annottext">getTitle3 :: Title -&gt; Maybe String
+</span><a href="#local-6989586621680596428"><span class="hs-identifier hs-var hs-var">getTitle3</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Title -&gt; Int -&gt; Maybe String
+</span><a href="Music.Score.Meta.Title.html#getTitleAt"><span class="hs-operator hs-var">`getTitleAt`</span></a></span><span> </span><span class="annot"><span class="hs-number">2</span></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span class="hs-comment">--     &gt;&gt;&gt; commonMetaAt 0 $ asScore $ composer &quot;Hans&quot; $ lyricist &quot;Sondheim&quot; c</span><span>
+</span><span id="line-67"></span><span class="hs-comment">--     [(&quot;title&quot;,Nothing),(&quot;subtitle&quot;,Nothing),(&quot;subsubtitle&quot;,Nothing),(&quot;composer&quot;,Just &quot;Hans&quot;),(&quot;lyricist&quot;,Just &quot;Sondheim&quot;)]</span><span>
+</span><span id="line-68"></span></pre></body></html>

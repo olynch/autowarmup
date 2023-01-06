@@ -1,0 +1,532 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DefaultSignatures #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-matches
+  -fno-warn-unused-imports #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- | Provides colored note heads.</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Color</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- ** HasColor class</span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier">HasColor</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Manipulating color</span></span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Score.Color.html#color"><span class="hs-identifier">color</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Score.Color.html#colorRed"><span class="hs-identifier">colorRed</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Music.Score.Color.html#colorBlue"><span class="hs-identifier">colorBlue</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Music.Score.Color.html#colorBlack"><span class="hs-identifier">colorBlack</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Representation</span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier">ColorT</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Music.Score.Color.html#runColorT"><span class="hs-identifier">runColorT</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Comonad</span></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">below</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier">Data.Colour</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier">Data.Colour.Names</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">C</span></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html"><span class="hs-identifier">Data.Functor.Couple</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Alterable.html"><span class="hs-identifier">Music.Pitch.Alterable</span></a></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Augmentable.html"><span class="hs-identifier">Music.Pitch.Augmentable</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Harmonics.html"><span class="hs-identifier">Music.Score.Harmonics</span></a></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Part.html"><span class="hs-identifier">Music.Score.Part</span></a></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Phrases.html"><span class="hs-identifier">Music.Score.Phrases</span></a></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Slide.html"><span class="hs-identifier">Music.Score.Slide</span></a></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Text.html"><span class="hs-identifier">Music.Score.Text</span></a></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Ties.html"><span class="hs-identifier">Music.Score.Ties</span></a></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Tremolo.html"><span class="hs-identifier">Music.Score.Tremolo</span></a></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html"><span class="hs-identifier">Music.Time.Internal.Transform</span></a></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- Class of types with a notion of tremolo.</span><span>
+</span><span id="line-55"></span><span class="hs-comment">--</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- ==== Laws</span><span>
+</span><span id="line-57"></span><span class="hs-comment">--</span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- [/set-set/]</span><span>
+</span><span id="line-59"></span><span class="hs-comment">--</span><span>
+</span><span id="line-60"></span><span class="hs-comment">--    @'setColor' n ('setColor' n x) = 'setColor' n x@</span><span>
+</span><span id="line-61"></span><span class="hs-keyword">class</span><span> </span><span id="HasColor"><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-var">HasColor</span></a></span></span><span> </span><span id="local-6989586621680597913"><span class="annot"><a href="#local-6989586621680597913"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span>  </span><span id="setColor"><span class="annot"><a href="Music.Score.Color.html#setColor"><span class="hs-identifier hs-type">setColor</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier hs-type">Colour</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597913"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597913"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-keyword">default</span><span> </span><span id="setColor"><span class="annot"><a href="Music.Score.Color.html#setColor"><span class="hs-identifier hs-type">setColor</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680597704"><span class="annot"><a href="#local-6989586621680597704"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621680597703"><span class="annot"><a href="#local-6989586621680597703"><span class="hs-identifier hs-type">b</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680597913"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">~</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597704"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597703"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Functor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597704"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597703"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier hs-type">Colour</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597913"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597913"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-66"></span><span>  </span><span id="local-6989586621680597702"><span class="annot"><a href="Music.Score.Color.html#setColor"><span class="hs-identifier hs-var hs-var">setColor</span></a></span><span> </span><span id="local-6989586621680597701"><span class="annot"><span class="annottext">s :: Colour Double
+</span><a href="#local-6989586621680597701"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(b -&gt; b) -&gt; f b -&gt; f b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Colour Double -&gt; b -&gt; b
+forall a. HasColor a =&gt; Colour Double -&gt; a -&gt; a
+</span><a href="Music.Score.Color.html#setColor"><span class="hs-identifier hs-var">setColor</span></a></span><span> </span><span class="annot"><span class="annottext">Colour Double
+</span><a href="#local-6989586621680597701"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span id="local-6989586621680597699"><span id="local-6989586621680597700"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597697"><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597700"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621680597699"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680597700"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span id="local-6989586621680597692"><span id="local-6989586621680597694"><span id="local-6989586621680597695"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597695"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597694"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597695"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span id="local-6989586621680597691"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597689"><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597691"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621680597691"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span id="local-6989586621680597688"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597686"><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597688"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597688"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span id="local-6989586621680597685"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597683"><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597685"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597685"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span id="local-6989586621680597682"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597680"><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597682"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Voice.html#Voice"><span class="hs-identifier hs-type">Voice</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597682"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span id="local-6989586621680597679"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597677"><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597679"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597679"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span id="local-6989586621680597675"><span id="local-6989586621680597676"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597673"><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597676"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Part.html#PartT"><span class="hs-identifier hs-type">PartT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597675"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597676"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span id="local-6989586621680597672"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597670"><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597672"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Ties.html#TieT"><span class="hs-identifier hs-type">TieT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597672"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">newtype</span><span> </span><span id="ColorT"><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-var">ColorT</span></a></span></span><span> </span><span id="local-6989586621680597745"><span class="annot"><a href="#local-6989586621680597745"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ColorT"><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-var">ColorT</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getColorT"><span class="annot"><span class="annottext">ColorT a -&gt; Couple (Option (Last (Colour Double))) a
+</span><a href="Music.Score.Color.html#getColorT"><span class="hs-identifier hs-var hs-var">getColorT</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Option</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Last</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier hs-type">Colour</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680597745"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-87"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680597664"><span id="local-6989586621680597666"><span class="annot"><span class="annottext">ColorT a -&gt; ColorT a -&gt; Bool
+(ColorT a -&gt; ColorT a -&gt; Bool)
+-&gt; (ColorT a -&gt; ColorT a -&gt; Bool) -&gt; Eq (ColorT a)
+forall a. Eq a =&gt; ColorT a -&gt; ColorT a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ColorT a -&gt; ColorT a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; ColorT a -&gt; ColorT a -&gt; Bool
+== :: ColorT a -&gt; ColorT a -&gt; Bool
+$c== :: forall a. Eq a =&gt; ColorT a -&gt; ColorT a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span> </span><span class="hs-comment">{-Ord,-}</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597657"><span id="local-6989586621680597659"><span id="local-6989586621680597661"><span class="annot"><span class="annottext">Int -&gt; ColorT a -&gt; ShowS
+[ColorT a] -&gt; ShowS
+ColorT a -&gt; String
+(Int -&gt; ColorT a -&gt; ShowS)
+-&gt; (ColorT a -&gt; String) -&gt; ([ColorT a] -&gt; ShowS) -&gt; Show (ColorT a)
+forall a. Show a =&gt; Int -&gt; ColorT a -&gt; ShowS
+forall a. Show a =&gt; [ColorT a] -&gt; ShowS
+forall a. Show a =&gt; ColorT a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ColorT a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [ColorT a] -&gt; ShowS
+show :: ColorT a -&gt; String
+$cshow :: forall a. Show a =&gt; ColorT a -&gt; String
+showsPrec :: Int -&gt; ColorT a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; ColorT a -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597652"><span id="local-6989586621680597654"><span class="annot"><span class="annottext">a -&gt; ColorT b -&gt; ColorT a
+(a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+(forall a b. (a -&gt; b) -&gt; ColorT a -&gt; ColorT b)
+-&gt; (forall a b. a -&gt; ColorT b -&gt; ColorT a) -&gt; Functor ColorT
+forall a b. a -&gt; ColorT b -&gt; ColorT a
+forall a b. (a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; ColorT b -&gt; ColorT a
+$c&lt;$ :: forall a b. a -&gt; ColorT b -&gt; ColorT a
+fmap :: (a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+$cfmap :: forall a b. (a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597617"><span id="local-6989586621680597619"><span id="local-6989586621680597621"><span id="local-6989586621680597623"><span id="local-6989586621680597625"><span id="local-6989586621680597627"><span id="local-6989586621680597629"><span id="local-6989586621680597631"><span id="local-6989586621680597633"><span id="local-6989586621680597635"><span id="local-6989586621680597637"><span id="local-6989586621680597639"><span id="local-6989586621680597641"><span id="local-6989586621680597643"><span id="local-6989586621680597645"><span id="local-6989586621680597647"><span id="local-6989586621680597649"><span class="annot"><span class="annottext">a -&gt; ColorT a -&gt; Bool
+ColorT m -&gt; m
+ColorT a -&gt; [a]
+ColorT a -&gt; Bool
+ColorT a -&gt; Int
+ColorT a -&gt; a
+ColorT a -&gt; a
+ColorT a -&gt; a
+ColorT a -&gt; a
+(a -&gt; m) -&gt; ColorT a -&gt; m
+(a -&gt; m) -&gt; ColorT a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+(a -&gt; a -&gt; a) -&gt; ColorT a -&gt; a
+(a -&gt; a -&gt; a) -&gt; ColorT a -&gt; a
+(forall m. Monoid m =&gt; ColorT m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; ColorT a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; ColorT a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; ColorT a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; ColorT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; ColorT a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; ColorT a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; ColorT a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; ColorT a -&gt; a)
+-&gt; (forall a. ColorT a -&gt; [a])
+-&gt; (forall a. ColorT a -&gt; Bool)
+-&gt; (forall a. ColorT a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; ColorT a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; ColorT a -&gt; a)
+-&gt; (forall a. Ord a =&gt; ColorT a -&gt; a)
+-&gt; (forall a. Num a =&gt; ColorT a -&gt; a)
+-&gt; (forall a. Num a =&gt; ColorT a -&gt; a)
+-&gt; Foldable ColorT
+forall a. Eq a =&gt; a -&gt; ColorT a -&gt; Bool
+forall a. Num a =&gt; ColorT a -&gt; a
+forall a. Ord a =&gt; ColorT a -&gt; a
+forall m. Monoid m =&gt; ColorT m -&gt; m
+forall a. ColorT a -&gt; Bool
+forall a. ColorT a -&gt; Int
+forall a. ColorT a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; ColorT a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; ColorT a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: ColorT a -&gt; a
+$cproduct :: forall a. Num a =&gt; ColorT a -&gt; a
+sum :: ColorT a -&gt; a
+$csum :: forall a. Num a =&gt; ColorT a -&gt; a
+minimum :: ColorT a -&gt; a
+$cminimum :: forall a. Ord a =&gt; ColorT a -&gt; a
+maximum :: ColorT a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; ColorT a -&gt; a
+elem :: a -&gt; ColorT a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; ColorT a -&gt; Bool
+length :: ColorT a -&gt; Int
+$clength :: forall a. ColorT a -&gt; Int
+null :: ColorT a -&gt; Bool
+$cnull :: forall a. ColorT a -&gt; Bool
+toList :: ColorT a -&gt; [a]
+$ctoList :: forall a. ColorT a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; ColorT a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; ColorT a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; ColorT a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; ColorT a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; ColorT a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; ColorT a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; ColorT a -&gt; m
+foldMap :: (a -&gt; m) -&gt; ColorT a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; ColorT a -&gt; m
+fold :: ColorT m -&gt; m
+$cfold :: forall m. Monoid m =&gt; ColorT m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597606"><span id="local-6989586621680597608"><span id="local-6989586621680597610"><span id="local-6989586621680597612"><span class="annot"><span class="annottext">Functor ColorT
+Foldable ColorT
+(Functor ColorT, Foldable ColorT) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; ColorT a -&gt; f (ColorT b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    ColorT (f a) -&gt; f (ColorT a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; ColorT a -&gt; m (ColorT b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    ColorT (m a) -&gt; m (ColorT a))
+-&gt; Traversable ColorT
+(a -&gt; f b) -&gt; ColorT a -&gt; f (ColorT b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; ColorT (m a) -&gt; m (ColorT a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+ColorT (f a) -&gt; f (ColorT a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; ColorT a -&gt; m (ColorT b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; ColorT a -&gt; f (ColorT b)
+sequence :: ColorT (m a) -&gt; m (ColorT a)
+$csequence :: forall (m :: * -&gt; *) a. Monad m =&gt; ColorT (m a) -&gt; m (ColorT a)
+mapM :: (a -&gt; m b) -&gt; ColorT a -&gt; m (ColorT b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; ColorT a -&gt; m (ColorT b)
+sequenceA :: ColorT (f a) -&gt; f (ColorT a)
+$csequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+ColorT (f a) -&gt; f (ColorT a)
+traverse :: (a -&gt; f b) -&gt; ColorT a -&gt; f (ColorT b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; ColorT a -&gt; f (ColorT b)
+$cp2Traversable :: Foldable ColorT
+$cp1Traversable :: Functor ColorT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span> </span><span class="hs-comment">{-Typeable,-}</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597594"><span id="local-6989586621680597596"><span id="local-6989586621680597598"><span id="local-6989586621680597600"><span id="local-6989586621680597602"><span class="annot"><span class="annottext">Functor ColorT
+a -&gt; ColorT a
+Functor ColorT =&gt;
+(forall a. a -&gt; ColorT a)
+-&gt; (forall a b. ColorT (a -&gt; b) -&gt; ColorT a -&gt; ColorT b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; ColorT a -&gt; ColorT b -&gt; ColorT c)
+-&gt; (forall a b. ColorT a -&gt; ColorT b -&gt; ColorT b)
+-&gt; (forall a b. ColorT a -&gt; ColorT b -&gt; ColorT a)
+-&gt; Applicative ColorT
+ColorT a -&gt; ColorT b -&gt; ColorT b
+ColorT a -&gt; ColorT b -&gt; ColorT a
+ColorT (a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+(a -&gt; b -&gt; c) -&gt; ColorT a -&gt; ColorT b -&gt; ColorT c
+forall a. a -&gt; ColorT a
+forall a b. ColorT a -&gt; ColorT b -&gt; ColorT a
+forall a b. ColorT a -&gt; ColorT b -&gt; ColorT b
+forall a b. ColorT (a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+forall a b c. (a -&gt; b -&gt; c) -&gt; ColorT a -&gt; ColorT b -&gt; ColorT c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: ColorT a -&gt; ColorT b -&gt; ColorT a
+$c&lt;* :: forall a b. ColorT a -&gt; ColorT b -&gt; ColorT a
+*&gt; :: ColorT a -&gt; ColorT b -&gt; ColorT b
+$c*&gt; :: forall a b. ColorT a -&gt; ColorT b -&gt; ColorT b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; ColorT a -&gt; ColorT b -&gt; ColorT c
+$cliftA2 :: forall a b c. (a -&gt; b -&gt; c) -&gt; ColorT a -&gt; ColorT b -&gt; ColorT c
+&lt;*&gt; :: ColorT (a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+$c&lt;*&gt; :: forall a b. ColorT (a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+pure :: a -&gt; ColorT a
+$cpure :: forall a. a -&gt; ColorT a
+$cp1Applicative :: Functor ColorT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597586"><span id="local-6989586621680597588"><span id="local-6989586621680597590"><span class="annot"><span class="annottext">Applicative ColorT
+a -&gt; ColorT a
+Applicative ColorT =&gt;
+(forall a b. ColorT a -&gt; (a -&gt; ColorT b) -&gt; ColorT b)
+-&gt; (forall a b. ColorT a -&gt; ColorT b -&gt; ColorT b)
+-&gt; (forall a. a -&gt; ColorT a)
+-&gt; Monad ColorT
+ColorT a -&gt; (a -&gt; ColorT b) -&gt; ColorT b
+ColorT a -&gt; ColorT b -&gt; ColorT b
+forall a. a -&gt; ColorT a
+forall a b. ColorT a -&gt; ColorT b -&gt; ColorT b
+forall a b. ColorT a -&gt; (a -&gt; ColorT b) -&gt; ColorT b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; ColorT a
+$creturn :: forall a. a -&gt; ColorT a
+&gt;&gt; :: ColorT a -&gt; ColorT b -&gt; ColorT b
+$c&gt;&gt; :: forall a b. ColorT a -&gt; ColorT b -&gt; ColorT b
+&gt;&gt;= :: ColorT a -&gt; (a -&gt; ColorT b) -&gt; ColorT b
+$c&gt;&gt;= :: forall a b. ColorT a -&gt; (a -&gt; ColorT b) -&gt; ColorT b
+$cp1Monad :: Applicative ColorT
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597578"><span id="local-6989586621680597580"><span id="local-6989586621680597582"><span class="annot"><span class="annottext">Functor ColorT
+Functor ColorT =&gt;
+(forall a. ColorT a -&gt; a)
+-&gt; (forall a. ColorT a -&gt; ColorT (ColorT a))
+-&gt; (forall a b. (ColorT a -&gt; b) -&gt; ColorT a -&gt; ColorT b)
+-&gt; Comonad ColorT
+ColorT a -&gt; a
+ColorT a -&gt; ColorT (ColorT a)
+(ColorT a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+forall a. ColorT a -&gt; a
+forall a. ColorT a -&gt; ColorT (ColorT a)
+forall a b. (ColorT a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (ColorT a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+$cextend :: forall a b. (ColorT a -&gt; b) -&gt; ColorT a -&gt; ColorT b
+duplicate :: ColorT a -&gt; ColorT (ColorT a)
+$cduplicate :: forall a. ColorT a -&gt; ColorT (ColorT a)
+extract :: ColorT a -&gt; a
+$cextract :: forall a. ColorT a -&gt; a
+$cp1Comonad :: Functor ColorT
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span id="local-6989586621680597576"><span class="annot"><a href="Music.Score.Color.html#runColorT"><span class="hs-identifier hs-type">runColorT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597576"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier hs-type">Colour</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680597576"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-90"></span><span id="runColorT"><span class="annot"><span class="annottext">runColorT :: ColorT a -&gt; (Colour Double, a)
+</span><a href="Music.Score.Color.html#runColorT"><span class="hs-identifier hs-var hs-var">runColorT</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597574"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680597574"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Colour Double
+forall a. HasCallStack =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">error</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;TODO color export&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680597574"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span id="local-6989586621680597558"><span id="local-6989586621680597560"><span id="local-6989586621680597562"><span id="local-6989586621680597564"><span id="local-6989586621680597566"><span id="local-6989586621680597568"><span id="local-6989586621680597570"><span id="local-6989586621680597572"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597572"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Num</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597572"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span id="local-6989586621680597549"><span id="local-6989586621680597551"><span id="local-6989586621680597553"><span id="local-6989586621680597556"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597556"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Fractional</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597556"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span id="local-6989586621680597502"><span id="local-6989586621680597504"><span id="local-6989586621680597506"><span id="local-6989586621680597508"><span id="local-6989586621680597510"><span id="local-6989586621680597512"><span id="local-6989586621680597514"><span id="local-6989586621680597516"><span id="local-6989586621680597518"><span id="local-6989586621680597520"><span id="local-6989586621680597522"><span id="local-6989586621680597524"><span id="local-6989586621680597526"><span id="local-6989586621680597528"><span id="local-6989586621680597530"><span id="local-6989586621680597532"><span id="local-6989586621680597534"><span id="local-6989586621680597536"><span id="local-6989586621680597538"><span id="local-6989586621680597540"><span id="local-6989586621680597542"><span id="local-6989586621680597544"><span id="local-6989586621680597547"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597547"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Floating</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597547"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span id="local-6989586621680597484"><span id="local-6989586621680597486"><span id="local-6989586621680597488"><span id="local-6989586621680597490"><span id="local-6989586621680597492"><span id="local-6989586621680597494"><span id="local-6989586621680597496"><span id="local-6989586621680597498"><span id="local-6989586621680597500"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597500"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Enum</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597500"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span id="local-6989586621680597478"><span id="local-6989586621680597480"><span id="local-6989586621680597482"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597482"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Bounded</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597482"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span id="local-6989586621680597476"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597476"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597476"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Option</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Last</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier hs-type">Colour</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680597476"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span>  </span><span id="local-6989586621680597473"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (ColorT a)) (f (Unwrapped (ColorT a)))
+-&gt; p (ColorT a) (f (ColorT a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ColorT a -&gt; Couple (Option (Last (Colour Double))) a)
+-&gt; (Couple (Option (Last (Colour Double))) a -&gt; ColorT a)
+-&gt; Iso
+     (ColorT a)
+     (ColorT a)
+     (Couple (Option (Last (Colour Double))) a)
+     (Couple (Option (Last (Colour Double))) a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">ColorT a -&gt; Couple (Option (Last (Colour Double))) a
+forall a. ColorT a -&gt; Couple (Option (Last (Colour Double))) a
+</span><a href="Music.Score.Color.html#getColorT"><span class="hs-identifier hs-var hs-var">getColorT</span></a></span><span> </span><span class="annot"><span class="annottext">Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+forall a. Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+</span><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-var">ColorT</span></a></span></span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span id="local-6989586621680597469"><span id="local-6989586621680597470"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597470"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597469"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span id="local-6989586621680597466"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597466"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-111"></span><span>  </span><span id="local-6989586621680597464"><span class="annot"><span class="annottext">setColor :: Colour Double -&gt; ColorT a -&gt; ColorT a
+</span><a href="#local-6989586621680597464"><span class="hs-identifier hs-var hs-var hs-var hs-var">setColor</span></a></span></span><span> </span><span id="local-6989586621680597463"><span class="annot"><span class="annottext">s :: Colour Double
+</span><a href="#local-6989586621680597463"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680597462"><span class="annot"><span class="annottext">t :: Option (Last (Colour Double))
+</span><a href="#local-6989586621680597462"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597461"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680597461"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+forall a. Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+</span><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-var">ColorT</span></a></span><span> </span><span class="annot"><span class="annottext">(Couple (Option (Last (Colour Double))) a -&gt; ColorT a)
+-&gt; Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Option (Last (Colour Double)), a)
+-&gt; Couple (Option (Last (Colour Double))) a
+forall b a. (b, a) -&gt; Couple b a
+</span><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-var">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Option (Last (Colour Double))
+</span><a href="#local-6989586621680597462"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Option (Last (Colour Double))
+-&gt; Option (Last (Colour Double)) -&gt; Option (Last (Colour Double))
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Colour Double -&gt; Option (Last (Colour Double))
+forall a. a -&gt; Option (Last a)
+</span><a href="#local-6989586621680597460"><span class="hs-identifier hs-var">wrap</span></a></span><span> </span><span class="annot"><span class="annottext">Colour Double
+</span><a href="#local-6989586621680597463"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680597461"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-113"></span><span>      </span><span id="local-6989586621680597460"><span class="annot"><span class="annottext">wrap :: a -&gt; Option (Last a)
+</span><a href="#local-6989586621680597460"><span class="hs-identifier hs-var hs-var">wrap</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Last a) -&gt; Option (Last a)
+forall a. Maybe a -&gt; Option a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Option</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe (Last a) -&gt; Option (Last a))
+-&gt; (a -&gt; Maybe (Last a)) -&gt; a -&gt; Option (Last a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Last a -&gt; Maybe (Last a)
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">(Last a -&gt; Maybe (Last a)) -&gt; (a -&gt; Last a) -&gt; a -&gt; Maybe (Last a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Last a
+forall a. a -&gt; Last a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Last</span></a></span></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span id="local-6989586621680597456"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597451"><span id="local-6989586621680597453"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597456"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597456"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-116"></span><span>  </span><span id="local-6989586621680597449"><span class="annot"><span class="annottext">&lt;&gt; :: ColorT a -&gt; ColorT a -&gt; ColorT a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;&gt;)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(a -&gt; a -&gt; a) -&gt; ColorT a -&gt; ColorT a -&gt; ColorT a
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(&lt;&gt;)</span></a></span></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span id="local-6989586621680597447"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680597443"><span id="local-6989586621680597445"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597447"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597447"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-119"></span><span>  </span><span id="local-6989586621680597440"><span class="annot"><span class="annottext">toTied :: ColorT a -&gt; (ColorT a, ColorT a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-type">ColorT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-type">Couple</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680597438"><span class="annot"><span class="annottext">n :: Option (Last (Colour Double))
+</span><a href="#local-6989586621680597438"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597437"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680597437"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+forall a. Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+</span><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-var">ColorT</span></a></span><span> </span><span class="annot"><span class="annottext">(Couple (Option (Last (Colour Double))) a -&gt; ColorT a)
+-&gt; Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Option (Last (Colour Double)), a)
+-&gt; Couple (Option (Last (Colour Double))) a
+forall b a. (b, a) -&gt; Couple b a
+</span><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-var">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Option (Last (Colour Double))
+</span><a href="#local-6989586621680597438"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680597436"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+forall a. Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+</span><a href="Music.Score.Color.html#ColorT"><span class="hs-identifier hs-var">ColorT</span></a></span><span> </span><span class="annot"><span class="annottext">(Couple (Option (Last (Colour Double))) a -&gt; ColorT a)
+-&gt; Couple (Option (Last (Colour Double))) a -&gt; ColorT a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Option (Last (Colour Double)), a)
+-&gt; Couple (Option (Last (Colour Double))) a
+forall b a. (b, a) -&gt; Couple b a
+</span><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-var">Couple</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Option (Last (Colour Double))
+</span><a href="#local-6989586621680597438"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680597435"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-120"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-121"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621680597436"><span class="annot"><span class="annottext">b :: a
+</span><a href="#local-6989586621680597436"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680597435"><span class="annot"><span class="annottext">c :: a
+</span><a href="#local-6989586621680597435"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; (a, a)
+forall a. Tiable a =&gt; a -&gt; (a, a)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var">toTied</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680597437"><span class="hs-identifier hs-var">a</span></a></span></span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-124"></span><span class="hs-comment">-- Set color of all notes in the score.</span><span>
+</span><span id="line-125"></span><span id="local-6989586621680597434"><span class="annot"><a href="Music.Score.Color.html#color"><span class="hs-identifier hs-type">color</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597434"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier hs-type">Colour</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597434"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597434"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-126"></span><span id="color"><span class="annot"><span class="annottext">color :: Colour Double -&gt; a -&gt; a
+</span><a href="Music.Score.Color.html#color"><span class="hs-identifier hs-var hs-var">color</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Colour Double -&gt; a -&gt; a
+forall a. HasColor a =&gt; Colour Double -&gt; a -&gt; a
+</span><a href="Music.Score.Color.html#setColor"><span class="hs-identifier hs-var">setColor</span></a></span><span>
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-129"></span><span class="hs-comment">-- Color all notes in the score red.</span><span>
+</span><span id="line-130"></span><span id="local-6989586621680597433"><span class="annot"><a href="Music.Score.Color.html#colorRed"><span class="hs-identifier hs-type">colorRed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597433"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597433"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597433"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-131"></span><span id="colorRed"><span class="annot"><span class="annottext">colorRed :: a -&gt; a
+</span><a href="Music.Score.Color.html#colorRed"><span class="hs-identifier hs-var hs-var">colorRed</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Colour Double -&gt; a -&gt; a
+forall a. HasColor a =&gt; Colour Double -&gt; a -&gt; a
+</span><a href="Music.Score.Color.html#color"><span class="hs-identifier hs-var">color</span></a></span><span> </span><span class="annot"><span class="annottext">Colour Double
+forall a. (Ord a, Floating a) =&gt; Colour a
+</span><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier hs-var">C.red</span></a></span><span>
+</span><span id="line-132"></span><span>
+</span><span id="line-133"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- Color all notes in the score blue.</span><span>
+</span><span id="line-135"></span><span id="local-6989586621680597431"><span class="annot"><a href="Music.Score.Color.html#colorBlue"><span class="hs-identifier hs-type">colorBlue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597431"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597431"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597431"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-136"></span><span id="colorBlue"><span class="annot"><span class="annottext">colorBlue :: a -&gt; a
+</span><a href="Music.Score.Color.html#colorBlue"><span class="hs-identifier hs-var hs-var">colorBlue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Colour Double -&gt; a -&gt; a
+forall a. HasColor a =&gt; Colour Double -&gt; a -&gt; a
+</span><a href="Music.Score.Color.html#color"><span class="hs-identifier hs-var">color</span></a></span><span> </span><span class="annot"><span class="annottext">Colour Double
+forall a. (Ord a, Floating a) =&gt; Colour a
+</span><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier hs-var">C.blue</span></a></span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-139"></span><span class="hs-comment">-- Color all notes in the score black.</span><span>
+</span><span id="line-140"></span><span id="local-6989586621680597429"><span class="annot"><a href="Music.Score.Color.html#colorBlack"><span class="hs-identifier hs-type">colorBlack</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Score.Color.html#HasColor"><span class="hs-identifier hs-type">HasColor</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680597429"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597429"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680597429"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-141"></span><span id="colorBlack"><span class="annot"><span class="annottext">colorBlack :: a -&gt; a
+</span><a href="Music.Score.Color.html#colorBlack"><span class="hs-identifier hs-var hs-var">colorBlack</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Colour Double -&gt; a -&gt; a
+forall a. HasColor a =&gt; Colour Double -&gt; a -&gt; a
+</span><a href="Music.Score.Color.html#color"><span class="hs-identifier hs-var">color</span></a></span><span> </span><span class="annot"><span class="annottext">Colour Double
+forall a. Num a =&gt; Colour a
+</span><a href="../file:///nix/store/k3irns0ihl5b8m68yhyd0g48y5yffpcb-colour-2.3.5-doc/share/doc/colour-2.3.5/html/src"><span class="hs-identifier hs-var">C.black</span></a></span><span>
+</span><span id="line-142"></span></pre></body></html>

@@ -1,0 +1,1044 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-deprecations
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Time.Note</span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Note type</span></span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier">Note</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Construction</span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Time.Note.html#note"><span class="hs-identifier">note</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Time.Note.html#notee"><span class="hs-identifier">notee</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Time.Note.html#durationNote"><span class="hs-identifier">durationNote</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- noteComplement,</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Control.Applicative</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Comonad</span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-keyword">hiding</span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-operator">(&lt;|)</span></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><span class="hs-identifier">Indexable</span></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><span class="hs-identifier">Level</span></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="hs-identifier">below</span></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="hs-identifier">index</span></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="hs-identifier">inside</span></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="hs-identifier">parts</span></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><span class="hs-identifier">reversed</span></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><span class="hs-identifier">transform</span></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><span class="hs-operator">(|&gt;)</span></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">FromJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">ToJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">JSON</span></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Bifunctor</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Foldable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Foldable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Foldable</span></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Couple.html"><span class="hs-identifier">Data.Functor.Couple</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.String</span></a></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Typeable</span></a></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.VectorSpace</span></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Internal.Util.html"><span class="hs-identifier">Music.Time.Internal.Util</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Util.html#dependingOn"><span class="hs-identifier">dependingOn</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Juxtapose.html"><span class="hs-identifier">Music.Time.Juxtapose</span></a></span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- A value 'Note' value, representing a value stretched by some 'Duration'.</span><span>
+</span><span id="line-54"></span><span class="hs-keyword">newtype</span><span> </span><span id="Note"><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-var">Note</span></a></span></span><span> </span><span id="local-6989586621680573036"><span class="annot"><a href="#local-6989586621680573036"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Note"><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-var">Note</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getNote"><span class="annot"><span class="annottext">Note a -&gt; Couple Duration a
+</span><a href="Music.Time.Note.html#getNote"><span class="hs-identifier hs-var hs-var">getNote</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="annot"><a href="Data.Functor.Couple.html#Couple"><span class="hs-operator hs-type">`Couple`</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573036"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-keyword">deriving</span><span>
+</span><span id="line-56"></span><span>    </span><span class="hs-special">(</span><span> </span><span id="local-6989586621680572915"><span id="local-6989586621680572917"><span class="annot"><span class="annottext">Note a -&gt; Note a -&gt; Bool
+(Note a -&gt; Note a -&gt; Bool)
+-&gt; (Note a -&gt; Note a -&gt; Bool) -&gt; Eq (Note a)
+forall a. Eq a =&gt; Note a -&gt; Note a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Note a -&gt; Note a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; Note a -&gt; Note a -&gt; Bool
+== :: Note a -&gt; Note a -&gt; Bool
+$c== :: forall a. Eq a =&gt; Note a -&gt; Note a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-57"></span><span>      </span><span id="local-6989586621680572899"><span id="local-6989586621680572901"><span id="local-6989586621680572903"><span id="local-6989586621680572905"><span id="local-6989586621680572907"><span id="local-6989586621680572909"><span id="local-6989586621680572911"><span class="annot"><span class="annottext">Eq (Note a)
+Eq (Note a) =&gt;
+(Note a -&gt; Note a -&gt; Ordering)
+-&gt; (Note a -&gt; Note a -&gt; Bool)
+-&gt; (Note a -&gt; Note a -&gt; Bool)
+-&gt; (Note a -&gt; Note a -&gt; Bool)
+-&gt; (Note a -&gt; Note a -&gt; Bool)
+-&gt; (Note a -&gt; Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a -&gt; Note a)
+-&gt; Ord (Note a)
+Note a -&gt; Note a -&gt; Bool
+Note a -&gt; Note a -&gt; Ordering
+Note a -&gt; Note a -&gt; Note a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (Note a)
+forall a. Ord a =&gt; Note a -&gt; Note a -&gt; Bool
+forall a. Ord a =&gt; Note a -&gt; Note a -&gt; Ordering
+forall a. Ord a =&gt; Note a -&gt; Note a -&gt; Note a
+min :: Note a -&gt; Note a -&gt; Note a
+$cmin :: forall a. Ord a =&gt; Note a -&gt; Note a -&gt; Note a
+max :: Note a -&gt; Note a -&gt; Note a
+$cmax :: forall a. Ord a =&gt; Note a -&gt; Note a -&gt; Note a
+&gt;= :: Note a -&gt; Note a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; Note a -&gt; Note a -&gt; Bool
+&gt; :: Note a -&gt; Note a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; Note a -&gt; Note a -&gt; Bool
+&lt;= :: Note a -&gt; Note a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; Note a -&gt; Note a -&gt; Bool
+&lt; :: Note a -&gt; Note a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; Note a -&gt; Note a -&gt; Bool
+compare :: Note a -&gt; Note a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; Note a -&gt; Note a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (Note a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-58"></span><span>      </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Typeable</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-59"></span><span>      </span><span id="local-6989586621680572864"><span id="local-6989586621680572866"><span id="local-6989586621680572868"><span id="local-6989586621680572870"><span id="local-6989586621680572872"><span id="local-6989586621680572874"><span id="local-6989586621680572876"><span id="local-6989586621680572878"><span id="local-6989586621680572880"><span id="local-6989586621680572882"><span id="local-6989586621680572884"><span id="local-6989586621680572886"><span id="local-6989586621680572888"><span id="local-6989586621680572890"><span id="local-6989586621680572892"><span id="local-6989586621680572894"><span id="local-6989586621680572896"><span class="annot"><span class="annottext">a -&gt; Note a -&gt; Bool
+Note m -&gt; m
+Note a -&gt; [a]
+Note a -&gt; Bool
+Note a -&gt; Int
+Note a -&gt; a
+Note a -&gt; a
+Note a -&gt; a
+Note a -&gt; a
+(a -&gt; m) -&gt; Note a -&gt; m
+(a -&gt; m) -&gt; Note a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; Note a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; Note a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; Note a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; Note a -&gt; b
+(a -&gt; a -&gt; a) -&gt; Note a -&gt; a
+(a -&gt; a -&gt; a) -&gt; Note a -&gt; a
+(forall m. Monoid m =&gt; Note m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Note a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Note a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Note a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Note a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Note a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Note a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Note a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Note a -&gt; a)
+-&gt; (forall a. Note a -&gt; [a])
+-&gt; (forall a. Note a -&gt; Bool)
+-&gt; (forall a. Note a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; Note a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; Note a -&gt; a)
+-&gt; (forall a. Ord a =&gt; Note a -&gt; a)
+-&gt; (forall a. Num a =&gt; Note a -&gt; a)
+-&gt; (forall a. Num a =&gt; Note a -&gt; a)
+-&gt; Foldable Note
+forall a. Eq a =&gt; a -&gt; Note a -&gt; Bool
+forall a. Num a =&gt; Note a -&gt; a
+forall a. Ord a =&gt; Note a -&gt; a
+forall m. Monoid m =&gt; Note m -&gt; m
+forall a. Note a -&gt; Bool
+forall a. Note a -&gt; Int
+forall a. Note a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; Note a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Note a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Note a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Note a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: Note a -&gt; a
+$cproduct :: forall a. Num a =&gt; Note a -&gt; a
+sum :: Note a -&gt; a
+$csum :: forall a. Num a =&gt; Note a -&gt; a
+minimum :: Note a -&gt; a
+$cminimum :: forall a. Ord a =&gt; Note a -&gt; a
+maximum :: Note a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; Note a -&gt; a
+elem :: a -&gt; Note a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; Note a -&gt; Bool
+length :: Note a -&gt; Int
+$clength :: forall a. Note a -&gt; Int
+null :: Note a -&gt; Bool
+$cnull :: forall a. Note a -&gt; Bool
+toList :: Note a -&gt; [a]
+$ctoList :: forall a. Note a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; Note a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; Note a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; Note a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; Note a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; Note a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Note a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; Note a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Note a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; Note a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Note a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; Note a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Note a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; Note a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Note a -&gt; m
+foldMap :: (a -&gt; m) -&gt; Note a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Note a -&gt; m
+fold :: Note m -&gt; m
+$cfold :: forall m. Monoid m =&gt; Note m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-60"></span><span>      </span><span id="local-6989586621680572853"><span id="local-6989586621680572855"><span id="local-6989586621680572857"><span id="local-6989586621680572859"><span class="annot"><span class="annottext">Functor Note
+Foldable Note
+(Functor Note, Foldable Note) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; Note a -&gt; f (Note b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    Note (f a) -&gt; f (Note a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; Note a -&gt; m (Note b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; Note (m a) -&gt; m (Note a))
+-&gt; Traversable Note
+(a -&gt; f b) -&gt; Note a -&gt; f (Note b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; Note (m a) -&gt; m (Note a)
+forall (f :: * -&gt; *) a. Applicative f =&gt; Note (f a) -&gt; f (Note a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Note a -&gt; m (Note b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Note a -&gt; f (Note b)
+sequence :: Note (m a) -&gt; m (Note a)
+$csequence :: forall (m :: * -&gt; *) a. Monad m =&gt; Note (m a) -&gt; m (Note a)
+mapM :: (a -&gt; m b) -&gt; Note a -&gt; m (Note b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Note a -&gt; m (Note b)
+sequenceA :: Note (f a) -&gt; f (Note a)
+$csequenceA :: forall (f :: * -&gt; *) a. Applicative f =&gt; Note (f a) -&gt; f (Note a)
+traverse :: (a -&gt; f b) -&gt; Note a -&gt; f (Note b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Note a -&gt; f (Note b)
+$cp2Traversable :: Foldable Note
+$cp1Traversable :: Functor Note
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-61"></span><span>      </span><span id="local-6989586621680572848"><span id="local-6989586621680572850"><span class="annot"><span class="annottext">a -&gt; Note b -&gt; Note a
+(a -&gt; b) -&gt; Note a -&gt; Note b
+(forall a b. (a -&gt; b) -&gt; Note a -&gt; Note b)
+-&gt; (forall a b. a -&gt; Note b -&gt; Note a) -&gt; Functor Note
+forall a b. a -&gt; Note b -&gt; Note a
+forall a b. (a -&gt; b) -&gt; Note a -&gt; Note b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; Note b -&gt; Note a
+$c&lt;$ :: forall a b. a -&gt; Note b -&gt; Note a
+fmap :: (a -&gt; b) -&gt; Note a -&gt; Note b
+$cfmap :: forall a b. (a -&gt; b) -&gt; Note a -&gt; Note b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-62"></span><span>      </span><span id="local-6989586621680572836"><span id="local-6989586621680572838"><span id="local-6989586621680572840"><span id="local-6989586621680572842"><span id="local-6989586621680572844"><span class="annot"><span class="annottext">Functor Note
+a -&gt; Note a
+Functor Note =&gt;
+(forall a. a -&gt; Note a)
+-&gt; (forall a b. Note (a -&gt; b) -&gt; Note a -&gt; Note b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; Note a -&gt; Note b -&gt; Note c)
+-&gt; (forall a b. Note a -&gt; Note b -&gt; Note b)
+-&gt; (forall a b. Note a -&gt; Note b -&gt; Note a)
+-&gt; Applicative Note
+Note a -&gt; Note b -&gt; Note b
+Note a -&gt; Note b -&gt; Note a
+Note (a -&gt; b) -&gt; Note a -&gt; Note b
+(a -&gt; b -&gt; c) -&gt; Note a -&gt; Note b -&gt; Note c
+forall a. a -&gt; Note a
+forall a b. Note a -&gt; Note b -&gt; Note a
+forall a b. Note a -&gt; Note b -&gt; Note b
+forall a b. Note (a -&gt; b) -&gt; Note a -&gt; Note b
+forall a b c. (a -&gt; b -&gt; c) -&gt; Note a -&gt; Note b -&gt; Note c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: Note a -&gt; Note b -&gt; Note a
+$c&lt;* :: forall a b. Note a -&gt; Note b -&gt; Note a
+*&gt; :: Note a -&gt; Note b -&gt; Note b
+$c*&gt; :: forall a b. Note a -&gt; Note b -&gt; Note b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; Note a -&gt; Note b -&gt; Note c
+$cliftA2 :: forall a b c. (a -&gt; b -&gt; c) -&gt; Note a -&gt; Note b -&gt; Note c
+&lt;*&gt; :: Note (a -&gt; b) -&gt; Note a -&gt; Note b
+$c&lt;*&gt; :: forall a b. Note (a -&gt; b) -&gt; Note a -&gt; Note b
+pure :: a -&gt; Note a
+$cpure :: forall a. a -&gt; Note a
+$cp1Applicative :: Functor Note
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-63"></span><span>      </span><span id="local-6989586621680572828"><span id="local-6989586621680572830"><span id="local-6989586621680572832"><span class="annot"><span class="annottext">Applicative Note
+a -&gt; Note a
+Applicative Note =&gt;
+(forall a b. Note a -&gt; (a -&gt; Note b) -&gt; Note b)
+-&gt; (forall a b. Note a -&gt; Note b -&gt; Note b)
+-&gt; (forall a. a -&gt; Note a)
+-&gt; Monad Note
+Note a -&gt; (a -&gt; Note b) -&gt; Note b
+Note a -&gt; Note b -&gt; Note b
+forall a. a -&gt; Note a
+forall a b. Note a -&gt; Note b -&gt; Note b
+forall a b. Note a -&gt; (a -&gt; Note b) -&gt; Note b
+forall (m :: * -&gt; *).
+Applicative m =&gt;
+(forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; Note a
+$creturn :: forall a. a -&gt; Note a
+&gt;&gt; :: Note a -&gt; Note b -&gt; Note b
+$c&gt;&gt; :: forall a b. Note a -&gt; Note b -&gt; Note b
+&gt;&gt;= :: Note a -&gt; (a -&gt; Note b) -&gt; Note b
+$c&gt;&gt;= :: forall a b. Note a -&gt; (a -&gt; Note b) -&gt; Note b
+$cp1Monad :: Applicative Note
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-64"></span><span>      </span><span id="local-6989586621680572820"><span id="local-6989586621680572822"><span id="local-6989586621680572824"><span class="annot"><span class="annottext">Functor Note
+Functor Note =&gt;
+(forall a. Note a -&gt; a)
+-&gt; (forall a. Note a -&gt; Note (Note a))
+-&gt; (forall a b. (Note a -&gt; b) -&gt; Note a -&gt; Note b)
+-&gt; Comonad Note
+Note a -&gt; a
+Note a -&gt; Note (Note a)
+(Note a -&gt; b) -&gt; Note a -&gt; Note b
+forall a. Note a -&gt; a
+forall a. Note a -&gt; Note (Note a)
+forall a b. (Note a -&gt; b) -&gt; Note a -&gt; Note b
+forall (w :: * -&gt; *).
+Functor w =&gt;
+(forall a. w a -&gt; a)
+-&gt; (forall a. w a -&gt; w (w a))
+-&gt; (forall a b. (w a -&gt; b) -&gt; w a -&gt; w b)
+-&gt; Comonad w
+extend :: (Note a -&gt; b) -&gt; Note a -&gt; Note b
+$cextend :: forall a b. (Note a -&gt; b) -&gt; Note a -&gt; Note b
+duplicate :: Note a -&gt; Note (Note a)
+$cduplicate :: forall a. Note a -&gt; Note (Note a)
+extract :: Note a -&gt; a
+$cextract :: forall a. Note a -&gt; a
+$cp1Comonad :: Functor Note
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Comonad</span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-65"></span><span>      </span><span id="local-6989586621680572805"><span id="local-6989586621680572807"><span id="local-6989586621680572809"><span id="local-6989586621680572811"><span id="local-6989586621680572813"><span id="local-6989586621680572815"><span id="local-6989586621680572817"><span class="annot"><span class="annottext">Integer -&gt; Note a
+Note a -&gt; Note a
+Note a -&gt; Note a -&gt; Note a
+(Note a -&gt; Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Integer -&gt; Note a)
+-&gt; Num (Note a)
+forall a. Num a =&gt; Integer -&gt; Note a
+forall a. Num a =&gt; Note a -&gt; Note a
+forall a. Num a =&gt; Note a -&gt; Note a -&gt; Note a
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Integer -&gt; a)
+-&gt; Num a
+fromInteger :: Integer -&gt; Note a
+$cfromInteger :: forall a. Num a =&gt; Integer -&gt; Note a
+signum :: Note a -&gt; Note a
+$csignum :: forall a. Num a =&gt; Note a -&gt; Note a
+abs :: Note a -&gt; Note a
+$cabs :: forall a. Num a =&gt; Note a -&gt; Note a
+negate :: Note a -&gt; Note a
+$cnegate :: forall a. Num a =&gt; Note a -&gt; Note a
+* :: Note a -&gt; Note a -&gt; Note a
+$c* :: forall a. Num a =&gt; Note a -&gt; Note a -&gt; Note a
+- :: Note a -&gt; Note a -&gt; Note a
+$c- :: forall a. Num a =&gt; Note a -&gt; Note a -&gt; Note a
++ :: Note a -&gt; Note a -&gt; Note a
+$c+ :: forall a. Num a =&gt; Note a -&gt; Note a -&gt; Note a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-66"></span><span>      </span><span id="local-6989586621680572797"><span id="local-6989586621680572799"><span id="local-6989586621680572801"><span class="annot"><span class="annottext">Num (Note a)
+Num (Note a) =&gt;
+(Note a -&gt; Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Rational -&gt; Note a)
+-&gt; Fractional (Note a)
+Rational -&gt; Note a
+Note a -&gt; Note a
+Note a -&gt; Note a -&gt; Note a
+forall a. Fractional a =&gt; Num (Note a)
+forall a. Fractional a =&gt; Rational -&gt; Note a
+forall a. Fractional a =&gt; Note a -&gt; Note a
+forall a. Fractional a =&gt; Note a -&gt; Note a -&gt; Note a
+forall a.
+Num a =&gt;
+(a -&gt; a -&gt; a) -&gt; (a -&gt; a) -&gt; (Rational -&gt; a) -&gt; Fractional a
+fromRational :: Rational -&gt; Note a
+$cfromRational :: forall a. Fractional a =&gt; Rational -&gt; Note a
+recip :: Note a -&gt; Note a
+$crecip :: forall a. Fractional a =&gt; Note a -&gt; Note a
+/ :: Note a -&gt; Note a -&gt; Note a
+$c/ :: forall a. Fractional a =&gt; Note a -&gt; Note a -&gt; Note a
+$cp1Fractional :: forall a. Fractional a =&gt; Num (Note a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Fractional</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-67"></span><span>      </span><span id="local-6989586621680572751"><span id="local-6989586621680572753"><span id="local-6989586621680572755"><span id="local-6989586621680572757"><span id="local-6989586621680572759"><span id="local-6989586621680572761"><span id="local-6989586621680572763"><span id="local-6989586621680572765"><span id="local-6989586621680572767"><span id="local-6989586621680572769"><span id="local-6989586621680572771"><span id="local-6989586621680572773"><span id="local-6989586621680572775"><span id="local-6989586621680572777"><span id="local-6989586621680572779"><span id="local-6989586621680572781"><span id="local-6989586621680572783"><span id="local-6989586621680572785"><span id="local-6989586621680572787"><span id="local-6989586621680572789"><span id="local-6989586621680572791"><span id="local-6989586621680572793"><span class="annot"><span class="annottext">Fractional (Note a)
+Note a
+Fractional (Note a) =&gt;
+Note a
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; (Note a -&gt; Note a)
+-&gt; Floating (Note a)
+Note a -&gt; Note a
+Note a -&gt; Note a -&gt; Note a
+forall a. Floating a =&gt; Fractional (Note a)
+forall a. Floating a =&gt; Note a
+forall a. Floating a =&gt; Note a -&gt; Note a
+forall a. Floating a =&gt; Note a -&gt; Note a -&gt; Note a
+forall a.
+Fractional a =&gt;
+a
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; Floating a
+log1mexp :: Note a -&gt; Note a
+$clog1mexp :: forall a. Floating a =&gt; Note a -&gt; Note a
+log1pexp :: Note a -&gt; Note a
+$clog1pexp :: forall a. Floating a =&gt; Note a -&gt; Note a
+expm1 :: Note a -&gt; Note a
+$cexpm1 :: forall a. Floating a =&gt; Note a -&gt; Note a
+log1p :: Note a -&gt; Note a
+$clog1p :: forall a. Floating a =&gt; Note a -&gt; Note a
+atanh :: Note a -&gt; Note a
+$catanh :: forall a. Floating a =&gt; Note a -&gt; Note a
+acosh :: Note a -&gt; Note a
+$cacosh :: forall a. Floating a =&gt; Note a -&gt; Note a
+asinh :: Note a -&gt; Note a
+$casinh :: forall a. Floating a =&gt; Note a -&gt; Note a
+tanh :: Note a -&gt; Note a
+$ctanh :: forall a. Floating a =&gt; Note a -&gt; Note a
+cosh :: Note a -&gt; Note a
+$ccosh :: forall a. Floating a =&gt; Note a -&gt; Note a
+sinh :: Note a -&gt; Note a
+$csinh :: forall a. Floating a =&gt; Note a -&gt; Note a
+atan :: Note a -&gt; Note a
+$catan :: forall a. Floating a =&gt; Note a -&gt; Note a
+acos :: Note a -&gt; Note a
+$cacos :: forall a. Floating a =&gt; Note a -&gt; Note a
+asin :: Note a -&gt; Note a
+$casin :: forall a. Floating a =&gt; Note a -&gt; Note a
+tan :: Note a -&gt; Note a
+$ctan :: forall a. Floating a =&gt; Note a -&gt; Note a
+cos :: Note a -&gt; Note a
+$ccos :: forall a. Floating a =&gt; Note a -&gt; Note a
+sin :: Note a -&gt; Note a
+$csin :: forall a. Floating a =&gt; Note a -&gt; Note a
+logBase :: Note a -&gt; Note a -&gt; Note a
+$clogBase :: forall a. Floating a =&gt; Note a -&gt; Note a -&gt; Note a
+** :: Note a -&gt; Note a -&gt; Note a
+$c** :: forall a. Floating a =&gt; Note a -&gt; Note a -&gt; Note a
+sqrt :: Note a -&gt; Note a
+$csqrt :: forall a. Floating a =&gt; Note a -&gt; Note a
+log :: Note a -&gt; Note a
+$clog :: forall a. Floating a =&gt; Note a -&gt; Note a
+exp :: Note a -&gt; Note a
+$cexp :: forall a. Floating a =&gt; Note a -&gt; Note a
+pi :: Note a
+$cpi :: forall a. Floating a =&gt; Note a
+$cp1Floating :: forall a. Floating a =&gt; Fractional (Note a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Floating</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-68"></span><span>      </span><span id="local-6989586621680572746"><span class="annot"><span class="annottext">Num (Note a)
+Ord (Note a)
+(Num (Note a), Ord (Note a)) =&gt;
+(Note a -&gt; Rational) -&gt; Real (Note a)
+Note a -&gt; Rational
+forall a. (Num a, Ord a) =&gt; (a -&gt; Rational) -&gt; Real a
+forall a. Real a =&gt; Num (Note a)
+forall a. Real a =&gt; Ord (Note a)
+forall a. Real a =&gt; Note a -&gt; Rational
+toRational :: Note a -&gt; Rational
+$ctoRational :: forall a. Real a =&gt; Note a -&gt; Rational
+$cp2Real :: forall a. Real a =&gt; Ord (Note a)
+$cp1Real :: forall a. Real a =&gt; Num (Note a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Real</span></a></span></span><span class="hs-special">,</span><span>
+</span><span id="line-69"></span><span>      </span><span id="local-6989586621680572733"><span id="local-6989586621680572735"><span id="local-6989586621680572737"><span id="local-6989586621680572739"><span id="local-6989586621680572741"><span class="annot"><span class="annottext">Fractional (Note a)
+Real (Note a)
+(Real (Note a), Fractional (Note a)) =&gt;
+(forall b. Integral b =&gt; Note a -&gt; (b, Note a))
+-&gt; (forall b. Integral b =&gt; Note a -&gt; b)
+-&gt; (forall b. Integral b =&gt; Note a -&gt; b)
+-&gt; (forall b. Integral b =&gt; Note a -&gt; b)
+-&gt; (forall b. Integral b =&gt; Note a -&gt; b)
+-&gt; RealFrac (Note a)
+Note a -&gt; b
+Note a -&gt; b
+Note a -&gt; b
+Note a -&gt; b
+Note a -&gt; (b, Note a)
+forall b. Integral b =&gt; Note a -&gt; b
+forall b. Integral b =&gt; Note a -&gt; (b, Note a)
+forall a.
+(Real a, Fractional a) =&gt;
+(forall b. Integral b =&gt; a -&gt; (b, a))
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; (forall b. Integral b =&gt; a -&gt; b)
+-&gt; RealFrac a
+forall a. RealFrac a =&gt; Fractional (Note a)
+forall a. RealFrac a =&gt; Real (Note a)
+forall a b. (RealFrac a, Integral b) =&gt; Note a -&gt; b
+forall a b. (RealFrac a, Integral b) =&gt; Note a -&gt; (b, Note a)
+floor :: Note a -&gt; b
+$cfloor :: forall a b. (RealFrac a, Integral b) =&gt; Note a -&gt; b
+ceiling :: Note a -&gt; b
+$cceiling :: forall a b. (RealFrac a, Integral b) =&gt; Note a -&gt; b
+round :: Note a -&gt; b
+$cround :: forall a b. (RealFrac a, Integral b) =&gt; Note a -&gt; b
+truncate :: Note a -&gt; b
+$ctruncate :: forall a b. (RealFrac a, Integral b) =&gt; Note a -&gt; b
+properFraction :: Note a -&gt; (b, Note a)
+$cproperFraction :: forall a b. (RealFrac a, Integral b) =&gt; Note a -&gt; (b, Note a)
+$cp2RealFrac :: forall a. RealFrac a =&gt; Fractional (Note a)
+$cp1RealFrac :: forall a. RealFrac a =&gt; Real (Note a)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">RealFrac</span></a></span></span></span></span></span></span><span>
+</span><span id="line-70"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span id="local-6989586621680572731"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680572726"><span id="local-6989586621680572729"><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572731"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572731"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-73"></span><span>  </span><span id="local-6989586621680572724"><span class="annot"><span class="annottext">show :: Note a -&gt; String
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span id="local-6989586621680572722"><span class="annot"><span class="annottext">x :: Note a
+</span><a href="#local-6989586621680572722"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Duration, a) -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Note a
+</span><a href="#local-6989586621680572722"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Note a
+-&gt; Getting (Duration, a) (Note a) (Duration, a) -&gt; (Duration, a)
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+-&gt; Iso (Note a) (Note a) (Duration, a) (Duration, a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;^.note&quot;</span></span></span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span id="local-6989586621680572719"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572719"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572719"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680572719"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span>  </span><span id="local-6989586621680572716"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped (Note a)) (f (Unwrapped (Note a)))
+-&gt; p (Note a) (f (Note a))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Note a -&gt; (Duration, a))
+-&gt; ((Duration, a) -&gt; Note a)
+-&gt; Iso (Note a) (Note a) (Duration, a) (Duration, a)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Couple Duration a -&gt; (Duration, a)
+forall b a. Couple b a -&gt; (b, a)
+</span><a href="Data.Functor.Couple.html#getCouple"><span class="hs-identifier hs-var hs-var">getCouple</span></a></span><span> </span><span class="annot"><span class="annottext">(Couple Duration a -&gt; (Duration, a))
+-&gt; (Note a -&gt; Couple Duration a) -&gt; Note a -&gt; (Duration, a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Note a -&gt; Couple Duration a
+forall a. Note a -&gt; Couple Duration a
+</span><a href="Music.Time.Note.html#getNote"><span class="hs-identifier hs-var hs-var">getNote</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Couple Duration a -&gt; Note a
+forall a. Couple Duration a -&gt; Note a
+</span><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-var">Note</span></a></span><span> </span><span class="annot"><span class="annottext">(Couple Duration a -&gt; Note a)
+-&gt; ((Duration, a) -&gt; Couple Duration a) -&gt; (Duration, a) -&gt; Note a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration, a) -&gt; Couple Duration a
+forall b a. (b, a) -&gt; Couple b a
+</span><a href="Data.Functor.Couple.html#Couple"><span class="hs-identifier hs-var">Couple</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span id="local-6989586621680572709"><span id="local-6989586621680572710"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572710"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572709"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span id="local-6989586621680572706"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572706"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-84"></span><span>  </span><span id="local-6989586621680572703"><span class="annot"><span class="annottext">transform :: Span -&gt; Note a -&gt; Note a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span id="local-6989586621680572701"><span class="annot"><span class="annottext">t :: Span
+</span><a href="#local-6989586621680572701"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter (Note a) (Note a) Duration Duration
+-&gt; (Duration -&gt; Duration) -&gt; Note a -&gt; Note a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+-&gt; Iso (Note a) (Note a) (Duration, a) (Duration, a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span><span> </span><span class="annot"><span class="annottext">(((Duration, a) -&gt; Identity (Duration, a))
+ -&gt; Note a -&gt; Identity (Note a))
+-&gt; ((Duration -&gt; Identity Duration)
+    -&gt; (Duration, a) -&gt; Identity (Duration, a))
+-&gt; ASetter (Note a) (Note a) Duration Duration
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Duration -&gt; Identity Duration)
+-&gt; (Duration, a) -&gt; Identity (Duration, a)
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; Duration -&gt; Duration
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680572701"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span id="local-6989586621680572698"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572698"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-87"></span><span>  </span><span id="local-6989586621680572695"><span class="annot"><span class="annottext">_duration :: Note a -&gt; Duration
+</span><a href="Music.Time.Duration.html#_duration"><span class="hs-identifier hs-var hs-var hs-var hs-var">_duration</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Duration, a) -&gt; Duration
+forall a b. (a, b) -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fst</span></a></span><span> </span><span class="annot"><span class="annottext">((Duration, a) -&gt; Duration)
+-&gt; (Note a -&gt; (Duration, a)) -&gt; Note a -&gt; Duration
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting (Duration, a) (Note a) (Duration, a)
+-&gt; Note a -&gt; (Duration, a)
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+-&gt; Iso (Note a) (Note a) (Duration, a) (Duration, a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span class="hs-comment">{-
+  Splitting a note is surprisingly difficult because of the recursive nature of split.
+
+  In brief, when splitting (d,(x,a)^.note)^.note at t, we have to split the inner value x at (t/d),
+  and then scale the results xa and xb by some values p and q such that the duration of the new
+  nested notes (da*xa) and (db*xb) is the duration of the original nested note (d*x), as stated
+  by the Splittable laws.
+
+  Full derivation below.
+
+  -----
+
+  split t d = (da+db)
+  split (t/d) x = (xa*p+xb*q)
+  split t (d*x) = (da*xa+db*xb)
+
+  d = da+db         [split laws]
+  x = (xa*p+xb*q)   [split laws]
+  d*x = da*xa+db*xb [split laws]
+
+  Isolate p and q!
+
+  xa*p + xb*q = x
+  xa*p = x - xb*q
+  p = (x - xb*q)/xa
+
+  xa*p + xb*q = x
+  xb*q = x - xa*p
+  q = (x - xa*p)/xb
+
+  -- Assuming we know t, d, x, xa*p, xb*q, da*xa, db*xb
+  xa = da*xa/da
+  xb = db*xb/db
+
+  -- Example
+  t = 0.6, d = 1, x = 2
+  da = 0.6, db = 0.4
+    [split t d]
+  xa*p = 3/5, xb*q = 7/5,
+    [split (t/d) x]
+  da*xa = 3/5, db*xb = 7/5
+    [split t (d*x)]
+
+  xb = (7/5)/0.4 = 3.5
+    [db*xb/db = xb]
+  xa = (3/5)/0.6 = 1
+    [da*xa/da = xa]
+
+  p = (2 - 7/5) / 1 = 0.6
+    [p def]
+  q = (2 - 3/5) / 3.5 = 0.4
+    [q def]
+
+  &gt;&gt;&gt; split 0.6 (1,(2,_)^.note)^.note -- 2
+            ( (0.6,(1,a)^.note)^.note                 -- da*xa
+            , (0.4,(3.5,mempty)^.note)^.note            -- db*xb
+
+-}</span><span>
+</span><span id="line-147"></span><span id="local-6989586621680572692"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680572687"><span id="local-6989586621680572689"><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572692"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Split.html#Splittable"><span class="hs-identifier hs-type">Splittable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572692"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572692"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Split.html#Splittable"><span class="hs-identifier hs-type">Splittable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572692"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-148"></span><span>  </span><span id="local-6989586621680572685"><span class="annot"><span class="annottext">split :: Duration -&gt; Note a -&gt; (Note a, Note a)
+</span><a href="Music.Time.Split.html#split"><span class="hs-identifier hs-var hs-var hs-var hs-var">split</span></a></span></span><span> </span><span id="local-6989586621680572683"><span class="annot"><span class="annottext">t :: Duration
+</span><a href="#local-6989586621680572683"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Note a
+-&gt; Getting (Duration, a) (Note a) (Duration, a) -&gt; (Duration, a)
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+-&gt; Iso (Note a) (Note a) (Duration, a) (Duration, a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680572682"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680572682"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572681"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680572681"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter
+  ((Duration, a), (Duration, a))
+  (Note a, Note a)
+  (Duration, a)
+  (Note a)
+-&gt; ((Duration, a) -&gt; Note a)
+-&gt; ((Duration, a), (Duration, a))
+-&gt; (Note a, Note a)
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="annot"><span class="annottext">ASetter
+  ((Duration, a), (Duration, a))
+  (Note a, Note a)
+  (Duration, a)
+  (Note a)
+forall (r :: * -&gt; * -&gt; *) a b.
+Bitraversable r =&gt;
+Traversal (r a a) (r b b) a b
+</span><span class="hs-identifier hs-var">both</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Duration, a) -&gt; Getting (Note a) (Duration, a) (Note a) -&gt; Note a
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Note a) (Duration, a) (Note a)
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(((Duration, a), (Duration, a)) -&gt; (Note a, Note a))
+-&gt; ((Duration, a), (Duration, a)) -&gt; (Note a, Note a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; a -&gt; ((Duration, a), (Duration, a))
+forall a.
+(Transformable a, HasDuration a, Splittable a) =&gt;
+Duration -&gt; Duration -&gt; a -&gt; ((Duration, a), (Duration, a))
+</span><a href="Music.Time.Note.html#split%27"><span class="hs-identifier hs-var">split'</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572683"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572682"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572681"><span class="hs-identifier hs-var">x</span></a></span></span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span id="local-6989586621680572994"><span class="annot"><a href="Music.Time.Note.html#split%27"><span class="hs-identifier hs-type">split'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572994"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572994"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Split.html#Splittable"><span class="hs-identifier hs-type">Splittable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572994"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680572994"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680572994"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680572994"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-151"></span><span id="split%27"><span class="annot"><span class="annottext">split' :: Duration -&gt; Duration -&gt; a -&gt; ((Duration, a), (Duration, a))
+</span><a href="Music.Time.Note.html#split%27"><span class="hs-identifier hs-var hs-var">split'</span></a></span></span><span> </span><span id="local-6989586621680572678"><span class="annot"><span class="annottext">t :: Duration
+</span><a href="#local-6989586621680572678"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680572677"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680572677"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621680572676"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680572676"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572675"><span class="hs-identifier hs-var">da</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; a -&gt; a
+forall a. Transformable a =&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#compress"><span class="hs-identifier hs-var">compress</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572673"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572672"><span class="hs-identifier hs-var">xa_p</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572671"><span class="hs-identifier hs-var">db</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; a -&gt; a
+forall a. Transformable a =&gt; Duration -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#compress"><span class="hs-identifier hs-var">compress</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572670"><span class="hs-identifier hs-var">q</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572669"><span class="hs-identifier hs-var">xb_q</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-152"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-153"></span><span>    </span><span class="hs-comment">-- We are really returning ((da, xa), (db, xb))</span><span>
+</span><span id="line-154"></span><span>    </span><span class="hs-comment">-- However because of the polymorphic value, we must derive xa and xb from split (t/d) x, p and q</span><span>
+</span><span id="line-155"></span><span>
+</span><span id="line-156"></span><span>    </span><span class="hs-comment">-- (da+db)       = split t d</span><span>
+</span><span id="line-157"></span><span>    </span><span class="hs-comment">-- (xa*p+xb*q)   = split (t/d) x</span><span>
+</span><span id="line-158"></span><span>    </span><span class="hs-comment">-- (da*xa+db*xb) = split t (d*x)</span><span>
+</span><span id="line-159"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621680572675"><span class="annot"><span class="annottext">da :: Duration
+</span><a href="#local-6989586621680572675"><span class="hs-identifier hs-var">da</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572671"><span class="annot"><span class="annottext">db :: Duration
+</span><a href="#local-6989586621680572671"><span class="hs-identifier hs-var">db</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; (Duration, Duration)
+forall a. Splittable a =&gt; Duration -&gt; a -&gt; (a, a)
+</span><a href="Music.Time.Split.html#split"><span class="hs-identifier hs-var">split</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572678"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572677"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-160"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621680572672"><span class="annot"><span class="annottext">xa_p :: a
+</span><a href="#local-6989586621680572672"><span class="hs-identifier hs-var">xa_p</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572669"><span class="annot"><span class="annottext">xb_q :: a
+</span><a href="#local-6989586621680572669"><span class="hs-identifier hs-var">xb_q</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; a -&gt; (a, a)
+forall a. Splittable a =&gt; Duration -&gt; a -&gt; (a, a)
+</span><a href="Music.Time.Split.html#split"><span class="hs-identifier hs-var">split</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572678"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572677"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572676"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-161"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621680572667"><span class="annot"><span class="annottext">da_xa :: Duration
+</span><a href="#local-6989586621680572667"><span class="hs-identifier hs-var">da_xa</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572666"><span class="annot"><span class="annottext">db_xb :: Duration
+</span><a href="#local-6989586621680572666"><span class="hs-identifier hs-var">db_xb</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; (Duration, Duration)
+forall a. Splittable a =&gt; Duration -&gt; a -&gt; (a, a)
+</span><a href="Music.Time.Split.html#split"><span class="hs-identifier hs-var">split</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572678"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572677"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572676"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Getting Duration a Duration -&gt; Duration
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Duration a Duration
+forall a. (Transformable a, HasDuration a) =&gt; Getter a Duration
+</span><a href="Music.Time.Duration.html#duration"><span class="hs-identifier hs-var">duration</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-162"></span><span>    </span><span id="local-6989586621680572663"><span class="annot"><span class="annottext">xa :: Duration
+</span><a href="#local-6989586621680572663"><span class="hs-identifier hs-var hs-var">xa</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572667"><span class="hs-identifier hs-var">da_xa</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572675"><span class="hs-identifier hs-var">da</span></a></span><span>
+</span><span id="line-163"></span><span>    </span><span id="local-6989586621680572662"><span class="annot"><span class="annottext">xb :: Duration
+</span><a href="#local-6989586621680572662"><span class="hs-identifier hs-var hs-var">xb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572666"><span class="hs-identifier hs-var">db_xb</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572671"><span class="hs-identifier hs-var">db</span></a></span><span>
+</span><span id="line-164"></span><span>    </span><span id="local-6989586621680572673"><span class="annot"><span class="annottext">p :: Duration
+</span><a href="#local-6989586621680572673"><span class="hs-identifier hs-var hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572676"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Getting Duration a Duration -&gt; Duration
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Duration a Duration
+forall a. (Transformable a, HasDuration a) =&gt; Getter a Duration
+</span><a href="Music.Time.Duration.html#duration"><span class="hs-identifier hs-var">duration</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572669"><span class="hs-identifier hs-var">xb_q</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Getting Duration a Duration -&gt; Duration
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Duration a Duration
+forall a. (Transformable a, HasDuration a) =&gt; Getter a Duration
+</span><a href="Music.Time.Duration.html#duration"><span class="hs-identifier hs-var">duration</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572663"><span class="hs-identifier hs-var">xa</span></a></span><span>
+</span><span id="line-165"></span><span>    </span><span id="local-6989586621680572670"><span class="annot"><span class="annottext">q :: Duration
+</span><a href="#local-6989586621680572670"><span class="hs-identifier hs-var hs-var">q</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572676"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Getting Duration a Duration -&gt; Duration
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Duration a Duration
+forall a. (Transformable a, HasDuration a) =&gt; Getter a Duration
+</span><a href="Music.Time.Duration.html#duration"><span class="hs-identifier hs-var">duration</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572672"><span class="hs-identifier hs-var">xa_p</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Getting Duration a Duration -&gt; Duration
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Duration a Duration
+forall a. (Transformable a, HasDuration a) =&gt; Getter a Duration
+</span><a href="Music.Time.Duration.html#duration"><span class="hs-identifier hs-var">duration</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Duration
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572662"><span class="hs-identifier hs-var">xb</span></a></span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span id="local-6989586621680572661"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">IsString</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572661"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">IsString</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572661"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-168"></span><span>  </span><span id="local-6989586621680572658"><span class="annot"><span class="annottext">fromString :: String -&gt; Note a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromString</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Note a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Note a) -&gt; (String -&gt; a) -&gt; String -&gt; Note a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; a
+forall a. IsString a =&gt; String -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fromString</span></a></span></span><span>
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span id="local-6989586621680572657"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572657"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsPitch"><span class="hs-identifier hs-type">IsPitch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572657"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-171"></span><span>  </span><span id="local-6989586621680572654"><span class="annot"><span class="annottext">fromPitch :: Pitch -&gt; Note a
+</span><a href="Music.Pitch.Common.Internal.html#fromPitch"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromPitch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Note a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Note a) -&gt; (Pitch -&gt; a) -&gt; Pitch -&gt; Note a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Pitch -&gt; a
+forall a. IsPitch a =&gt; Pitch -&gt; a
+</span><a href="Music.Pitch.Common.Internal.html#fromPitch"><span class="hs-identifier hs-var">fromPitch</span></a></span></span><span>
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span id="local-6989586621680572652"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsInterval"><span class="hs-identifier hs-type">IsInterval</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572652"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Pitch.Common.Internal.html#IsInterval"><span class="hs-identifier hs-type">IsInterval</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572652"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-174"></span><span>  </span><span id="local-6989586621680572649"><span class="annot"><span class="annottext">fromInterval :: Interval -&gt; Note a
+</span><a href="Music.Pitch.Common.Internal.html#fromInterval"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromInterval</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Note a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Note a) -&gt; (Interval -&gt; a) -&gt; Interval -&gt; Note a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Interval -&gt; a
+forall a. IsInterval a =&gt; Interval -&gt; a
+</span><a href="Music.Pitch.Common.Internal.html#fromInterval"><span class="hs-identifier hs-var">fromInterval</span></a></span></span><span>
+</span><span id="line-175"></span><span>
+</span><span id="line-176"></span><span id="local-6989586621680572647"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572647"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html#IsDynamics"><span class="hs-identifier hs-type">IsDynamics</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572647"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-177"></span><span>  </span><span id="local-6989586621680572644"><span class="annot"><span class="annottext">fromDynamics :: DynamicsL -&gt; Note a
+</span><a href="Music.Dynamics.Literal.html#fromDynamics"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromDynamics</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Note a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Note a) -&gt; (DynamicsL -&gt; a) -&gt; DynamicsL -&gt; Note a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">DynamicsL -&gt; a
+forall a. IsDynamics a =&gt; DynamicsL -&gt; a
+</span><a href="Music.Dynamics.Literal.html#fromDynamics"><span class="hs-identifier hs-var">fromDynamics</span></a></span></span><span>
+</span><span id="line-178"></span><span>
+</span><span id="line-179"></span><span id="local-6989586621680572642"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680572635"><span id="local-6989586621680572637"><span id="local-6989586621680572639"><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">ToJSON</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572642"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">ToJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572642"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-180"></span><span>  </span><span class="hs-comment">-- TODO meta</span><span>
+</span><span id="line-181"></span><span>  </span><span id="local-6989586621680572633"><span class="annot"><span class="annottext">toJSON :: Note a -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toJSON</span></a></span></span><span> </span><span id="local-6989586621680572631"><span class="annot"><span class="annottext">a :: Note a
+</span><a href="#local-6989586621680572631"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pair] -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">JSON.object</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-string">&quot;duration&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Value
+forall a. ToJSON a =&gt; a -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">toJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572629"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-string">&quot;value&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a -&gt; Value
+forall a. ToJSON a =&gt; a -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">toJSON</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572628"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-182"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-183"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621680572629"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680572629"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680572628"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680572628"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Note a
+</span><a href="#local-6989586621680572631"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Note a
+-&gt; Getting (Duration, a) (Note a) (Duration, a) -&gt; (Duration, a)
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+-&gt; Iso (Note a) (Note a) (Duration, a) (Duration, a)
+forall s t a b. AnIso s t a b -&gt; Iso b a t s
+</span><span class="hs-identifier hs-var">from</span></span><span> </span><span class="annot"><span class="annottext">AnIso (Duration, a) (Duration, a) (Note a) (Note a)
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span></span><span>
+</span><span id="line-184"></span><span>
+</span><span id="line-185"></span><span id="local-6989586621680572627"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680572624"><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572627"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572627"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-186"></span><span>  </span><span id="local-6989586621680572622"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser (Note a)
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">JSON.Object</span></a></span><span> </span><span id="local-6989586621680572619"><span class="annot"><span class="annottext">x :: Object
+</span><a href="#local-6989586621680572619"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Duration -&gt; a -&gt; Note a)
+-&gt; Parser Duration -&gt; Parser a -&gt; Parser (Note a)
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">liftA2</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680572617"><span class="annot"><span class="annottext">x :: Duration
+</span><a href="#local-6989586621680572617"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680572616"><span class="annot"><span class="annottext">y :: a
+</span><a href="#local-6989586621680572616"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572617"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680572616"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Duration, a) -&gt; Getting (Note a) (Duration, a) (Note a) -&gt; Note a
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Note a) (Duration, a) (Note a)
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Parser Duration
+</span><a href="#local-6989586621680572615"><span class="hs-identifier hs-var">dur</span></a></span><span> </span><span class="annot"><span class="annottext">Parser a
+</span><a href="#local-6989586621680572614"><span class="hs-identifier hs-var">value</span></a></span><span>
+</span><span id="line-187"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-188"></span><span>      </span><span id="local-6989586621680572615"><span class="annot"><span class="annottext">dur :: Parser Duration
+</span><a href="#local-6989586621680572615"><span class="hs-identifier hs-var hs-var">dur</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621680572619"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser Duration
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">JSON..:</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;duration&quot;</span></span><span>
+</span><span id="line-189"></span><span>      </span><span id="local-6989586621680572614"><span class="annot"><span class="annottext">value :: Parser a
+</span><a href="#local-6989586621680572614"><span class="hs-identifier hs-var hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621680572619"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Text -&gt; Parser a
+forall a. FromJSON a =&gt; Object -&gt; Text -&gt; Parser a
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-operator hs-var">JSON..:</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;value&quot;</span></span><span>
+</span><span id="line-190"></span><span>  </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser (Note a)
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">empty</span></a></span></span><span>
+</span><span id="line-191"></span><span>
+</span><span id="line-192"></span><span class="hs-comment">-- | View a note value as a pair of the original value and a stretch factor.</span><span>
+</span><span id="line-193"></span><span id="local-6989586621680573054"><span id="local-6989586621680573055"><span class="annot"><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-type">note</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680573055"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680573054"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573055"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680573054"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-194"></span><span id="note"><span class="annot"><span class="annottext">note :: p (Note a) (f (Note b)) -&gt; p (Duration, a) (f (Duration, b))
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var hs-var">note</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p (Note a) (f (Note b)) -&gt; p (Duration, a) (f (Duration, b))
+forall s t. Rewrapping s t =&gt; Iso (Unwrapped t) (Unwrapped s) t s
+</span><span class="hs-identifier hs-var">_Unwrapped</span></span><span>
+</span><span id="line-195"></span><span>
+</span><span id="line-196"></span><span class="hs-comment">-- | Access the note value.</span><span>
+</span><span id="line-197"></span><span class="hs-comment">-- Taking a value out carries out the stretch (using the 'Transformable' instance),</span><span>
+</span><span id="line-198"></span><span class="hs-comment">-- while putting a value in carries out the reverse transformation.</span><span>
+</span><span id="line-199"></span><span class="hs-comment">--</span><span>
+</span><span id="line-200"></span><span class="hs-comment">-- &gt;&gt;&gt; view notee $ (2,3::Duration)^.note</span><span>
+</span><span id="line-201"></span><span class="hs-comment">-- 6</span><span>
+</span><span id="line-202"></span><span class="hs-comment">--</span><span>
+</span><span id="line-203"></span><span class="hs-comment">-- &gt;&gt;&gt; set notee 6 $ (2,1::Duration)^.note</span><span>
+</span><span id="line-204"></span><span class="hs-comment">-- (2,3)^.note</span><span>
+</span><span id="line-205"></span><span id="local-6989586621680572609"><span id="local-6989586621680572610"><span class="annot"><a href="Music.Time.Note.html#notee"><span class="hs-identifier hs-type">notee</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572610"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572609"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572610"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572609"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680572610"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680572609"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-206"></span><span id="notee"><span class="annot"><span class="annottext">notee :: Lens (Note a) (Note b) a b
+</span><a href="Music.Time.Note.html#notee"><span class="hs-identifier hs-var hs-var">notee</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall s t. Rewrapping s t =&gt; Iso s t (Unwrapped s) (Unwrapped t)
+forall (f :: * -&gt; *).
+Functor f =&gt;
+((Duration, a) -&gt; f (Duration, b)) -&gt; Note a -&gt; f (Note b)
+</span><span class="hs-identifier hs-var">_Wrapped</span></span><span> </span><span class="annot"><span class="annottext">(forall (f :: * -&gt; *).
+ Functor f =&gt;
+ ((Duration, a) -&gt; f (Duration, b)) -&gt; Note a -&gt; f (Note b))
+-&gt; (Duration -&gt; Lens a b a b) -&gt; Lens (Note a) (Note b) a b
+forall s t x a b c d.
+Lens s t (x, a) (x, b) -&gt; (x -&gt; Lens a b c d) -&gt; Lens s t c d
+</span><a href="Music.Time.Internal.Util.html#dependingOn"><span class="hs-operator hs-var">`dependingOn`</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; (a -&gt; f b) -&gt; a -&gt; f b
+forall a b.
+(Transformable a, Transformable b) =&gt;
+Span -&gt; Iso a b a b
+</span><a href="Music.Time.Internal.Transform.html#transformed"><span class="hs-identifier hs-var">transformed</span></a></span><span> </span><span class="annot"><span class="annottext">(Span -&gt; (a -&gt; f b) -&gt; a -&gt; f b)
+-&gt; (Duration -&gt; Span) -&gt; Duration -&gt; (a -&gt; f b) -&gt; a -&gt; f b
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Span
+</span><a href="Music.Time.Internal.Transform.html#stretching"><span class="hs-identifier hs-var">stretching</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-207"></span><span>
+</span><span id="line-208"></span><span class="hs-comment">-- | A note value as a duration carrying an associated value.</span><span>
+</span><span id="line-209"></span><span class="hs-comment">-- Whitness by picking a trivial value.</span><span>
+</span><span id="line-210"></span><span class="hs-comment">--</span><span>
+</span><span id="line-211"></span><span class="hs-comment">-- &gt;&gt;&gt; 2^.durationNote</span><span>
+</span><span id="line-212"></span><span class="hs-comment">-- (2,())^.note</span><span>
+</span><span id="line-213"></span><span class="annot"><a href="Music.Time.Note.html#durationNote"><span class="hs-identifier hs-type">durationNote</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Iso'</span></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-214"></span><span id="durationNote"><span class="annot"><span class="annottext">durationNote :: p (Note ()) (f (Note ())) -&gt; p Duration (f Duration)
+</span><a href="Music.Time.Note.html#durationNote"><span class="hs-identifier hs-var hs-var">durationNote</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Duration -&gt; Note ())
+-&gt; (Note () -&gt; Duration)
+-&gt; Iso Duration Duration (Note ()) (Note ())
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680572605"><span class="annot"><span class="annottext">d :: Duration
+</span><a href="#local-6989586621680572605"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Duration
+</span><a href="#local-6989586621680572605"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Duration, ())
+-&gt; Getting (Note ()) (Duration, ()) (Note ()) -&gt; Note ()
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting (Note ()) (Duration, ()) (Note ())
+forall a b. Iso (Duration, a) (Duration, b) (Note a) (Note b)
+</span><a href="Music.Time.Note.html#note"><span class="hs-identifier hs-var">note</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Note () -&gt; Getting Duration (Note ()) Duration -&gt; Duration
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Duration (Note ()) Duration
+forall a. (Transformable a, HasDuration a) =&gt; Getter a Duration
+</span><a href="Music.Time.Duration.html#duration"><span class="hs-identifier hs-var">duration</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-215"></span><span class="hs-comment">-- &gt;&gt;&gt; (pure ())^.from durationNote</span><span>
+</span><span id="line-216"></span><span class="hs-comment">-- 1</span><span>
+</span><span id="line-217"></span><span class="hs-comment">-- &gt;&gt;&gt; (pure () :: Note ())^.duration</span><span>
+</span><span id="line-218"></span><span class="hs-comment">-- 1</span><span>
+</span><span id="line-219"></span></pre></body></html>

@@ -1,0 +1,755 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-deprecations
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Time.Aligned</span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Aligned type</span></span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier">Aligned</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Creating aligned values</span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#aligned"><span class="hs-identifier">aligned</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#alignTo"><span class="hs-identifier">alignTo</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#%7C%7C%3E"><span class="hs-operator">(||&gt;)</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Update aligned values</span></span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#align"><span class="hs-identifier">align</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#realign"><span class="hs-identifier">realign</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Extracting/rendering aligned values</span></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#renderAligned"><span class="hs-identifier">renderAligned</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#renderAlignedVoice"><span class="hs-identifier">renderAlignedVoice</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#renderAlignedNote"><span class="hs-identifier">renderAlignedNote</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#renderAlignedDuration"><span class="hs-identifier">renderAlignedDuration</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#unAlign"><span class="hs-identifier">unAlign</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Conversion functions</span></span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#voiceAtDuration"><span class="hs-identifier">voiceAtDuration</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#voiceToBehavior"><span class="hs-identifier">voiceToBehavior</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Music.Time.Aligned.html#scoreToBehavior"><span class="hs-identifier">scoreToBehavior</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">JSON</span></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Monoid</span></a></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Dynamics.Literal.html"><span class="hs-identifier">Music.Dynamics.Literal</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Pitch.Literal.html"><span class="hs-identifier">Music.Pitch.Literal</span></a></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html"><span class="hs-identifier">Music.Time.Behavior</span></a></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Event.html"><span class="hs-identifier">Music.Time.Event</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Internal.Preliminaries.html"><span class="hs-identifier">Music.Time.Internal.Preliminaries</span></a></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Juxtapose.html"><span class="hs-identifier">Music.Time.Juxtapose</span></a></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Note.html"><span class="hs-identifier">Music.Time.Note</span></a></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Score.html"><span class="hs-identifier">Music.Time.Score</span></a></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.Voice.html"><span class="hs-identifier">Music.Time.Voice</span></a></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- | Update the local origin of a value, but not its attachment point.</span><span>
+</span><span id="line-51"></span><span class="hs-comment">--</span><span>
+</span><span id="line-52"></span><span class="hs-comment">--   If the new alignment is different from the previous alignment,</span><span>
+</span><span id="line-53"></span><span class="hs-comment">--   the value is moved.</span><span>
+</span><span id="line-54"></span><span class="hs-comment">--</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- align x (aligned t y) = aligned t x</span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- align x (align y v) = align x v</span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-59"></span><span id="local-6989586621680578932"><span class="annot"><a href="Music.Time.Aligned.html#align"><span class="hs-identifier hs-type">align</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Alignment"><span class="hs-identifier hs-type">Alignment</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578932"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578932"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-60"></span><span id="align"><span class="annot"><span class="annottext">align :: Alignment -&gt; Aligned a -&gt; Aligned a
+</span><a href="Music.Time.Aligned.html#align"><span class="hs-identifier hs-var hs-var">align</span></a></span></span><span> </span><span id="local-6989586621680578931"><span class="annot"><span class="annottext">l :: Alignment
+</span><a href="#local-6989586621680578931"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680578929"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680578929"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578928"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680578928"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Time, Alignment), a) -&gt; Aligned a
+forall v. ((Time, Alignment), v) -&gt; Aligned v
+</span><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-var">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680578929"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578931"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578928"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- type AlignedVoice a = Aligned (Voice a)</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- | 'Aligned' places a vector-like object in space, by fixing a local duration interpolating</span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- the vector to a specific point in time. The aligned value must be an instance of</span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- 'HasDuration', with @'view' 'duration'@ providing the size of the vector.</span><span>
+</span><span id="line-67"></span><span class="hs-comment">--</span><span>
+</span><span id="line-68"></span><span class="hs-comment">-- This is analogous to alignment in a graphical program. To align something at onset, midpoint</span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- or offset, use 0, 0.5 or 1 as the local duration value.</span><span>
+</span><span id="line-70"></span><span class="hs-keyword">newtype</span><span> </span><span id="Aligned"><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-var">Aligned</span></a></span></span><span> </span><span id="local-6989586621680579142"><span class="annot"><a href="#local-6989586621680579142"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Aligned"><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-var">Aligned</span></a></span></span><span> </span><span class="hs-special">{</span><span id="_getAligned"><span class="annot"><span class="annottext">Aligned v -&gt; ((Time, Alignment), v)
+</span><a href="Music.Time.Aligned.html#_getAligned"><span class="hs-identifier hs-var hs-var">_getAligned</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Alignment"><span class="hs-identifier hs-type">Alignment</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680579142"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span class="hs-special">}</span><span>
+</span><span id="line-71"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680578923"><span id="local-6989586621680578925"><span class="annot"><span class="annottext">a -&gt; Aligned b -&gt; Aligned a
+(a -&gt; b) -&gt; Aligned a -&gt; Aligned b
+(forall a b. (a -&gt; b) -&gt; Aligned a -&gt; Aligned b)
+-&gt; (forall a b. a -&gt; Aligned b -&gt; Aligned a) -&gt; Functor Aligned
+forall a b. a -&gt; Aligned b -&gt; Aligned a
+forall a b. (a -&gt; b) -&gt; Aligned a -&gt; Aligned b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; Aligned b -&gt; Aligned a
+$c&lt;$ :: forall a b. a -&gt; Aligned b -&gt; Aligned a
+fmap :: (a -&gt; b) -&gt; Aligned a -&gt; Aligned b
+$cfmap :: forall a b. (a -&gt; b) -&gt; Aligned a -&gt; Aligned b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578918"><span id="local-6989586621680578920"><span class="annot"><span class="annottext">Aligned v -&gt; Aligned v -&gt; Bool
+(Aligned v -&gt; Aligned v -&gt; Bool)
+-&gt; (Aligned v -&gt; Aligned v -&gt; Bool) -&gt; Eq (Aligned v)
+forall v. Eq v =&gt; Aligned v -&gt; Aligned v -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Aligned v -&gt; Aligned v -&gt; Bool
+$c/= :: forall v. Eq v =&gt; Aligned v -&gt; Aligned v -&gt; Bool
+== :: Aligned v -&gt; Aligned v -&gt; Bool
+$c== :: forall v. Eq v =&gt; Aligned v -&gt; Aligned v -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578902"><span id="local-6989586621680578904"><span id="local-6989586621680578906"><span id="local-6989586621680578908"><span id="local-6989586621680578910"><span id="local-6989586621680578912"><span id="local-6989586621680578914"><span class="annot"><span class="annottext">Eq (Aligned v)
+Eq (Aligned v) =&gt;
+(Aligned v -&gt; Aligned v -&gt; Ordering)
+-&gt; (Aligned v -&gt; Aligned v -&gt; Bool)
+-&gt; (Aligned v -&gt; Aligned v -&gt; Bool)
+-&gt; (Aligned v -&gt; Aligned v -&gt; Bool)
+-&gt; (Aligned v -&gt; Aligned v -&gt; Bool)
+-&gt; (Aligned v -&gt; Aligned v -&gt; Aligned v)
+-&gt; (Aligned v -&gt; Aligned v -&gt; Aligned v)
+-&gt; Ord (Aligned v)
+Aligned v -&gt; Aligned v -&gt; Bool
+Aligned v -&gt; Aligned v -&gt; Ordering
+Aligned v -&gt; Aligned v -&gt; Aligned v
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall v. Ord v =&gt; Eq (Aligned v)
+forall v. Ord v =&gt; Aligned v -&gt; Aligned v -&gt; Bool
+forall v. Ord v =&gt; Aligned v -&gt; Aligned v -&gt; Ordering
+forall v. Ord v =&gt; Aligned v -&gt; Aligned v -&gt; Aligned v
+min :: Aligned v -&gt; Aligned v -&gt; Aligned v
+$cmin :: forall v. Ord v =&gt; Aligned v -&gt; Aligned v -&gt; Aligned v
+max :: Aligned v -&gt; Aligned v -&gt; Aligned v
+$cmax :: forall v. Ord v =&gt; Aligned v -&gt; Aligned v -&gt; Aligned v
+&gt;= :: Aligned v -&gt; Aligned v -&gt; Bool
+$c&gt;= :: forall v. Ord v =&gt; Aligned v -&gt; Aligned v -&gt; Bool
+&gt; :: Aligned v -&gt; Aligned v -&gt; Bool
+$c&gt; :: forall v. Ord v =&gt; Aligned v -&gt; Aligned v -&gt; Bool
+&lt;= :: Aligned v -&gt; Aligned v -&gt; Bool
+$c&lt;= :: forall v. Ord v =&gt; Aligned v -&gt; Aligned v -&gt; Bool
+&lt; :: Aligned v -&gt; Aligned v -&gt; Bool
+$c&lt; :: forall v. Ord v =&gt; Aligned v -&gt; Aligned v -&gt; Bool
+compare :: Aligned v -&gt; Aligned v -&gt; Ordering
+$ccompare :: forall v. Ord v =&gt; Aligned v -&gt; Aligned v -&gt; Ordering
+$cp1Ord :: forall v. Ord v =&gt; Eq (Aligned v)
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578867"><span id="local-6989586621680578869"><span id="local-6989586621680578871"><span id="local-6989586621680578873"><span id="local-6989586621680578875"><span id="local-6989586621680578877"><span id="local-6989586621680578879"><span id="local-6989586621680578881"><span id="local-6989586621680578883"><span id="local-6989586621680578885"><span id="local-6989586621680578887"><span id="local-6989586621680578889"><span id="local-6989586621680578891"><span id="local-6989586621680578893"><span id="local-6989586621680578895"><span id="local-6989586621680578897"><span id="local-6989586621680578899"><span class="annot"><span class="annottext">a -&gt; Aligned a -&gt; Bool
+Aligned m -&gt; m
+Aligned a -&gt; [a]
+Aligned a -&gt; Bool
+Aligned a -&gt; Int
+Aligned a -&gt; a
+Aligned a -&gt; a
+Aligned a -&gt; a
+Aligned a -&gt; a
+(a -&gt; m) -&gt; Aligned a -&gt; m
+(a -&gt; m) -&gt; Aligned a -&gt; m
+(a -&gt; b -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+(a -&gt; b -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+(b -&gt; a -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+(a -&gt; a -&gt; a) -&gt; Aligned a -&gt; a
+(a -&gt; a -&gt; a) -&gt; Aligned a -&gt; a
+(forall m. Monoid m =&gt; Aligned m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Aligned a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Aligned a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Aligned a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Aligned a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Aligned a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Aligned a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Aligned a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Aligned a -&gt; a)
+-&gt; (forall a. Aligned a -&gt; [a])
+-&gt; (forall a. Aligned a -&gt; Bool)
+-&gt; (forall a. Aligned a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; Aligned a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; Aligned a -&gt; a)
+-&gt; (forall a. Ord a =&gt; Aligned a -&gt; a)
+-&gt; (forall a. Num a =&gt; Aligned a -&gt; a)
+-&gt; (forall a. Num a =&gt; Aligned a -&gt; a)
+-&gt; Foldable Aligned
+forall a. Eq a =&gt; a -&gt; Aligned a -&gt; Bool
+forall a. Num a =&gt; Aligned a -&gt; a
+forall a. Ord a =&gt; Aligned a -&gt; a
+forall m. Monoid m =&gt; Aligned m -&gt; m
+forall a. Aligned a -&gt; Bool
+forall a. Aligned a -&gt; Int
+forall a. Aligned a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; Aligned a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Aligned a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+product :: Aligned a -&gt; a
+$cproduct :: forall a. Num a =&gt; Aligned a -&gt; a
+sum :: Aligned a -&gt; a
+$csum :: forall a. Num a =&gt; Aligned a -&gt; a
+minimum :: Aligned a -&gt; a
+$cminimum :: forall a. Ord a =&gt; Aligned a -&gt; a
+maximum :: Aligned a -&gt; a
+$cmaximum :: forall a. Ord a =&gt; Aligned a -&gt; a
+elem :: a -&gt; Aligned a -&gt; Bool
+$celem :: forall a. Eq a =&gt; a -&gt; Aligned a -&gt; Bool
+length :: Aligned a -&gt; Int
+$clength :: forall a. Aligned a -&gt; Int
+null :: Aligned a -&gt; Bool
+$cnull :: forall a. Aligned a -&gt; Bool
+toList :: Aligned a -&gt; [a]
+$ctoList :: forall a. Aligned a -&gt; [a]
+foldl1 :: (a -&gt; a -&gt; a) -&gt; Aligned a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; Aligned a -&gt; a
+foldr1 :: (a -&gt; a -&gt; a) -&gt; Aligned a -&gt; a
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; Aligned a -&gt; a
+foldl' :: (b -&gt; a -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+foldl :: (b -&gt; a -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+foldr' :: (a -&gt; b -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Aligned a -&gt; b
+foldMap' :: (a -&gt; m) -&gt; Aligned a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Aligned a -&gt; m
+foldMap :: (a -&gt; m) -&gt; Aligned a -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Aligned a -&gt; m
+fold :: Aligned m -&gt; m
+$cfold :: forall m. Monoid m =&gt; Aligned m -&gt; m
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578856"><span id="local-6989586621680578858"><span id="local-6989586621680578860"><span id="local-6989586621680578862"><span class="annot"><span class="annottext">Functor Aligned
+Foldable Aligned
+(Functor Aligned, Foldable Aligned) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; Aligned a -&gt; f (Aligned b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    Aligned (f a) -&gt; f (Aligned a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; Aligned a -&gt; m (Aligned b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    Aligned (m a) -&gt; m (Aligned a))
+-&gt; Traversable Aligned
+(a -&gt; f b) -&gt; Aligned a -&gt; f (Aligned b)
+forall (t :: * -&gt; *).
+(Functor t, Foldable t) =&gt;
+(forall (f :: * -&gt; *) a b.
+ Applicative f =&gt;
+ (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a. Monad m =&gt; Aligned (m a) -&gt; m (Aligned a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+Aligned (f a) -&gt; f (Aligned a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Aligned a -&gt; m (Aligned b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Aligned a -&gt; f (Aligned b)
+sequence :: Aligned (m a) -&gt; m (Aligned a)
+$csequence :: forall (m :: * -&gt; *) a. Monad m =&gt; Aligned (m a) -&gt; m (Aligned a)
+mapM :: (a -&gt; m b) -&gt; Aligned a -&gt; m (Aligned b)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; Aligned a -&gt; m (Aligned b)
+sequenceA :: Aligned (f a) -&gt; f (Aligned a)
+$csequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+Aligned (f a) -&gt; f (Aligned a)
+traverse :: (a -&gt; f b) -&gt; Aligned a -&gt; f (Aligned b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; Aligned a -&gt; f (Aligned b)
+$cp2Traversable :: Foldable Aligned
+$cp1Traversable :: Functor Aligned
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578844"><span id="local-6989586621680578846"><span id="local-6989586621680578848"><span id="local-6989586621680578850"><span id="local-6989586621680578852"><span class="annot"><span class="annottext">Functor Aligned
+a -&gt; Aligned a
+Functor Aligned =&gt;
+(forall a. a -&gt; Aligned a)
+-&gt; (forall a b. Aligned (a -&gt; b) -&gt; Aligned a -&gt; Aligned b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; Aligned a -&gt; Aligned b -&gt; Aligned c)
+-&gt; (forall a b. Aligned a -&gt; Aligned b -&gt; Aligned b)
+-&gt; (forall a b. Aligned a -&gt; Aligned b -&gt; Aligned a)
+-&gt; Applicative Aligned
+Aligned a -&gt; Aligned b -&gt; Aligned b
+Aligned a -&gt; Aligned b -&gt; Aligned a
+Aligned (a -&gt; b) -&gt; Aligned a -&gt; Aligned b
+(a -&gt; b -&gt; c) -&gt; Aligned a -&gt; Aligned b -&gt; Aligned c
+forall a. a -&gt; Aligned a
+forall a b. Aligned a -&gt; Aligned b -&gt; Aligned a
+forall a b. Aligned a -&gt; Aligned b -&gt; Aligned b
+forall a b. Aligned (a -&gt; b) -&gt; Aligned a -&gt; Aligned b
+forall a b c. (a -&gt; b -&gt; c) -&gt; Aligned a -&gt; Aligned b -&gt; Aligned c
+forall (f :: * -&gt; *).
+Functor f =&gt;
+(forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+&lt;* :: Aligned a -&gt; Aligned b -&gt; Aligned a
+$c&lt;* :: forall a b. Aligned a -&gt; Aligned b -&gt; Aligned a
+*&gt; :: Aligned a -&gt; Aligned b -&gt; Aligned b
+$c*&gt; :: forall a b. Aligned a -&gt; Aligned b -&gt; Aligned b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; Aligned a -&gt; Aligned b -&gt; Aligned c
+$cliftA2 :: forall a b c. (a -&gt; b -&gt; c) -&gt; Aligned a -&gt; Aligned b -&gt; Aligned c
+&lt;*&gt; :: Aligned (a -&gt; b) -&gt; Aligned a -&gt; Aligned b
+$c&lt;*&gt; :: forall a b. Aligned (a -&gt; b) -&gt; Aligned a -&gt; Aligned b
+pure :: a -&gt; Aligned a
+$cpure :: forall a. a -&gt; Aligned a
+$cp1Applicative :: Functor Aligned
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></a></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span id="local-6989586621680578842"><span class="annot"><a href="Music.Time.Aligned.html#unAlign"><span class="hs-identifier hs-type">unAlign</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578842"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578842"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-74"></span><span id="unAlign"><span class="annot"><span class="annottext">unAlign :: Aligned a -&gt; a
+</span><a href="Music.Time.Aligned.html#unAlign"><span class="hs-identifier hs-var hs-var">unAlign</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578841"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680578841"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578841"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="hs-comment">-- | Align so that the given part of the value occurs at the given time.</span><span>
+</span><span id="line-77"></span><span class="hs-comment">--</span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- aligned t 0 = onsetAt t</span><span>
+</span><span id="line-80"></span><span class="hs-comment">-- aligned t 1 = offsetAt t</span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-82"></span><span id="local-6989586621680579044"><span class="annot"><a href="Music.Time.Aligned.html#aligned"><span class="hs-identifier hs-type">aligned</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Alignment"><span class="hs-identifier hs-type">Alignment</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680579044"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579044"><span class="hs-identifier hs-type">v</span></a></span></span><span>
+</span><span id="line-83"></span><span id="aligned"><span class="annot"><span class="annottext">aligned :: Time -&gt; Alignment -&gt; v -&gt; Aligned v
+</span><a href="Music.Time.Aligned.html#aligned"><span class="hs-identifier hs-var hs-var">aligned</span></a></span></span><span> </span><span id="local-6989586621680578840"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680578840"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680578839"><span class="annot"><span class="annottext">d :: Alignment
+</span><a href="#local-6989586621680578839"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621680578838"><span class="annot"><span class="annottext">a :: v
+</span><a href="#local-6989586621680578838"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Time, Alignment), v) -&gt; Aligned v
+forall v. ((Time, Alignment), v) -&gt; Aligned v
+</span><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-var">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680578840"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578839"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621680578838"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="hs-comment">-- | Align so that the given local duration occurs at the given time.</span><span>
+</span><span id="line-86"></span><span class="hs-comment">--</span><span>
+</span><span id="line-87"></span><span class="hs-comment">-- If @_duration x = 1@ then @aligned t d x = alignTo t d x@</span><span>
+</span><span id="line-88"></span><span id="local-6989586621680579032"><span class="annot"><a href="Music.Time.Aligned.html#alignTo"><span class="hs-identifier hs-type">alignTo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579032"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579032"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680579032"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680579032"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-89"></span><span id="alignTo"><span class="annot"><span class="annottext">alignTo :: Time -&gt; Alignment -&gt; a -&gt; Aligned a
+</span><a href="Music.Time.Aligned.html#alignTo"><span class="hs-identifier hs-var hs-var">alignTo</span></a></span></span><span> </span><span id="local-6989586621680578836"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680578836"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680578835"><span class="annot"><span class="annottext">d :: Alignment
+</span><a href="#local-6989586621680578835"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621680578834"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680578834"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Alignment -&gt; a -&gt; Aligned a
+forall v. Time -&gt; Alignment -&gt; v -&gt; Aligned v
+</span><a href="Music.Time.Aligned.html#aligned"><span class="hs-identifier hs-var">aligned</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680578836"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578835"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Alignment -&gt; Alignment -&gt; Alignment
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">/</span></a></span><span> </span><span class="annot"><span class="annottext">Getting Alignment a Alignment -&gt; a -&gt; Alignment
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting Alignment a Alignment
+forall a. (Transformable a, HasDuration a) =&gt; Getter a Alignment
+</span><a href="Music.Time.Duration.html#duration"><span class="hs-identifier hs-var">duration</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578834"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578834"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- | Upbeat composition.</span><span>
+</span><span id="line-92"></span><span class="hs-comment">--</span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- @a ||&gt; b@ is the same as @a &lt;&gt; b@ aligned to the offset of @b@ (and therefore also onset of @b@).</span><span>
+</span><span id="line-94"></span><span id="local-6989586621680578830"><span class="annot"><a href="Music.Time.Aligned.html#%7C%7C%3E"><span class="hs-operator hs-type">(||&gt;)</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578830"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578830"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578830"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578830"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578830"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578830"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-95"></span><span id="local-6989586621680578829"><span class="annot"><span class="annottext">a :: a
+</span><a href="#local-6989586621680578829"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="%7C%7C%3E"><span class="annot"><span class="annottext">||&gt; :: a -&gt; a -&gt; Aligned a
+</span><a href="Music.Time.Aligned.html#%7C%7C%3E"><span class="hs-operator hs-var hs-var">||&gt;</span></a></span></span><span> </span><span id="local-6989586621680578828"><span class="annot"><span class="annottext">b :: a
+</span><a href="#local-6989586621680578828"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Alignment -&gt; a -&gt; Aligned a
+forall a.
+(Transformable a, HasDuration a) =&gt;
+Time -&gt; Alignment -&gt; a -&gt; Aligned a
+</span><a href="Music.Time.Aligned.html#alignTo"><span class="hs-identifier hs-var">alignTo</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Getting Alignment a Alignment -&gt; a -&gt; Alignment
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting Alignment a Alignment
+forall a. (Transformable a, HasDuration a) =&gt; Getter a Alignment
+</span><a href="Music.Time.Duration.html#duration"><span class="hs-identifier hs-var">duration</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578829"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578829"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578828"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span id="local-6989586621680578827"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680578822"><span id="local-6989586621680578825"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578827"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578827"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-98"></span><span>  </span><span id="local-6989586621680578820"><span class="annot"><span class="annottext">show :: Aligned a -&gt; String
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680578818"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680578818"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578817"><span class="annot"><span class="annottext">d :: Alignment
+</span><a href="#local-6989586621680578817"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578816"><span class="annot"><span class="annottext">v :: a
+</span><a href="#local-6989586621680578816"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;aligned (&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680578818"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;) (&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">Alignment -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578817"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;) (&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">show</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578816"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">++</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;)&quot;</span></span></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span id="local-6989586621680578815"><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680578808"><span id="local-6989586621680578810"><span id="local-6989586621680578812"><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">ToJSON</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578815"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-type">ToJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578815"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-101"></span><span>  </span><span id="local-6989586621680578806"><span class="annot"><span class="annottext">toJSON :: Aligned a -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">toJSON</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680578804"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680578804"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578803"><span class="annot"><span class="annottext">d :: Alignment
+</span><a href="#local-6989586621680578803"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578802"><span class="annot"><span class="annottext">v :: a
+</span><a href="#local-6989586621680578802"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Pair] -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">JSON.object</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-string">&quot;alignment&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Alignment -&gt; Value
+forall a. ToJSON a =&gt; a -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">toJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578803"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-string">&quot;origin&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Value
+forall a. ToJSON a =&gt; a -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">toJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680578804"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-string">&quot;value&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a -&gt; Value
+forall a. ToJSON a =&gt; a -&gt; Value
+</span><a href="../file:///nix/store/wfzvc7y6zn39r5c7wn1pk0sinsril5dd-aeson-1.4.7.1-doc/share/doc/aeson-1.4.7.1/html/src"><span class="hs-identifier hs-var">toJSON</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578802"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span id="local-6989586621680578800"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578800"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578800"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621680578797"><span class="annot"><span class="annottext">transform :: Span -&gt; Aligned v -&gt; Aligned v
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span id="local-6989586621680578795"><span class="annot"><span class="annottext">s :: Span
+</span><a href="#local-6989586621680578795"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680578794"><span class="annot"><span class="annottext">t :: Time
+</span><a href="#local-6989586621680578794"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578793"><span class="annot"><span class="annottext">d :: Alignment
+</span><a href="#local-6989586621680578793"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578792"><span class="annot"><span class="annottext">v :: v
+</span><a href="#local-6989586621680578792"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Time, Alignment), v) -&gt; Aligned v
+forall v. ((Time, Alignment), v) -&gt; Aligned v
+</span><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-var">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Span -&gt; Time -&gt; Time
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680578795"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680578794"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578793"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Span -&gt; v -&gt; v
+forall a. Transformable a =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var">transform</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680578795"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621680578792"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span id="local-6989586621680578791"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578791"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578791"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578791"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-107"></span><span>  </span><span id="local-6989586621680578788"><span class="annot"><span class="annottext">_duration :: Aligned v -&gt; Alignment
+</span><a href="Music.Time.Duration.html#_duration"><span class="hs-identifier hs-var hs-var hs-var hs-var">_duration</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578786"><span class="annot"><span class="annottext">v :: v
+</span><a href="#local-6989586621680578786"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621680578786"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">v -&gt; Getting Alignment v Alignment -&gt; Alignment
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Alignment v Alignment
+forall a. (Transformable a, HasDuration a) =&gt; Getter a Alignment
+</span><a href="Music.Time.Duration.html#duration"><span class="hs-identifier hs-var">duration</span></a></span></span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span id="local-6989586621680578784"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578784"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578784"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition1"><span class="hs-identifier hs-type">HasPosition1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578784"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-110"></span><span>  </span><span class="hs-comment">-- _position (Aligned (position, alignment, v)) = alerp (position .-^ (size * alignment)) (position .+^ (size * (1-alignment)))</span><span>
+</span><span id="line-111"></span><span>  </span><span id="local-6989586621680578780"><span class="annot"><span class="annottext">_era1 :: Aligned v -&gt; Span
+</span><a href="Music.Time.Position.html#_era1"><span class="hs-identifier hs-var hs-var hs-var hs-var">_era1</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680578778"><span class="annot"><span class="annottext">p :: Time
+</span><a href="#local-6989586621680578778"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578777"><span class="annot"><span class="annottext">a :: Alignment
+</span><a href="#local-6989586621680578777"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578776"><span class="annot"><span class="annottext">v :: v
+</span><a href="#local-6989586621680578776"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-112"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680578778"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Diff Time -&gt; Time
+forall p. AffineSpace p =&gt; p -&gt; Diff p -&gt; p
+</span><span class="hs-operator hs-var">.-^</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578774"><span class="hs-identifier hs-var">size</span></a></span><span> </span><span class="annot"><span class="annottext">Alignment -&gt; Alignment -&gt; Alignment
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578777"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Span
+</span><a href="Music.Time.Types.html#%3C-%3E"><span class="hs-operator hs-var">&lt;-&gt;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680578778"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Diff Time -&gt; Time
+forall p. AffineSpace p =&gt; p -&gt; Diff p -&gt; p
+</span><span class="hs-operator hs-var">.+^</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578774"><span class="hs-identifier hs-var">size</span></a></span><span> </span><span class="annot"><span class="annottext">Alignment -&gt; Alignment -&gt; Alignment
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">*</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Alignment -&gt; Alignment -&gt; Alignment
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578777"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-113"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-114"></span><span>      </span><span id="local-6989586621680578774"><span class="annot"><span class="annottext">size :: Alignment
+</span><a href="#local-6989586621680578774"><span class="hs-identifier hs-var hs-var">size</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621680578776"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">v -&gt; Getting Alignment v Alignment -&gt; Alignment
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Getting Alignment v Alignment
+forall a. (Transformable a, HasDuration a) =&gt; Getter a Alignment
+</span><a href="Music.Time.Duration.html#duration"><span class="hs-identifier hs-var">duration</span></a></span></span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span id="local-6989586621680578770"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578770"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578770"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Position.html#HasPosition"><span class="hs-identifier hs-type">HasPosition</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578770"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-117"></span><span>  </span><span id="local-6989586621680578767"><span class="annot"><span class="annottext">_era :: Aligned v -&gt; Maybe Span
+</span><a href="Music.Time.Position.html#_era"><span class="hs-identifier hs-var hs-var hs-var hs-var">_era</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Span -&gt; Maybe Span
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="annot"><span class="annottext">(Span -&gt; Maybe Span)
+-&gt; (Aligned v -&gt; Span) -&gt; Aligned v -&gt; Maybe Span
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Aligned v -&gt; Span
+forall a. HasPosition1 a =&gt; a -&gt; Span
+</span><a href="Music.Time.Position.html#_era1"><span class="hs-identifier hs-var">_era1</span></a></span></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="hs-comment">-- | &#160;Change the alignment of a value without moving it.</span><span>
+</span><span id="line-120"></span><span class="hs-comment">--</span><span>
+</span><span id="line-121"></span><span class="hs-comment">--  @</span><span>
+</span><span id="line-122"></span><span class="hs-comment">--  x^.'era' = ('realign' l x)^.'era'</span><span>
+</span><span id="line-123"></span><span class="hs-comment">--  @</span><span>
+</span><span id="line-124"></span><span id="local-6989586621680578764"><span class="annot"><a href="Music.Time.Aligned.html#realign"><span class="hs-identifier hs-type">realign</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578764"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578764"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Alignment"><span class="hs-identifier hs-type">Alignment</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578764"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578764"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-125"></span><span id="realign"><span class="annot"><span class="annottext">realign :: Alignment -&gt; Aligned a -&gt; Aligned a
+</span><a href="Music.Time.Aligned.html#realign"><span class="hs-identifier hs-var hs-var">realign</span></a></span></span><span> </span><span id="local-6989586621680578763"><span class="annot"><span class="annottext">l :: Alignment
+</span><a href="#local-6989586621680578763"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621680578762"><span class="annot"><span class="annottext">a :: Aligned a
+</span><a href="#local-6989586621680578762"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621680578761"><span class="annot"><span class="annottext">_t :: Time
+</span><a href="#local-6989586621680578761"><span class="hs-identifier hs-var">_t</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578760"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680578760"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Time, Alignment), a) -&gt; Aligned a
+forall v. ((Time, Alignment), v) -&gt; Aligned v
+</span><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-var">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Aligned a
+</span><a href="#local-6989586621680578762"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Aligned a -&gt; Getting Time (Aligned a) Time -&gt; Time
+forall s a. s -&gt; Getting a s a -&gt; a
+</span><span class="hs-operator hs-var">^.</span></span><span> </span><span class="annot"><span class="annottext">Alignment -&gt; Lens' (Aligned a) Time
+forall a.
+(HasPosition1 a, Transformable a) =&gt;
+Alignment -&gt; Lens' a Time
+</span><a href="Music.Time.Position.html#position"><span class="hs-identifier hs-var">position</span></a></span><span> </span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578763"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Alignment
+</span><a href="#local-6989586621680578763"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578760"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-126"></span><span>
+</span><span id="line-127"></span><span class="hs-comment">-- | Render an aligned value. The given span represents the actual span of the aligned value.</span><span>
+</span><span id="line-128"></span><span id="local-6989586621680578963"><span id="local-6989586621680578964"><span class="annot"><a href="Music.Time.Aligned.html#renderAligned"><span class="hs-identifier hs-type">renderAligned</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Duration.html#HasDuration"><span class="hs-identifier hs-type">HasDuration</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578964"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578964"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578964"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578963"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578964"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578963"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-129"></span><span id="renderAligned"><span class="annot"><span class="annottext">renderAligned :: (Span -&gt; a -&gt; b) -&gt; Aligned a -&gt; b
+</span><a href="Music.Time.Aligned.html#renderAligned"><span class="hs-identifier hs-var hs-var">renderAligned</span></a></span></span><span> </span><span id="local-6989586621680578758"><span class="annot"><span class="annottext">f :: Span -&gt; a -&gt; b
+</span><a href="#local-6989586621680578758"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680578757"><span class="annot"><span class="annottext">a :: Aligned a
+</span><a href="#local-6989586621680578757"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span id="local-6989586621680578756"><span class="annot"><span class="annottext">v :: a
+</span><a href="#local-6989586621680578756"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Span -&gt; a -&gt; b
+</span><a href="#local-6989586621680578758"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Aligned a -&gt; Span
+forall a. HasPosition1 a =&gt; a -&gt; Span
+</span><a href="Music.Time.Position.html#_era1"><span class="hs-identifier hs-var">_era1</span></a></span><span> </span><span class="annot"><span class="annottext">Aligned a
+</span><a href="#local-6989586621680578757"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680578756"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- Somewhat suspect, see below for clarity...</span><span>
+</span><span id="line-132"></span><span>
+</span><span id="line-133"></span><span id="local-6989586621680578962"><span class="annot"><a href="Music.Time.Aligned.html#voiceToScoreInEra"><span class="hs-identifier hs-type">voiceToScoreInEra</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Voice.html#Voice"><span class="hs-identifier hs-type">Voice</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578962"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578962"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-134"></span><span id="voiceToScoreInEra"><span class="annot"><span class="annottext">voiceToScoreInEra :: Span -&gt; Voice a -&gt; Score a
+</span><a href="Music.Time.Aligned.html#voiceToScoreInEra"><span class="hs-identifier hs-var hs-var">voiceToScoreInEra</span></a></span></span><span> </span><span id="local-6989586621680578754"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680578754"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Span -&gt; Score a -&gt; Score a
+forall a. (HasPosition a, Transformable a) =&gt; Span -&gt; a -&gt; a
+</span><a href="Music.Time.Position.html#setEra"><span class="hs-identifier hs-var">setEra</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680578754"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">(Score a -&gt; Score a) -&gt; (Voice a -&gt; Score a) -&gt; Voice a -&gt; Score a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">[Score a] -&gt; Score a
+forall a. (Monoid a, HasPosition a, Transformable a) =&gt; [a] -&gt; a
+</span><a href="Music.Time.Juxtapose.html#pseq"><span class="hs-identifier hs-var">pseq</span></a></span><span> </span><span class="annot"><span class="annottext">([Score a] -&gt; Score a)
+-&gt; (Voice a -&gt; [Score a]) -&gt; Voice a -&gt; Score a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">((Alignment, Score a) -&gt; Score a)
+-&gt; [(Alignment, Score a)] -&gt; [Score a]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">map</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Alignment -&gt; Score a -&gt; Score a)
+-&gt; (Alignment, Score a) -&gt; Score a
+forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">uncurry</span></a></span><span> </span><span class="annot"><span class="annottext">Alignment -&gt; Score a -&gt; Score a
+forall a. Transformable a =&gt; Alignment -&gt; a -&gt; a
+</span><a href="Music.Time.Internal.Transform.html#stretch"><span class="hs-identifier hs-var">stretch</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([(Alignment, Score a)] -&gt; [Score a])
+-&gt; (Voice a -&gt; [(Alignment, Score a)]) -&gt; Voice a -&gt; [Score a]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting
+  [(Alignment, Score a)] (Voice (Score a)) [(Alignment, Score a)]
+-&gt; Voice (Score a) -&gt; [(Alignment, Score a)]
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting
+  [(Alignment, Score a)] (Voice (Score a)) [(Alignment, Score a)]
+forall a b.
+Iso (Voice a) (Voice b) [(Alignment, a)] [(Alignment, b)]
+</span><a href="Music.Time.Voice.html#pairs"><span class="hs-identifier hs-var">pairs</span></a></span><span> </span><span class="annot"><span class="annottext">(Voice (Score a) -&gt; [(Alignment, Score a)])
+-&gt; (Voice a -&gt; Voice (Score a))
+-&gt; Voice a
+-&gt; [(Alignment, Score a)]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Score a) -&gt; Voice a -&gt; Voice (Score a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Score a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span>
+</span><span id="line-135"></span><span>
+</span><span id="line-136"></span><span id="local-6989586621680578960"><span class="annot"><a href="Music.Time.Aligned.html#noteToEventInEra"><span class="hs-identifier hs-type">noteToEventInEra</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578960"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Event.html#Event"><span class="hs-identifier hs-type">Event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578960"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-137"></span><span id="noteToEventInEra"><span class="annot"><span class="annottext">noteToEventInEra :: Span -&gt; Note a -&gt; Event a
+</span><a href="Music.Time.Aligned.html#noteToEventInEra"><span class="hs-identifier hs-var hs-var">noteToEventInEra</span></a></span></span><span> </span><span id="local-6989586621680578747"><span class="annot"><span class="annottext">e :: Span
+</span><a href="#local-6989586621680578747"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter (Event a) (Event a) Span Span -&gt; Span -&gt; Event a -&gt; Event a
+forall s t a b. ASetter s t a b -&gt; b -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">set</span></span><span> </span><span class="annot"><span class="annottext">ASetter (Event a) (Event a) Span Span
+forall a. (HasPosition1 a, Transformable a) =&gt; Lens' a Span
+</span><a href="Music.Time.Position.html#era"><span class="hs-identifier hs-var">era</span></a></span><span> </span><span class="annot"><span class="annottext">Span
+</span><a href="#local-6989586621680578747"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">(Event a -&gt; Event a) -&gt; (Note a -&gt; Event a) -&gt; Note a -&gt; Event a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Getting (Event a) (Note (Event a)) (Event a)
+-&gt; Note (Event a) -&gt; Event a
+forall s (m :: * -&gt; *) a. MonadReader s m =&gt; Getting a s a -&gt; m a
+</span><span class="hs-identifier hs-var">view</span></span><span> </span><span class="annot"><span class="annottext">Getting (Event a) (Note (Event a)) (Event a)
+forall a b.
+(Transformable a, Transformable b) =&gt;
+Lens (Note a) (Note b) a b
+</span><a href="Music.Time.Note.html#notee"><span class="hs-identifier hs-var">notee</span></a></span><span> </span><span class="annot"><span class="annottext">(Note (Event a) -&gt; Event a)
+-&gt; (Note a -&gt; Note (Event a)) -&gt; Note a -&gt; Event a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Event a) -&gt; Note a -&gt; Note (Event a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Event a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span>
+</span><span id="line-138"></span><span>
+</span><span id="line-139"></span><span class="annot"><a href="Music.Time.Aligned.html#durationToSpanInEra"><span class="hs-identifier hs-type">durationToSpanInEra</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span>
+</span><span id="line-140"></span><span id="durationToSpanInEra"><span class="annot"><span class="annottext">durationToSpanInEra :: Span -&gt; Alignment -&gt; Span
+</span><a href="Music.Time.Aligned.html#durationToSpanInEra"><span class="hs-identifier hs-var hs-var">durationToSpanInEra</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Span -&gt; Alignment -&gt; Span
+forall a b. a -&gt; b -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">const</span></a></span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span class="hs-comment">-- | Convert an aligned voice to a score.</span><span>
+</span><span id="line-143"></span><span id="local-6989586621680578948"><span class="annot"><a href="Music.Time.Aligned.html#renderAlignedVoice"><span class="hs-identifier hs-type">renderAlignedVoice</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Voice.html#Voice"><span class="hs-identifier hs-type">Voice</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578948"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578948"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-144"></span><span id="renderAlignedVoice"><span class="annot"><span class="annottext">renderAlignedVoice :: Aligned (Voice a) -&gt; Score a
+</span><a href="Music.Time.Aligned.html#renderAlignedVoice"><span class="hs-identifier hs-var hs-var">renderAlignedVoice</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Span -&gt; Voice a -&gt; Score a) -&gt; Aligned (Voice a) -&gt; Score a
+forall a b.
+(HasDuration a, Transformable a) =&gt;
+(Span -&gt; a -&gt; b) -&gt; Aligned a -&gt; b
+</span><a href="Music.Time.Aligned.html#renderAligned"><span class="hs-identifier hs-var">renderAligned</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Voice a -&gt; Score a
+forall a. Span -&gt; Voice a -&gt; Score a
+</span><a href="Music.Time.Aligned.html#voiceToScoreInEra"><span class="hs-identifier hs-var">voiceToScoreInEra</span></a></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span class="hs-comment">-- | Convert an aligned note to an event.</span><span>
+</span><span id="line-147"></span><span id="local-6989586621680578741"><span class="annot"><a href="Music.Time.Aligned.html#renderAlignedNote"><span class="hs-identifier hs-type">renderAlignedNote</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Note.html#Note"><span class="hs-identifier hs-type">Note</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578741"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Event.html#Event"><span class="hs-identifier hs-type">Event</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578741"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-148"></span><span id="renderAlignedNote"><span class="annot"><span class="annottext">renderAlignedNote :: Aligned (Note a) -&gt; Event a
+</span><a href="Music.Time.Aligned.html#renderAlignedNote"><span class="hs-identifier hs-var hs-var">renderAlignedNote</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Span -&gt; Note a -&gt; Event a) -&gt; Aligned (Note a) -&gt; Event a
+forall a b.
+(HasDuration a, Transformable a) =&gt;
+(Span -&gt; a -&gt; b) -&gt; Aligned a -&gt; b
+</span><a href="Music.Time.Aligned.html#renderAligned"><span class="hs-identifier hs-var">renderAligned</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Note a -&gt; Event a
+forall a. Span -&gt; Note a -&gt; Event a
+</span><a href="Music.Time.Aligned.html#noteToEventInEra"><span class="hs-identifier hs-var">noteToEventInEra</span></a></span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span class="hs-comment">-- | Convert an aligned duration to a span.</span><span>
+</span><span id="line-151"></span><span class="annot"><a href="Music.Time.Aligned.html#renderAlignedDuration"><span class="hs-identifier hs-type">renderAlignedDuration</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span>
+</span><span id="line-152"></span><span id="renderAlignedDuration"><span class="annot"><span class="annottext">renderAlignedDuration :: Aligned Alignment -&gt; Span
+</span><a href="Music.Time.Aligned.html#renderAlignedDuration"><span class="hs-identifier hs-var hs-var">renderAlignedDuration</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Span -&gt; Alignment -&gt; Span) -&gt; Aligned Alignment -&gt; Span
+forall a b.
+(HasDuration a, Transformable a) =&gt;
+(Span -&gt; a -&gt; b) -&gt; Aligned a -&gt; b
+</span><a href="Music.Time.Aligned.html#renderAligned"><span class="hs-identifier hs-var">renderAligned</span></a></span><span> </span><span class="annot"><span class="annottext">Span -&gt; Alignment -&gt; Span
+</span><a href="Music.Time.Aligned.html#durationToSpanInEra"><span class="hs-identifier hs-var">durationToSpanInEra</span></a></span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- Treat a voice as a partial function of time.</span><span>
+</span><span id="line-156"></span><span class="hs-comment">--</span><span>
+</span><span id="line-157"></span><span class="hs-comment">-- &gt;&gt;&gt; voiceAtDuration (stretch 2 c &lt;&gt; stretch 3 d) (-1)</span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- Nothing</span><span>
+</span><span id="line-159"></span><span class="hs-comment">--</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- &gt;&gt;&gt; voiceAtDuration (stretch 2 c &lt;&gt; stretch 3 d)) 0</span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- Just c</span><span>
+</span><span id="line-162"></span><span class="hs-comment">--</span><span>
+</span><span id="line-163"></span><span class="hs-comment">-- &gt;&gt;&gt; voiceAtDuration (stretch 2 c &lt;&gt; stretch 3 d) 2</span><span>
+</span><span id="line-164"></span><span class="hs-comment">-- Just d</span><span>
+</span><span id="line-165"></span><span class="hs-comment">--</span><span>
+</span><span id="line-166"></span><span class="hs-comment">-- &gt;&gt;&gt; voiceAtDuration (stretch 2 c &lt;&gt; stretch 3 d) 6</span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- Nothing</span><span>
+</span><span id="line-168"></span><span id="local-6989586621680578740"><span class="annot"><a href="Music.Time.Aligned.html#voiceAtDuration"><span class="hs-identifier hs-type">voiceAtDuration</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Music.Time.Voice.html#Voice"><span class="hs-identifier hs-type">Voice</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578740"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578740"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-169"></span><span id="voiceAtDuration"><span class="annot"><span class="annottext">voiceAtDuration :: Voice a -&gt; Alignment -&gt; Maybe a
+</span><a href="Music.Time.Aligned.html#voiceAtDuration"><span class="hs-identifier hs-var hs-var">voiceAtDuration</span></a></span></span><span> </span><span id="local-6989586621680578739"><span class="annot"><span class="annottext">v :: Voice a
+</span><a href="#local-6989586621680578739"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-170"></span><span>  </span><span class="annot"><span class="annottext">Last a -&gt; Maybe a
+forall a. Last a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var">Data.Monoid.getLast</span></a></span><span> </span><span class="annot"><span class="annottext">(Last a -&gt; Maybe a)
+-&gt; (Alignment -&gt; Last a) -&gt; Alignment -&gt; Maybe a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Voice (Last a) -&gt; Alignment -&gt; Last a
+forall a. Monoid a =&gt; Voice a -&gt; Alignment -&gt; a
+</span><a href="Music.Time.Aligned.html#voiceAtDuration%27"><span class="hs-identifier hs-var">voiceAtDuration'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a -&gt; Last a) -&gt; Voice a -&gt; Voice (Last a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Last a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">Voice a
+</span><a href="#local-6989586621680578739"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-171"></span><span>
+</span><span id="line-172"></span><span id="local-6989586621680578956"><span class="annot"><a href="Music.Time.Aligned.html#voiceAtDuration%27"><span class="hs-identifier hs-type">voiceAtDuration'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578956"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Voice.html#Voice"><span class="hs-identifier hs-type">Voice</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578956"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Duration"><span class="hs-identifier hs-type">Duration</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680578956"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-173"></span><span id="voiceAtDuration%27"><span class="annot"><span class="annottext">voiceAtDuration' :: Voice a -&gt; Alignment -&gt; a
+</span><a href="Music.Time.Aligned.html#voiceAtDuration%27"><span class="hs-identifier hs-var hs-var">voiceAtDuration'</span></a></span></span><span> </span><span id="local-6989586621680578736"><span class="annot"><span class="annottext">v :: Voice a
+</span><a href="#local-6989586621680578736"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621680578735"><span class="annot"><span class="annottext">d :: Alignment
+</span><a href="#local-6989586621680578735"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Aligned (Voice a) -&gt; Behavior a
+forall a. Monoid a =&gt; Aligned (Voice a) -&gt; Behavior a
+</span><a href="Music.Time.Aligned.html#voiceToBehavior"><span class="hs-identifier hs-var">voiceToBehavior</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time -&gt; Alignment -&gt; Voice a -&gt; Aligned (Voice a)
+forall v. Time -&gt; Alignment -&gt; v -&gt; Aligned v
+</span><a href="Music.Time.Aligned.html#aligned"><span class="hs-identifier hs-var">aligned</span></a></span><span> </span><span class="annot"><span class="annottext">Time
+forall p. Num p =&gt; p
+</span><a href="#local-6989586621680578734"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Voice a
+</span><a href="#local-6989586621680578736"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Behavior a -&gt; Time -&gt; a
+forall a. Behavior a -&gt; Time -&gt; a
+</span><a href="Music.Time.Behavior.html#%21"><span class="hs-glyph hs-var">!</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time
+forall p. Num p =&gt; p
+</span><a href="#local-6989586621680578734"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Diff Time -&gt; Time
+forall p. AffineSpace p =&gt; p -&gt; Diff p -&gt; p
+</span><span class="hs-operator hs-var">.+^</span></span><span> </span><span class="annot"><span class="annottext">Diff Time
+Alignment
+</span><a href="#local-6989586621680578735"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-174"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-175"></span><span>    </span><span id="local-6989586621680578734"><span class="annot"><span class="annottext">o :: p
+</span><a href="#local-6989586621680578734"><span class="hs-identifier hs-var hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-comment">-- Any value will do</span><span>
+</span><span id="line-176"></span><span>
+</span><span id="line-177"></span><span class="hs-comment">-- Turn a voice into a behavior by aligning.</span><span>
+</span><span id="line-178"></span><span class="hs-comment">-- Value at switchpoint is determined by the monoid (see voiceAtDurationFirst etc).</span><span>
+</span><span id="line-179"></span><span id="local-6989586621680578953"><span class="annot"><a href="Music.Time.Aligned.html#voiceToBehavior"><span class="hs-identifier hs-type">voiceToBehavior</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578953"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Aligned.html#Aligned"><span class="hs-identifier hs-type">Aligned</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Voice.html#Voice"><span class="hs-identifier hs-type">Voice</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578953"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578953"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-180"></span><span id="voiceToBehavior"><span class="annot"><span class="annottext">voiceToBehavior :: Aligned (Voice a) -&gt; Behavior a
+</span><a href="Music.Time.Aligned.html#voiceToBehavior"><span class="hs-identifier hs-var hs-var">voiceToBehavior</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Score a -&gt; Behavior a
+forall a. Monoid a =&gt; Score a -&gt; Behavior a
+</span><a href="Music.Time.Aligned.html#scoreToBehavior"><span class="hs-identifier hs-var">scoreToBehavior</span></a></span><span> </span><span class="annot"><span class="annottext">(Score a -&gt; Behavior a)
+-&gt; (Aligned (Voice a) -&gt; Score a)
+-&gt; Aligned (Voice a)
+-&gt; Behavior a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">Aligned (Voice a) -&gt; Score a
+forall a. Aligned (Voice a) -&gt; Score a
+</span><a href="Music.Time.Aligned.html#renderAlignedVoice"><span class="hs-identifier hs-var">renderAlignedVoice</span></a></span><span>
+</span><span id="line-181"></span><span>
+</span><span id="line-182"></span><span id="local-6989586621680578949"><span class="annot"><a href="Music.Time.Aligned.html#scoreToBehavior"><span class="hs-identifier hs-type">scoreToBehavior</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578949"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Music.Time.Score.html#Score"><span class="hs-identifier hs-type">Score</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578949"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Behavior.html#Behavior"><span class="hs-identifier hs-type">Behavior</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680578949"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-183"></span><span id="scoreToBehavior"><span class="annot"><span class="annottext">scoreToBehavior :: Score a -&gt; Behavior a
+</span><a href="Music.Time.Aligned.html#scoreToBehavior"><span class="hs-identifier hs-var hs-var">scoreToBehavior</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Score (Behavior a) -&gt; Behavior a
+forall a. Monoid a =&gt; Score (Behavior a) -&gt; Behavior a
+</span><a href="Music.Time.Behavior.html#concatB"><span class="hs-identifier hs-var">concatB</span></a></span><span> </span><span class="annot"><span class="annottext">(Score (Behavior a) -&gt; Behavior a)
+-&gt; (Score a -&gt; Score (Behavior a)) -&gt; Score a -&gt; Behavior a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Behavior a) -&gt; Score a -&gt; Score (Behavior a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">fmap</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Behavior a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span>
+</span><span id="line-184"></span></pre></body></html>

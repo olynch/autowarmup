@@ -1,0 +1,543 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_BlBaNp6gn3yGYofZ962mAw"></span><span class="hs-pragma">{-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DefaultSignatures #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE DeriveFoldable #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE DeriveFunctor #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE DeriveTraversable #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE FunctionalDependencies #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-11"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-12"></span><span class="hs-pragma">{-# LANGUAGE RankNTypes #-}</span><span>
+</span><span id="line-13"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-14"></span><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving #-}</span><span>
+</span><span id="line-15"></span><span class="hs-pragma">{-# LANGUAGE TupleSections #-}</span><span>
+</span><span id="line-16"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-17"></span><span class="hs-pragma">{-# LANGUAGE ViewPatterns #-}</span><span>
+</span><span id="line-18"></span><span class="hs-pragma">{-# LANGUAGE NoMonomorphismRestriction #-}</span><span>
+</span><span id="line-19"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wall
+  -Wcompat
+  -Wincomplete-record-updates
+  -Wincomplete-uni-patterns
+  -Werror
+  -fno-warn-name-shadowing
+  -fno-warn-unused-imports
+  -fno-warn-redundant-constraints #-}</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-comment">-------------------------------------------------------------------------------------</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- Copyright   : (c) Hans Hoglund 2012-2014</span><span>
+</span><span id="line-34"></span><span class="hs-comment">--</span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- License     : BSD-style</span><span>
+</span><span id="line-36"></span><span class="hs-comment">--</span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- Maintainer  : hans@hanshoglund.se</span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- Portability : non-portable (TF,GNTD)</span><span>
+</span><span id="line-40"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Music.Score.Export.DynamicNotation</span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#CrescDim"><span class="hs-identifier">CrescDim</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier">DynamicNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#crescDim"><span class="hs-identifier">crescDim</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#dynamicLevel"><span class="hs-identifier">dynamicLevel</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#notateDynamic"><span class="hs-identifier">notateDynamic</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Utility</span></span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#removeCloseDynMarks"><span class="hs-identifier">removeCloseDynMarks</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Lens</span></span><span> </span><span class="hs-comment">-- ()</span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.AffineSpace</span></span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Functor.Context.html"><span class="hs-identifier">Data.Functor.Context</span></a></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier">Data.Semigroup</span></a></span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html"><span class="hs-identifier">Music.Score.Dynamics</span></a></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Phrases.html"><span class="hs-identifier">Music.Score.Phrases</span></a></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Score.Ties.html"><span class="hs-identifier">Music.Score.Ties</span></a></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Music.Time.html"><span class="hs-identifier">Music.Time</span></a></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="hs-keyword">data</span><span> </span><span id="CrescDim"><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#CrescDim"><span class="hs-identifier hs-var">CrescDim</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="NoCrescDim"><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#NoCrescDim"><span class="hs-identifier hs-var">NoCrescDim</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="BeginCresc"><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#BeginCresc"><span class="hs-identifier hs-var">BeginCresc</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="EndCresc"><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#EndCresc"><span class="hs-identifier hs-var">EndCresc</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="BeginDim"><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#BeginDim"><span class="hs-identifier hs-var">BeginDim</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="EndDim"><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#EndDim"><span class="hs-identifier hs-var">EndDim</span></a></span></span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680596644"><span id="local-6989586621680596646"><span class="annot"><span class="annottext">CrescDim -&gt; CrescDim -&gt; Bool
+(CrescDim -&gt; CrescDim -&gt; Bool)
+-&gt; (CrescDim -&gt; CrescDim -&gt; Bool) -&gt; Eq CrescDim
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: CrescDim -&gt; CrescDim -&gt; Bool
+$c/= :: CrescDim -&gt; CrescDim -&gt; Bool
+== :: CrescDim -&gt; CrescDim -&gt; Bool
+$c== :: CrescDim -&gt; CrescDim -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680596628"><span id="local-6989586621680596630"><span id="local-6989586621680596632"><span id="local-6989586621680596634"><span id="local-6989586621680596636"><span id="local-6989586621680596638"><span id="local-6989586621680596640"><span class="annot"><span class="annottext">Eq CrescDim
+Eq CrescDim =&gt;
+(CrescDim -&gt; CrescDim -&gt; Ordering)
+-&gt; (CrescDim -&gt; CrescDim -&gt; Bool)
+-&gt; (CrescDim -&gt; CrescDim -&gt; Bool)
+-&gt; (CrescDim -&gt; CrescDim -&gt; Bool)
+-&gt; (CrescDim -&gt; CrescDim -&gt; Bool)
+-&gt; (CrescDim -&gt; CrescDim -&gt; CrescDim)
+-&gt; (CrescDim -&gt; CrescDim -&gt; CrescDim)
+-&gt; Ord CrescDim
+CrescDim -&gt; CrescDim -&gt; Bool
+CrescDim -&gt; CrescDim -&gt; Ordering
+CrescDim -&gt; CrescDim -&gt; CrescDim
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: CrescDim -&gt; CrescDim -&gt; CrescDim
+$cmin :: CrescDim -&gt; CrescDim -&gt; CrescDim
+max :: CrescDim -&gt; CrescDim -&gt; CrescDim
+$cmax :: CrescDim -&gt; CrescDim -&gt; CrescDim
+&gt;= :: CrescDim -&gt; CrescDim -&gt; Bool
+$c&gt;= :: CrescDim -&gt; CrescDim -&gt; Bool
+&gt; :: CrescDim -&gt; CrescDim -&gt; Bool
+$c&gt; :: CrescDim -&gt; CrescDim -&gt; Bool
+&lt;= :: CrescDim -&gt; CrescDim -&gt; Bool
+$c&lt;= :: CrescDim -&gt; CrescDim -&gt; Bool
+&lt; :: CrescDim -&gt; CrescDim -&gt; Bool
+$c&lt; :: CrescDim -&gt; CrescDim -&gt; Bool
+compare :: CrescDim -&gt; CrescDim -&gt; Ordering
+$ccompare :: CrescDim -&gt; CrescDim -&gt; Ordering
+$cp1Ord :: Eq CrescDim
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680596621"><span id="local-6989586621680596623"><span id="local-6989586621680596625"><span class="annot"><span class="annottext">Int -&gt; CrescDim -&gt; ShowS
+[CrescDim] -&gt; ShowS
+CrescDim -&gt; String
+(Int -&gt; CrescDim -&gt; ShowS)
+-&gt; (CrescDim -&gt; String) -&gt; ([CrescDim] -&gt; ShowS) -&gt; Show CrescDim
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [CrescDim] -&gt; ShowS
+$cshowList :: [CrescDim] -&gt; ShowS
+show :: CrescDim -&gt; String
+$cshow :: CrescDim -&gt; String
+showsPrec :: Int -&gt; CrescDim -&gt; ShowS
+$cshowsPrec :: Int -&gt; CrescDim -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680596614"><span id="local-6989586621680596616"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#CrescDim"><span class="hs-identifier hs-type">CrescDim</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-65"></span><span>  </span><span id="local-6989586621680596612"><span class="annot"><span class="annottext">mempty :: CrescDim
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#NoCrescDim"><span class="hs-identifier hs-var">NoCrescDim</span></a></span><span>
+</span><span id="line-66"></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680596607"><span id="local-6989586621680596609"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#CrescDim"><span class="hs-identifier hs-type">CrescDim</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-68"></span><span>  </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#NoCrescDim"><span class="hs-identifier hs-type">NoCrescDim</span></a></span><span> </span><span id="local-6989586621680596605"><span class="annot"><span class="annottext">&lt;&gt; :: CrescDim -&gt; CrescDim -&gt; CrescDim
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span id="local-6989586621680596604"><span class="annot"><span class="annottext">a :: CrescDim
+</span><a href="#local-6989586621680596604"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CrescDim
+</span><a href="#local-6989586621680596604"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-69"></span><span>  </span><span id="local-6989586621680596603"><span class="annot"><span class="annottext">a :: CrescDim
+</span><a href="#local-6989586621680596603"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CrescDim
+</span><a href="#local-6989586621680596603"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-keyword">newtype</span><span> </span><span id="DynamicNotation"><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-var">DynamicNotation</span></a></span></span><span>
+</span><span id="line-72"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="DynamicNotation"><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-var">DynamicNotation</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getDynamicNotation"><span class="annot"><span class="annottext">DynamicNotation -&gt; ([CrescDim], Maybe Double)
+</span><a href="Music.Score.Export.DynamicNotation.html#getDynamicNotation"><span class="hs-identifier hs-var hs-var">getDynamicNotation</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#CrescDim"><span class="hs-identifier hs-type">CrescDim</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span class="hs-special">)</span><span class="hs-special">}</span><span>
+</span><span id="line-73"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621680596597"><span id="local-6989586621680596599"><span class="annot"><span class="annottext">DynamicNotation -&gt; DynamicNotation -&gt; Bool
+(DynamicNotation -&gt; DynamicNotation -&gt; Bool)
+-&gt; (DynamicNotation -&gt; DynamicNotation -&gt; Bool)
+-&gt; Eq DynamicNotation
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+$c/= :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+== :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+$c== :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680596582"><span id="local-6989586621680596584"><span id="local-6989586621680596586"><span id="local-6989586621680596588"><span id="local-6989586621680596590"><span id="local-6989586621680596592"><span id="local-6989586621680596594"><span class="annot"><span class="annottext">Eq DynamicNotation
+Eq DynamicNotation =&gt;
+(DynamicNotation -&gt; DynamicNotation -&gt; Ordering)
+-&gt; (DynamicNotation -&gt; DynamicNotation -&gt; Bool)
+-&gt; (DynamicNotation -&gt; DynamicNotation -&gt; Bool)
+-&gt; (DynamicNotation -&gt; DynamicNotation -&gt; Bool)
+-&gt; (DynamicNotation -&gt; DynamicNotation -&gt; Bool)
+-&gt; (DynamicNotation -&gt; DynamicNotation -&gt; DynamicNotation)
+-&gt; (DynamicNotation -&gt; DynamicNotation -&gt; DynamicNotation)
+-&gt; Ord DynamicNotation
+DynamicNotation -&gt; DynamicNotation -&gt; Bool
+DynamicNotation -&gt; DynamicNotation -&gt; Ordering
+DynamicNotation -&gt; DynamicNotation -&gt; DynamicNotation
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: DynamicNotation -&gt; DynamicNotation -&gt; DynamicNotation
+$cmin :: DynamicNotation -&gt; DynamicNotation -&gt; DynamicNotation
+max :: DynamicNotation -&gt; DynamicNotation -&gt; DynamicNotation
+$cmax :: DynamicNotation -&gt; DynamicNotation -&gt; DynamicNotation
+&gt;= :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+$c&gt;= :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+&gt; :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+$c&gt; :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+&lt;= :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+$c&lt;= :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+&lt; :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+$c&lt; :: DynamicNotation -&gt; DynamicNotation -&gt; Bool
+compare :: DynamicNotation -&gt; DynamicNotation -&gt; Ordering
+$ccompare :: DynamicNotation -&gt; DynamicNotation -&gt; Ordering
+$cp1Ord :: Eq DynamicNotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></a></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680596576"><span id="local-6989586621680596578"><span id="local-6989586621680596580"><span class="annot"><span class="annottext">Int -&gt; DynamicNotation -&gt; ShowS
+[DynamicNotation] -&gt; ShowS
+DynamicNotation -&gt; String
+(Int -&gt; DynamicNotation -&gt; ShowS)
+-&gt; (DynamicNotation -&gt; String)
+-&gt; ([DynamicNotation] -&gt; ShowS)
+-&gt; Show DynamicNotation
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [DynamicNotation] -&gt; ShowS
+$cshowList :: [DynamicNotation] -&gt; ShowS
+show :: DynamicNotation -&gt; String
+$cshow :: DynamicNotation -&gt; String
+showsPrec :: Int -&gt; DynamicNotation -&gt; ShowS
+$cshowsPrec :: Int -&gt; DynamicNotation -&gt; ShowS
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Wrapped</span></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Unwrapped"><span class="annot"><span class="hs-identifier hs-var">Unwrapped</span></span></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#CrescDim"><span class="hs-identifier hs-type">CrescDim</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span>  </span><span id="local-6989586621680596573"><span class="annot"><span class="annottext">_Wrapped' :: p (Unwrapped DynamicNotation) (f (Unwrapped DynamicNotation))
+-&gt; p DynamicNotation (f DynamicNotation)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">_Wrapped'</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(DynamicNotation -&gt; ([CrescDim], Maybe Double))
+-&gt; (([CrescDim], Maybe Double) -&gt; DynamicNotation)
+-&gt; Iso
+     DynamicNotation
+     DynamicNotation
+     ([CrescDim], Maybe Double)
+     ([CrescDim], Maybe Double)
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><span class="hs-identifier hs-var">iso</span></span><span> </span><span class="annot"><span class="annottext">DynamicNotation -&gt; ([CrescDim], Maybe Double)
+</span><a href="Music.Score.Export.DynamicNotation.html#getDynamicNotation"><span class="hs-identifier hs-var hs-var">getDynamicNotation</span></a></span><span> </span><span class="annot"><span class="annottext">([CrescDim], Maybe Double) -&gt; DynamicNotation
+</span><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-var">DynamicNotation</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Rewrapped</span></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="GetDynamic"><span class="annot"><a href="Music.Score.Dynamics.html#GetDynamic"><span class="hs-identifier hs-var">GetDynamic</span></a></span></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Music.Time.Internal.Transform.html#Transformable"><span class="hs-identifier hs-type">Transformable</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-86"></span><span>  </span><span id="local-6989586621680596566"><span class="annot"><span class="annottext">transform :: Span -&gt; DynamicNotation -&gt; DynamicNotation
+</span><a href="Music.Time.Internal.Transform.html#transform"><span class="hs-identifier hs-var hs-var hs-var hs-var">transform</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DynamicNotation -&gt; DynamicNotation
+forall a. a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">id</span></a></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680596560"><span id="local-6989586621680596562"><span class="annot"><a href="Music.Score.Ties.html#Tiable"><span class="hs-identifier hs-type">Tiable</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621680596557"><span class="annot"><span class="annottext">toTied :: DynamicNotation -&gt; (DynamicNotation, DynamicNotation)
+</span><a href="Music.Score.Ties.html#toTied"><span class="hs-identifier hs-var hs-var hs-var hs-var">toTied</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680596555"><span class="annot"><span class="annottext">beginEnd :: [CrescDim]
+</span><a href="#local-6989586621680596555"><span class="hs-identifier hs-var">beginEnd</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680596554"><span class="annot"><span class="annottext">marks :: Maybe Double
+</span><a href="#local-6989586621680596554"><span class="hs-identifier hs-var">marks</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-90"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">([CrescDim], Maybe Double) -&gt; DynamicNotation
+</span><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-var">DynamicNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[CrescDim]
+</span><a href="#local-6989586621680596555"><span class="hs-identifier hs-var">beginEnd</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe Double
+</span><a href="#local-6989586621680596554"><span class="hs-identifier hs-var">marks</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-91"></span><span>      </span><span class="annot"><span class="annottext">([CrescDim], Maybe Double) -&gt; DynamicNotation
+</span><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-var">DynamicNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[CrescDim]
+forall a. Monoid a =&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">mempty</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe Double
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-92"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680596549"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Monoid</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span>  </span><span id="local-6989586621680596548"><span class="annot"><span class="annottext">mempty :: DynamicNotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([CrescDim], Maybe Double) -&gt; DynamicNotation
+</span><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-var">DynamicNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Maybe Double
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span>  </span><span id="local-6989586621680596547"><span class="annot"><span class="annottext">mappend :: DynamicNotation -&gt; DynamicNotation -&gt; DynamicNotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">mappend</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DynamicNotation -&gt; DynamicNotation -&gt; DynamicNotation
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">(&lt;&gt;)</span></a></span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621680596542"><span id="local-6989586621680596544"><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Semigroup</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-101"></span><span>  </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">)</span><span> </span><span id="local-6989586621680596541"><span class="annot"><span class="annottext">&lt;&gt; :: DynamicNotation -&gt; DynamicNotation -&gt; DynamicNotation
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></a></span></span><span> </span><span id="local-6989586621680596540"><span class="annot"><span class="annottext">y :: DynamicNotation
+</span><a href="#local-6989586621680596540"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DynamicNotation
+</span><a href="#local-6989586621680596540"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-102"></span><span>  </span><span id="local-6989586621680596539"><span class="annot"><span class="annottext">x :: DynamicNotation
+</span><a href="#local-6989586621680596539"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DynamicNotation
+</span><a href="#local-6989586621680596539"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#crescDim"><span class="hs-identifier hs-type">crescDim</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#CrescDim"><span class="hs-identifier hs-type">CrescDim</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-105"></span><span id="crescDim"><span class="annot"><span class="annottext">crescDim :: ([CrescDim] -&gt; f [CrescDim])
+-&gt; DynamicNotation -&gt; f DynamicNotation
+</span><a href="Music.Score.Export.DynamicNotation.html#crescDim"><span class="hs-identifier hs-var hs-var">crescDim</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(([CrescDim], Maybe Double) -&gt; f ([CrescDim], Maybe Double))
+-&gt; DynamicNotation -&gt; f DynamicNotation
+forall s. Wrapped s =&gt; Iso' s (Unwrapped s)
+</span><span class="hs-identifier hs-var">_Wrapped'</span></span><span> </span><span class="annot"><span class="annottext">((([CrescDim], Maybe Double) -&gt; f ([CrescDim], Maybe Double))
+ -&gt; DynamicNotation -&gt; f DynamicNotation)
+-&gt; (([CrescDim] -&gt; f [CrescDim])
+    -&gt; ([CrescDim], Maybe Double) -&gt; f ([CrescDim], Maybe Double))
+-&gt; ([CrescDim] -&gt; f [CrescDim])
+-&gt; DynamicNotation
+-&gt; f DynamicNotation
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">([CrescDim] -&gt; f [CrescDim])
+-&gt; ([CrescDim], Maybe Double) -&gt; f ([CrescDim], Maybe Double)
+forall s t a b. Field1 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_1</span></span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#dynamicLevel"><span class="hs-identifier hs-type">dynamicLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Lens'</span></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Double</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span id="dynamicLevel"><span class="annot"><span class="annottext">dynamicLevel :: (Maybe Double -&gt; f (Maybe Double))
+-&gt; DynamicNotation -&gt; f DynamicNotation
+</span><a href="Music.Score.Export.DynamicNotation.html#dynamicLevel"><span class="hs-identifier hs-var hs-var">dynamicLevel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(([CrescDim], Maybe Double) -&gt; f ([CrescDim], Maybe Double))
+-&gt; DynamicNotation -&gt; f DynamicNotation
+forall s. Wrapped s =&gt; Iso' s (Unwrapped s)
+</span><span class="hs-identifier hs-var">_Wrapped'</span></span><span> </span><span class="annot"><span class="annottext">((([CrescDim], Maybe Double) -&gt; f ([CrescDim], Maybe Double))
+ -&gt; DynamicNotation -&gt; f DynamicNotation)
+-&gt; ((Maybe Double -&gt; f (Maybe Double))
+    -&gt; ([CrescDim], Maybe Double) -&gt; f ([CrescDim], Maybe Double))
+-&gt; (Maybe Double -&gt; f (Maybe Double))
+-&gt; DynamicNotation
+-&gt; f DynamicNotation
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Double -&gt; f (Maybe Double))
+-&gt; ([CrescDim], Maybe Double) -&gt; f ([CrescDim], Maybe Double)
+forall s t a b. Field2 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_2</span></span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="hs-comment">-- Given a dynamic value and its context, decide:</span><span>
+</span><span id="line-111"></span><span class="hs-comment">--</span><span>
+</span><span id="line-112"></span><span class="hs-comment">--   1) Whether we should begin or end a crescendo or diminuendo</span><span>
+</span><span id="line-113"></span><span class="hs-comment">--   2) Whether we should display the current dynamic value</span><span>
+</span><span id="line-114"></span><span class="hs-comment">--</span><span>
+</span><span id="line-115"></span><span id="local-6989586621680596534"><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#notateDynamic"><span class="hs-identifier hs-type">notateDynamic</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">Ord</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596534"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Real</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596534"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Functor.Context.html#Ctxt"><span class="hs-identifier hs-type">Ctxt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596534"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span></span><span>
+</span><span id="line-116"></span><span id="notateDynamic"><span class="annot"><span class="annottext">notateDynamic :: Ctxt a -&gt; DynamicNotation
+</span><a href="Music.Score.Export.DynamicNotation.html#notateDynamic"><span class="hs-identifier hs-var hs-var">notateDynamic</span></a></span></span><span> </span><span id="local-6989586621680596533"><span class="annot"><span class="annottext">x :: Ctxt a
+</span><a href="#local-6989586621680596533"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([CrescDim], Maybe Double) -&gt; DynamicNotation
+</span><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-var">DynamicNotation</span></a></span><span> </span><span class="annot"><span class="annottext">(([CrescDim], Maybe Double) -&gt; DynamicNotation)
+-&gt; ([CrescDim], Maybe Double) -&gt; DynamicNotation
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">ASetter
+  ([CrescDim], Bool) ([CrescDim], Maybe Double) Bool (Maybe Double)
+-&gt; (Bool -&gt; Maybe Double)
+-&gt; ([CrescDim], Bool)
+-&gt; ([CrescDim], Maybe Double)
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="annot"><span class="annottext">ASetter
+  ([CrescDim], Bool) ([CrescDim], Maybe Double) Bool (Maybe Double)
+forall s t a b. Field2 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_2</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621680596531"><span class="annot"><span class="annottext">t :: Bool
+</span><a href="#local-6989586621680596531"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621680596531"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Maybe Double
+forall a. a -&gt; Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Just</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Double
+forall a b. (Real a, Fractional b) =&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">realToFrac</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Double) -&gt; a -&gt; Double
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Ctxt a -&gt; a
+forall a. Ctxt a -&gt; a
+</span><a href="Data.Functor.Context.html#extractCtxt"><span class="hs-identifier hs-var">extractCtxt</span></a></span><span> </span><span class="annot"><span class="annottext">Ctxt a
+</span><a href="#local-6989586621680596533"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe Double
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(([CrescDim], Bool) -&gt; ([CrescDim], Maybe Double))
+-&gt; ([CrescDim], Bool) -&gt; ([CrescDim], Maybe Double)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Ctxt a -&gt; (Maybe a, a, Maybe a)
+forall a. Ctxt a -&gt; (Maybe a, a, Maybe a)
+</span><a href="Data.Functor.Context.html#getCtxt"><span class="hs-identifier hs-var hs-var">getCtxt</span></a></span><span> </span><span class="annot"><span class="annottext">Ctxt a
+</span><a href="#local-6989586621680596533"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-117"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-118"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680596528"><span class="annot"><span class="annottext">y :: a
+</span><a href="#local-6989586621680596528"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680596527"><span class="annot"><span class="annottext">z :: a
+</span><a href="#local-6989586621680596527"><span class="hs-identifier hs-var">z</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596528"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">`compare`</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596527"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-119"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">LT</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#BeginCresc"><span class="hs-identifier hs-var">BeginCresc</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-120"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">EQ</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-121"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">GT</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#BeginDim"><span class="hs-identifier hs-var">BeginDim</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-122"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680596525"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680596525"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680596524"><span class="annot"><span class="annottext">y :: a
+</span><a href="#local-6989586621680596524"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680596523"><span class="annot"><span class="annottext">z :: a
+</span><a href="#local-6989586621680596523"><span class="hs-identifier hs-var">z</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596525"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">`compare`</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596524"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596524"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">`compare`</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596523"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-123"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">LT</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">LT</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#NoCrescDim"><span class="hs-identifier hs-var">NoCrescDim</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-124"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">LT</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">EQ</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#EndCresc"><span class="hs-identifier hs-var">EndCresc</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-125"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">EQ</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">LT</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#BeginCresc"><span class="hs-identifier hs-var">BeginCresc</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span> </span><span class="hs-comment">{-True-}</span><span class="hs-special">)</span><span>
+</span><span id="line-126"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">GT</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">GT</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#NoCrescDim"><span class="hs-identifier hs-var">NoCrescDim</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">GT</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">EQ</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#EndDim"><span class="hs-identifier hs-var">EndDim</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-128"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">EQ</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">GT</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#BeginDim"><span class="hs-identifier hs-var">BeginDim</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span> </span><span class="hs-comment">{-True-}</span><span class="hs-special">)</span><span>
+</span><span id="line-129"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">EQ</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">EQ</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-130"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">LT</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">GT</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#EndCresc"><span class="hs-identifier hs-var">EndCresc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#BeginDim"><span class="hs-identifier hs-var">BeginDim</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-131"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">GT</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">LT</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#EndDim"><span class="hs-identifier hs-var">EndDim</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#BeginCresc"><span class="hs-identifier hs-var">BeginCresc</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-132"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621680596522"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680596522"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680596521"><span class="annot"><span class="annottext">y :: a
+</span><a href="#local-6989586621680596521"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596522"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">`compare`</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596521"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-133"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">LT</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#EndCresc"><span class="hs-identifier hs-var">EndCresc</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-134"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">EQ</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">False</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-135"></span><span>    </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-type">GT</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">CrescDim
+</span><a href="Music.Score.Export.DynamicNotation.html#EndDim"><span class="hs-identifier hs-var">EndDim</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-identifier hs-var">True</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-136"></span><span>
+</span><span id="line-137"></span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#removeCloseDynMarks"><span class="hs-identifier hs-type">removeCloseDynMarks</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621680596520"><span class="annot"><a href="#local-6989586621680596520"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span id="local-6989586621680596519"><span class="annot"><a href="#local-6989586621680596519"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Phrases.html#HasPhrases%27"><span class="hs-identifier hs-type">HasPhrases'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596520"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596519"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#HasDynamics%27"><span class="hs-identifier hs-type">HasDynamics'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596519"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#GetDynamic"><span class="hs-identifier hs-type">GetDynamic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596519"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">~</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680596519"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">~</span></a></span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#SetDynamic"><span class="hs-identifier hs-type">SetDynamic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Dynamics.html#GetDynamic"><span class="hs-identifier hs-type">GetDynamic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596519"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680596519"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680596520"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680596520"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-138"></span><span id="removeCloseDynMarks"><span class="annot"><span class="annottext">removeCloseDynMarks :: s -&gt; s
+</span><a href="Music.Score.Export.DynamicNotation.html#removeCloseDynMarks"><span class="hs-identifier hs-var hs-var">removeCloseDynMarks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Maybe (Time, Phrase a) -&gt; Time -&gt; Phrase a -&gt; Phrase a) -&gt; s -&gt; s
+forall s t a b.
+HasPhrases s t a b =&gt;
+(Maybe (Time, Phrase a) -&gt; Time -&gt; Phrase a -&gt; Phrase b) -&gt; s -&gt; t
+</span><a href="Music.Score.Phrases.html#mapPhrasesWithPrevAndCurrentOnset"><span class="hs-identifier hs-var">mapPhrasesWithPrevAndCurrentOnset</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe (Time, Phrase a) -&gt; Time -&gt; Phrase a -&gt; Phrase a
+</span><a href="#local-6989586621680596516"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-139"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-140"></span><span>    </span><span class="annot"><a href="#local-6989586621680596516"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Phrases.html#Phrase"><span class="hs-identifier hs-type">Phrase</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596519"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Time.Types.html#Time"><span class="hs-identifier hs-type">Time</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Phrases.html#Phrase"><span class="hs-identifier hs-type">Phrase</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596519"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Music.Score.Phrases.html#Phrase"><span class="hs-identifier hs-type">Phrase</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596519"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-141"></span><span>    </span><span id="local-6989586621680596516"><span class="annot"><span class="annottext">f :: Maybe (Time, Phrase a) -&gt; Time -&gt; Phrase a -&gt; Phrase a
+</span><a href="#local-6989586621680596516"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Nothing</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span id="local-6989586621680596515"><span class="annot"><span class="annottext">x :: Phrase a
+</span><a href="#local-6989586621680596515"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Phrase a
+</span><a href="#local-6989586621680596515"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-142"></span><span>    </span><span class="annot"><a href="#local-6989586621680596516"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621680596514"><span class="annot"><span class="annottext">t1 :: Time
+</span><a href="#local-6989586621680596514"><span class="hs-identifier hs-var">t1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680596513"><span class="annot"><span class="annottext">x1 :: Phrase a
+</span><a href="#local-6989586621680596513"><span class="hs-identifier hs-var">x1</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621680596512"><span class="annot"><span class="annottext">t2 :: Time
+</span><a href="#local-6989586621680596512"><span class="hs-identifier hs-var">t2</span></a></span></span><span> </span><span id="local-6989586621680596511"><span class="annot"><span class="annottext">x :: Phrase a
+</span><a href="#local-6989586621680596511"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-143"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680596512"><span class="hs-identifier hs-var">t2</span></a></span><span> </span><span class="annot"><span class="annottext">Time -&gt; Time -&gt; Diff Time
+forall p. AffineSpace p =&gt; p -&gt; p -&gt; Diff p
+</span><span class="hs-operator hs-var">.-.</span></span><span> </span><span class="annot"><span class="annottext">Time
+</span><a href="#local-6989586621680596514"><span class="hs-identifier hs-var">t1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Duration -&gt; Duration -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">&gt;</span></a></span><span> </span><span class="annot"><span class="hs-number">1.5</span></span><span>
+</span><span id="line-144"></span><span>        </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Phrase a
+</span><a href="#local-6989586621680596513"><span class="hs-identifier hs-var">x1</span></a></span><span> </span><span class="annot"><span class="annottext">Phrase a
+-&gt; Getting (First DynamicNotation) (Phrase a) DynamicNotation
+-&gt; Maybe DynamicNotation
+forall s a. s -&gt; Getting (First a) s a -&gt; Maybe a
+</span><span class="hs-operator hs-var">^?</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Note a -&gt; Const (First DynamicNotation) (Note a))
+-&gt; Phrase a -&gt; Const (First DynamicNotation) (Phrase a)
+forall s a. Snoc s s a a =&gt; Traversal' s a
+</span><span class="hs-identifier hs-var">_last</span></span><span> </span><span class="annot"><span class="annottext">((Note a -&gt; Const (First DynamicNotation) (Note a))
+ -&gt; Phrase a -&gt; Const (First DynamicNotation) (Phrase a))
+-&gt; ((DynamicNotation
+     -&gt; Const (First DynamicNotation) DynamicNotation)
+    -&gt; Note a -&gt; Const (First DynamicNotation) (Note a))
+-&gt; Getting (First DynamicNotation) (Phrase a) DynamicNotation
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(DynamicNotation -&gt; Const (First DynamicNotation) DynamicNotation)
+-&gt; Note a -&gt; Const (First DynamicNotation) (Note a)
+forall s t. (HasDynamics s t, s ~ t) =&gt; Traversal' s (GetDynamic s)
+</span><a href="Music.Score.Dynamics.html#dynamics%27"><span class="hs-identifier hs-var">dynamics'</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe DynamicNotation -&gt; Maybe DynamicNotation -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-operator hs-var">/=</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Phrase a
+</span><a href="#local-6989586621680596511"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Phrase a
+-&gt; Getting (First DynamicNotation) (Phrase a) DynamicNotation
+-&gt; Maybe DynamicNotation
+forall s a. s -&gt; Getting (First a) s a -&gt; Maybe a
+</span><span class="hs-operator hs-var">^?</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Note a -&gt; Const (First DynamicNotation) (Note a))
+-&gt; Phrase a -&gt; Const (First DynamicNotation) (Phrase a)
+forall s a. Cons s s a a =&gt; Traversal' s a
+</span><span class="hs-identifier hs-var">_head</span></span><span> </span><span class="annot"><span class="annottext">((Note a -&gt; Const (First DynamicNotation) (Note a))
+ -&gt; Phrase a -&gt; Const (First DynamicNotation) (Phrase a))
+-&gt; ((DynamicNotation
+     -&gt; Const (First DynamicNotation) DynamicNotation)
+    -&gt; Note a -&gt; Const (First DynamicNotation) (Note a))
+-&gt; Getting (First DynamicNotation) (Phrase a) DynamicNotation
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(DynamicNotation -&gt; Const (First DynamicNotation) DynamicNotation)
+-&gt; Note a -&gt; Const (First DynamicNotation) (Note a)
+forall s t. (HasDynamics s t, s ~ t) =&gt; Traversal' s (GetDynamic s)
+</span><a href="Music.Score.Dynamics.html#dynamics%27"><span class="hs-identifier hs-var">dynamics'</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-145"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Phrase a
+</span><a href="#local-6989586621680596511"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-146"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">ASetter (Phrase a) (Phrase a) a a
+-&gt; (a -&gt; a) -&gt; Phrase a -&gt; Phrase a
+forall s t a b. ASetter s t a b -&gt; (a -&gt; b) -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">over</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Note a -&gt; Identity (Note a)) -&gt; Phrase a -&gt; Identity (Phrase a)
+forall s a. Cons s s a a =&gt; Traversal' s a
+</span><span class="hs-identifier hs-var">_head</span></span><span> </span><span class="annot"><span class="annottext">((Note a -&gt; Identity (Note a)) -&gt; Phrase a -&gt; Identity (Phrase a))
+-&gt; ((a -&gt; Identity a) -&gt; Note a -&gt; Identity (Note a))
+-&gt; ASetter (Phrase a) (Phrase a) a a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Identity a) -&gt; Note a -&gt; Identity (Note a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; Setter (f a) (f b) a b
+</span><span class="hs-identifier hs-var">mapped</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a.
+(HasDynamics' a, GetDynamic a ~ DynamicNotation,
+ a ~ SetDynamic (GetDynamic a) a) =&gt;
+a -&gt; a
+</span><a href="Music.Score.Export.DynamicNotation.html#removeDynMark"><span class="hs-identifier hs-var">removeDynMark</span></a></span><span> </span><span class="annot"><span class="annottext">Phrase a
+</span><a href="#local-6989586621680596511"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span id="local-6989586621680596665"><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#removeDynMark"><span class="hs-identifier hs-type">removeDynMark</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Dynamics.html#HasDynamics%27"><span class="hs-identifier hs-type">HasDynamics'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596665"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#GetDynamic"><span class="hs-identifier hs-type">GetDynamic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596665"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">~</span></a></span><span> </span><span class="annot"><a href="Music.Score.Export.DynamicNotation.html#DynamicNotation"><span class="hs-identifier hs-type">DynamicNotation</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621680596665"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.5.3/src"><span class="hs-glyph hs-type">~</span></a></span><span> </span><span class="annot"><a href="Music.Score.Dynamics.html#SetDynamic"><span class="hs-identifier hs-type">SetDynamic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Music.Score.Dynamics.html#GetDynamic"><span class="hs-identifier hs-type">GetDynamic</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680596665"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621680596665"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680596665"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680596665"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-149"></span><span id="removeDynMark"><span class="annot"><span class="annottext">removeDynMark :: a -&gt; a
+</span><a href="Music.Score.Export.DynamicNotation.html#removeDynMark"><span class="hs-identifier hs-var hs-var">removeDynMark</span></a></span></span><span> </span><span id="local-6989586621680596500"><span class="annot"><span class="annottext">x :: a
+</span><a href="#local-6989586621680596500"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ASetter a a (Maybe Double) (Maybe Double) -&gt; Maybe Double -&gt; a -&gt; a
+forall s t a b. ASetter s t a b -&gt; b -&gt; s -&gt; t
+</span><span class="hs-identifier hs-var">set</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(DynamicNotation -&gt; Identity DynamicNotation) -&gt; a -&gt; Identity a
+forall s t. (HasDynamics s t, s ~ t) =&gt; Traversal' s (GetDynamic s)
+</span><a href="Music.Score.Dynamics.html#dynamics%27"><span class="hs-identifier hs-var">dynamics'</span></a></span><span> </span><span class="annot"><span class="annottext">((DynamicNotation -&gt; Identity DynamicNotation) -&gt; a -&gt; Identity a)
+-&gt; ((Maybe Double -&gt; Identity (Maybe Double))
+    -&gt; DynamicNotation -&gt; Identity DynamicNotation)
+-&gt; ASetter a a (Maybe Double) (Maybe Double)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(([CrescDim], Maybe Double) -&gt; Identity ([CrescDim], Maybe Double))
+-&gt; DynamicNotation -&gt; Identity DynamicNotation
+forall s. Wrapped s =&gt; Iso' s (Unwrapped s)
+</span><span class="hs-identifier hs-var">_Wrapped'</span></span><span> </span><span class="annot"><span class="annottext">((([CrescDim], Maybe Double)
+  -&gt; Identity ([CrescDim], Maybe Double))
+ -&gt; DynamicNotation -&gt; Identity DynamicNotation)
+-&gt; ((Maybe Double -&gt; Identity (Maybe Double))
+    -&gt; ([CrescDim], Maybe Double)
+    -&gt; Identity ([CrescDim], Maybe Double))
+-&gt; (Maybe Double -&gt; Identity (Maybe Double))
+-&gt; DynamicNotation
+-&gt; Identity DynamicNotation
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Double -&gt; Identity (Maybe Double))
+-&gt; ([CrescDim], Maybe Double)
+-&gt; Identity ([CrescDim], Maybe Double)
+forall s t a b. Field2 s t a b =&gt; Lens s t a b
+</span><span class="hs-identifier hs-var">_2</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe Double
+forall a. Maybe a
+</span><a href="../file:///nix/store/yi1zp26n2al045qmp9gwpxblhp2c8gs8-ghc-8.8.3-doc/share/doc/ghc/html/libraries/base-4.13.0.0/src"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621680596500"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-150"></span></pre></body></html>
